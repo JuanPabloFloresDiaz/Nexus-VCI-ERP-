@@ -1,0 +1,66 @@
+services:
+  # Servicio de la API
+  api:
+    build: .
+    container_name: ${API_CONTAINER_NAME}
+    restart: always
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - nexus_vci_erp_network
+
+  # Servicio de Base de Datos MariaDB
+  db:
+    image: mariadb:11
+    container_name: ${DB_CONTAINER_NAME}
+    restart: always
+    ports:
+      - "${DB_EXTERNAL_PORT}:${DB_INTERNAL_PORT}"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus_vci_erp_network
+
+  # Servicio de Almacenamiento Minio (S3 Local)
+  minio:
+    image: minio/minio
+    container_name: ${MINIO_CONTAINER_NAME}
+    ports:
+      - "${MINIO_PORT}:9000" # API de Minio
+      - "${MINIO_CONSOLE_PORT}:9001" # Consola Web
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - nexus_vci_erp_network
+
+networks:
+  nexus_vci_erp_network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  minio_data:

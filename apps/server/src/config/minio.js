@@ -8,7 +8,7 @@ const minioClient = new Minio.Client({
     secretKey: process.env.MINIO_ROOT_PASSWORD
 });
 
-const BUCKET_NAME = 'sgpitr-bucket';
+const BUCKET_NAME = 'nexus-vci-erp-bucket';
 
 // Initialize bucket
 const initBucket = async () => {

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { login, register } = require('../controllers/auth.controller');
 const validateRequest = require('../utils/validateRequest');
-const loginSchema = require('../validations/auth.schema.js');
+const { loginSchema, registerSchema } = require('../validations/auth.schema.js');
 
 /**
  * @swagger
@@ -32,6 +32,6 @@ const loginSchema = require('../validations/auth.schema.js');
  *         description: Invalid credentials.
  */
 router.post('/login', validateRequest(loginSchema), login);
-router.post('/register', register);
+router.post('/register', validateRequest(registerSchema), register);
 
 module.exports = router;

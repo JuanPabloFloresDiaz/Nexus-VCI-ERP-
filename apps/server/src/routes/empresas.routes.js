@@ -2,6 +2,9 @@ const express = require('express');
 const EmpresasController = require('../controllers/empresas.controller');
 // const { verifyToken, isAdmin } = require('../middlewares/auth'); // Uncomment when middlewares are ready
 
+const validateRequest = require('../utils/validateRequest');
+const { createEmpresaSchema, updateEmpresaSchema } = require('../validations/empresas.schema');
+
 const router = express.Router();
 
 /**
@@ -84,8 +87,8 @@ const router = express.Router();
 // Define routes
 router.get('/', EmpresasController.index);
 router.get('/:id', EmpresasController.getById);
-router.post('/', EmpresasController.store); // Protect later?
-router.put('/:id', EmpresasController.update);
+router.post('/', validateRequest(createEmpresaSchema), EmpresasController.store); // Protect later?
+router.put('/:id', validateRequest(updateEmpresaSchema), EmpresasController.update);
 router.delete('/:id', EmpresasController.destroy);
 
 module.exports = router;

@@ -11,10 +11,16 @@ const { createUserSchema, updateUserSchema } = require('../validations/usuarios.
  *   description: API para la gestión de usuarios
  */
 
+const { checkAuthAny } = require('../middlewares/checkAuth');
+
+// Apply verifyToken middleware to all routes
+router.use(checkAuthAny());
+
 /**
  * @swagger
  * /usuarios:
  *   get:
+
  *     summary: Obtener listado paginado de usuarios (con búsqueda opcional)
  *     tags: [Usuarios]
  *     parameters:

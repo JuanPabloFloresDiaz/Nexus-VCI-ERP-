@@ -29,6 +29,10 @@ const { z } = require('zod');
  *           enum: [Administrador, Vendedor]
  *           description: Role of the user.
  *           example: "Vendedor"
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
+ *           description: (Optional) ID of the company.
  *     UpdateUser:
  *       type: object
  *       properties:
@@ -40,6 +44,9 @@ const { z } = require('zod');
  *           type: string
  *         estado_usuario:
  *           type: boolean
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  */
 
 const createUserSchema = z.object({
@@ -60,7 +67,8 @@ const createUserSchema = z.object({
             .enum(['Administrador', 'Vendedor'], {
                 required_error: 'El rol es requerido',
                 invalid_type_error: 'El rol debe ser Administrador o Vendedor'
-            })
+            }),
+        id_empresa: z.string().uuid().optional()
     }),
 });
 
@@ -84,7 +92,8 @@ const updateUserSchema = z.object({
             .optional(),
         estado_usuario: z
             .boolean()
-            .optional()
+            .optional(),
+        id_empresa: z.string().uuid().optional()
     }),
 });
 

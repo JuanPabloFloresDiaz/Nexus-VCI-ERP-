@@ -2,14 +2,15 @@ const jwt = require('jsonwebtoken');
 
 class Auth {
     // Store the secrets for each user type as a static property.
+    // Store the secrets for each user type as a static property.
     static secrets = {
-        admin: process.env.JWT_SECRET_ADMIN,
-        user: process.env.JWT_SECRET_USER,
+        Administrador: process.env.JWT_SECRET_ADMIN,
+        Vendedor: process.env.JWT_SECRET_USER,
     };
 
     /**
      * Validates that the provided user type is allowed.
-     * @param {string} userType - The user type ("admin" or "user").
+     * @param {string} userType - The user type ("Administrador" or "Vendedor").
      * @throws {Error} If the user type is invalid.
      */
     static validateUserType(userType) {
@@ -21,7 +22,7 @@ class Auth {
     /**
      * Generates a JWT token with the provided user data.
      * @param {Object} data - User data (e.g., id, name, etc.).
-     * @param {string} userType - The user type ("admin" or "user").
+     * @param {string} userType - The user type ("Administrador" or "Vendedor").
      * @returns {string} A signed JWT token.
      */
     static generateToken(data, userType) {
@@ -29,9 +30,9 @@ class Auth {
         const tokenData = { ...data, userType };
 
         let expiresIn;
-        if (userType === 'user') {
+        if (userType === 'Vendedor') {
             expiresIn = process.env.JWT_EXPIRES_IN_USER;
-        } else if (userType === 'admin') {
+        } else if (userType === 'Administrador') {
             expiresIn = process.env.JWT_EXPIRES_IN_ADMIN;
         } else {
             expiresIn = '480m';

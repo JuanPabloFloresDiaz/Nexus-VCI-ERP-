@@ -1,8 +1,8 @@
-const { Usuarios } = require('../models');
+const { Usuarios, Empresas, sequelize } = require('../models');
 const catchErrors = require('../utils/tryCatch');
 const ApiResponse = require('../utils/apiResponse');
 const { generateToken } = require('../auth'); // Module with functions: asignarToken, verificarToken
-const { comparePassword } = require('../utils/password'); // Function to compare plain and hashed passwords
+const { comparePassword, encryptPassword } = require('../utils/password'); // Function to compare plain and hashed passwords
 
 class AuthController {
     /**
@@ -40,7 +40,7 @@ class AuthController {
                 id: user.id,
                 correo_electronico: user.correo_electronico,
                 nombre_usuario: user.nombre_usuario,
-                rol: user.rol, // Keeping it consistent
+                rol: user.rol_usuario, // Keeping it consistent with user object
                 id_empresa: user.id_empresa // Add tenant ID
             },
             user.rol_usuario
@@ -79,15 +79,24 @@ class AuthController {
             clave_acceso
         } = req.body;
 
+        // Check if user already exists
+        const existingUser = await Usuarios.findOne({ where: { correo_electronico } });
+        if (existingUser) {
+            return ApiResponse.error(res, {
+                error: 'El correo electrónico ya está registrado',
+                route: '/auth/register',
+                status: 400
+            });
+        }
+
         const result = await sequelize.transaction(async (t) => {
             // 1. Create the Company
             const newEmpresa = await Empresas.create({
                 nombre_empresa
             }, { transaction: t });
 
-            // 2. Create the Admin User
-            const { hashPassword } = require('../utils/password');
-            const encryptedPassword = await hashPassword(clave_acceso);
+            // 2. Create the Admin User}
+            const encryptedPassword = await encryptPassword(clave_acceso);
 
             const newUser = await Usuarios.create({
                 id_empresa: newEmpresa.id,

@@ -6,6 +6,7 @@ class Auth {
     static secrets = {
         Administrador: process.env.JWT_SECRET_ADMIN,
         Vendedor: process.env.JWT_SECRET_USER,
+        SuperAdministrador: process.env.JWT_SECRET_SUPER_ADMIN,
     };
 
     /**
@@ -34,6 +35,8 @@ class Auth {
             expiresIn = process.env.JWT_EXPIRES_IN_USER;
         } else if (userType === 'Administrador') {
             expiresIn = process.env.JWT_EXPIRES_IN_ADMIN;
+        } else if (userType === 'SuperAdministrador') {
+            expiresIn = process.env.JWT_EXPIRES_IN_SUPER_ADMIN;
         } else {
             expiresIn = '480m';
         }

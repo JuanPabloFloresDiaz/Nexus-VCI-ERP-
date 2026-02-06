@@ -35,7 +35,7 @@ class Usuarios extends BaseEntity {
                     allowNull: false
                 },
                 rol_usuario: {
-                    type: DataTypes.ENUM('Administrador', 'Vendedor'),
+                    type: DataTypes.ENUM('Administrador', 'Vendedor', 'SuperAdministrador'),
                     allowNull: false
                 },
                 foto_perfil_url: {

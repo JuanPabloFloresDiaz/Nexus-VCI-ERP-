@@ -18,6 +18,9 @@ const { z } = require('zod');
  *         tipo_dato:
  *           type: string
  *           enum: [Texto, Numérico, Lista]
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     CreateOpcionFiltro:
  *       type: object
  *       required:
@@ -35,7 +38,8 @@ const createFiltroSchema = z.object({
     body: z.object({
         id_subcategoria: z.string().uuid('ID de subcategoría inválido'),
         nombre_filtro: z.string().min(1, 'El nombre del filtro es requerido').max(100),
-        tipo_dato: z.enum(['Texto', 'Numérico', 'Lista']).default('Texto').optional()
+        tipo_dato: z.enum(['Texto', 'Numérico', 'Lista']).default('Texto').optional(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -43,7 +47,8 @@ const updateFiltroSchema = z.object({
     body: z.object({
         id_subcategoria: z.string().uuid().optional(),
         nombre_filtro: z.string().min(1).max(100).optional(),
-        tipo_dato: z.enum(['Texto', 'Numérico', 'Lista']).optional()
+        tipo_dato: z.enum(['Texto', 'Numérico', 'Lista']).optional(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 

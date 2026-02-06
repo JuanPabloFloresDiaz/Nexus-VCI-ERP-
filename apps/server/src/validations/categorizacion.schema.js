@@ -22,6 +22,9 @@ const { z } = require('zod');
  *             properties:
  *               nombre_subcategoria:
  *                 type: string
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     CreateSubcategoria:
  *       type: object
  *       required:
@@ -50,7 +53,8 @@ const createCategoriaSchema = z.object({
             z.object({
                 nombre_subcategoria: z.string().min(1).max(100)
             })
-        ).optional()
+        ).optional(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -64,7 +68,8 @@ const updateCategoriaSchema = z.object({
         descripcion_categoria: z
             .string()
             .optional()
-            .nullable()
+            .nullable(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -88,7 +93,8 @@ const bulkCategoriaSchema = z.object({
                         })
                     ).optional()
                 })
-            ).optional()
+            ).optional(),
+            id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos una categoría')
 });
@@ -97,7 +103,8 @@ const createSubcategoriaSchema = z.object({
     body: z.object({
         id_categoria: z.string().uuid('ID de categoría inválido'),
         nombre_subcategoria: z.string().min(1).max(100),
-        descripcion_subcategoria: z.string().optional().nullable()
+        descripcion_subcategoria: z.string().optional().nullable(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -105,7 +112,8 @@ const updateSubcategoriaSchema = z.object({
     body: z.object({
         id_categoria: z.string().uuid().optional(),
         nombre_subcategoria: z.string().min(1).max(100).optional(),
-        descripcion_subcategoria: z.string().optional().nullable()
+        descripcion_subcategoria: z.string().optional().nullable(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -114,7 +122,8 @@ const bulkSubcategoriaSchema = z.object({
         z.object({
             id_categoria: z.string().uuid(),
             nombre_subcategoria: z.string().min(1).max(100),
-            descripcion_subcategoria: z.string().optional().nullable()
+            descripcion_subcategoria: z.string().optional().nullable(),
+            id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos una subcategoría')
 });

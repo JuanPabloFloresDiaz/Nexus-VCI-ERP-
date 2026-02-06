@@ -31,6 +31,9 @@ const { z } = require('zod');
  *           type: string
  *           description: Email address.
  *           example: "maria@example.com"
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     UpdateCliente:
  *       type: object
  *       properties:
@@ -44,6 +47,9 @@ const { z } = require('zod');
  *           type: string
  *         correo_cliente:
  *           type: string
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  */
 
 const createClienteSchema = z.object({
@@ -70,6 +76,7 @@ const createClienteSchema = z.object({
             .string({ required_error: 'El correo es requerido' })
             .email('Debe ser un correo válido')
             .max(100, 'El correo no puede exceder los 100 caracteres'),
+        id_empresa: z.string().uuid().optional(),
     }),
 });
 
@@ -100,6 +107,7 @@ const updateClienteSchema = z.object({
             .email('Debe ser un correo válido')
             .max(100)
             .optional(),
+        id_empresa: z.string().uuid().optional(),
     }),
 });
 
@@ -110,7 +118,8 @@ const bulkClienteSchema = z.object({
             apellido_cliente: z.string().min(1).max(100),
             dui_cliente: z.string().max(10).optional().nullable(),
             telefono_cliente: z.string().max(15).optional().nullable(),
-            correo_cliente: z.string().email().max(100)
+            correo_cliente: z.string().email().max(100),
+            id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos un cliente')
 });

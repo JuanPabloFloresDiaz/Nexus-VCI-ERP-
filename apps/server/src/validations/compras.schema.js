@@ -45,6 +45,9 @@ const { z } = require('zod');
  *                 type: number
  *               precio_costo_historico:
  *                 type: number
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     UpdateCompra:
  *       type: object
  *       properties:
@@ -54,6 +57,9 @@ const { z } = require('zod');
  *         fecha_entrega_estimada:
  *           type: string
  *           format: date
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  */
 
 // Schema for creating a provider inline within a purchase
@@ -79,7 +85,8 @@ const createCompraSchema = z.object({
         nuevo_proveedor: inlineProveedorSchema.optional().nullable(),
         fecha_entrega_estimada: z.string().datetime({ offset: true }).optional().nullable().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato YYYY-MM-DD')), // Allow ISO or DateOnly string
         estado_compra: z.enum(['Pendiente', 'Recibido', 'Cancelado']).default('Recibido'), // Purchases usually entered as received for stock update, but allow option
-        detalles: z.array(detalleCompraSchema).min(1, 'La compra debe tener al menos un detalle')
+        detalles: z.array(detalleCompraSchema).min(1, 'La compra debe tener al menos un detalle'),
+        id_empresa: z.string().uuid().optional()
     }).refine(data => data.id_proveedor || data.nuevo_proveedor, {
         message: "Debe proporcionar un 'id_proveedor' existente o un 'nuevo_proveedor'",
         path: ["id_proveedor"] // Error pointer
@@ -89,7 +96,8 @@ const createCompraSchema = z.object({
 const updateCompraSchema = z.object({
     body: z.object({
         estado_compra: z.enum(['Pendiente', 'Recibido', 'Cancelado']).optional(),
-        fecha_entrega_estimada: z.string().optional().nullable()
+        fecha_entrega_estimada: z.string().optional().nullable(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -100,7 +108,8 @@ const bulkCompraSchema = z.object({
             nuevo_proveedor: inlineProveedorSchema.optional().nullable(),
             fecha_entrega_estimada: z.string().optional().nullable(),
             estado_compra: z.enum(['Pendiente', 'Recibido', 'Cancelado']).default('Recibido'),
-            detalles: z.array(detalleCompraSchema).min(1)
+            detalles: z.array(detalleCompraSchema).min(1),
+            id_empresa: z.string().uuid().optional()
         }).refine(data => data.id_proveedor || data.nuevo_proveedor, {
             message: "Debe proporcionar un 'id_proveedor' existente o un 'nuevo_proveedor'",
             path: ["id_proveedor"]

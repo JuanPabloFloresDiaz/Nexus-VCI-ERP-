@@ -37,6 +37,9 @@ const { z } = require('zod');
  *               id_opcion_filtro:
  *                 type: string
  *                 format: uuid
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     UpdateStock:
  *       type: object
  *       required:
@@ -62,7 +65,8 @@ const createProductoSchema = z.object({
             z.object({
                 id_opcion_filtro: z.string().uuid('ID de opción inválido')
             })
-        ).optional()
+        ).optional(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -76,7 +80,8 @@ const updateProductoSchema = z.object({
         stock_actual: z.number().int().nonnegative().optional(),
         stock_minimo: z.number().int().nonnegative().optional(),
         imagen_url: z.string().url().optional().nullable(),
-        estado_producto: z.boolean().optional()
+        estado_producto: z.boolean().optional(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -92,7 +97,8 @@ const bulkProductoSchema = z.object({
             stock_actual: z.number().int().nonnegative().default(0),
             stock_minimo: z.number().int().nonnegative().default(5),
             imagen_url: z.string().url().optional().nullable(),
-            detalles: z.array(z.object({ id_opcion_filtro: z.string().uuid() })).optional()
+            detalles: z.array(z.object({ id_opcion_filtro: z.string().uuid() })).optional(),
+            id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos un producto')
 });

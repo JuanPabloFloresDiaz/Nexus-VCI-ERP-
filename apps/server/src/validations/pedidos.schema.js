@@ -33,6 +33,9 @@ const { z } = require('zod');
  *                 type: integer
  *               precio_historico:
  *                 type: number
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     UpdateEstadoPedido:
  *       type: object
  *       required:
@@ -53,7 +56,8 @@ const createPedidoSchema = z.object({
                 cantidad: z.number().int().positive('La cantidad debe ser positiva'),
                 precio_historico: z.number().positive('El precio debe ser positivo')
             })
-        ).min(1, 'El pedido debe tener al menos un detalle')
+        ).min(1, 'El pedido debe tener al menos un detalle'),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -76,7 +80,8 @@ const bulkPedidoSchema = z.object({
                     cantidad: z.number().int().positive(),
                     precio_historico: z.number().positive()
                 })
-            ).min(1)
+            ).min(1),
+            id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos un pedido')
 });

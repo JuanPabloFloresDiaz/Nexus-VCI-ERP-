@@ -19,6 +19,30 @@ const { z } = require('zod');
  *           type: string
  *           description: The user's password.
  *           example: "Clave123!"
+ *     Register:
+ *       type: object
+ *       required:
+ *         - nombre_empresa
+ *         - nombre_usuario
+ *         - correo_electronico
+ *         - clave_acceso
+ *       properties:
+ *         nombre_empresa:
+ *           type: string
+ *           description: Name of the company to register.
+ *           example: "Tech Solutions Ltd."
+ *         nombre_usuario:
+ *           type: string
+ *           description: Name of the initial admin user.
+ *           example: "Admin User"
+ *         correo_electronico:
+ *           type: string
+ *           description: Email address for the admin user.
+ *           example: "admin@techsolutions.com"
+ *         clave_acceso:
+ *           type: string
+ *           description: Password for the admin user.
+ *           example: "SecurePass123!"
  */
 
 const loginSchema = z.object({

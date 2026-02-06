@@ -21,6 +21,9 @@ const { z } = require('zod');
  *         correo_proveedor:
  *           type: string
  *           description: Email address.
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  *     UpdateProveedor:
  *       type: object
  *       properties:
@@ -32,6 +35,9 @@ const { z } = require('zod');
  *           type: string
  *         correo_proveedor:
  *           type: string
+ *         id_empresa:
+ *           type: string
+ *           format: uuid
  */
 
 const createProveedorSchema = z.object({
@@ -39,7 +45,8 @@ const createProveedorSchema = z.object({
         nombre_proveedor: z.string().min(1, 'El nombre del proveedor es requerido').max(150),
         contacto_nombre: z.string().max(100).optional().nullable(),
         telefono_proveedor: z.string().max(15).optional().nullable(),
-        correo_proveedor: z.string().email('Debe ser un correo válido').max(100).optional().nullable()
+        correo_proveedor: z.string().email('Debe ser un correo válido').max(100).optional().nullable(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -48,7 +55,8 @@ const updateProveedorSchema = z.object({
         nombre_proveedor: z.string().min(1).max(150).optional(),
         contacto_nombre: z.string().max(100).optional().nullable(),
         telefono_proveedor: z.string().max(15).optional().nullable(),
-        correo_proveedor: z.string().email().max(100).optional().nullable()
+        correo_proveedor: z.string().email().max(100).optional().nullable(),
+        id_empresa: z.string().uuid().optional()
     })
 });
 
@@ -58,7 +66,8 @@ const bulkProveedorSchema = z.object({
             nombre_proveedor: z.string().min(1, 'El nombre del proveedor es requerido').max(150),
             contacto_nombre: z.string().max(100).optional().nullable(),
             telefono_proveedor: z.string().max(15).optional().nullable(),
-            correo_proveedor: z.string().email('Debe ser un correo válido').max(100).optional().nullable()
+            correo_proveedor: z.string().email('Debe ser un correo válido').max(100).optional().nullable(),
+            id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos un proveedor')
 });

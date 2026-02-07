@@ -1,9 +1,10 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { authRegister } from '@/services/auth.service';
+import { useAuth } from '@/hooks/useAuth';
 
 const router = useRouter();
+const { register } = useAuth();
 const step = ref(1);
 const loading = ref(false);
 const errorMsg = ref('');
@@ -67,11 +68,16 @@ const handleRegister = async () => {
         payload.logo = form.logo;
     }
 
-    await authRegister(payload);
+    const result = await register(payload);
     
-    // Redirigir al login con mensaje de éxito (o auto-login)
-    // Por ahora, redirigimos al login
-    router.push({ path: '/auth/login', query: { registered: 'true' } });
+    if (result.success) {
+        // Redirigir al login (aunque ya hay auto-login, el flujo visual pide ir a login o dash)
+        // Dado que el store hace auto-login, podríamos ir directo a dashboard
+        // Pero para confirmar al usuario, podemos ir al login o dashboard con mensaje
+        router.push({ path: '/auth/login', query: { registered: 'true' } });
+    } else {
+        throw new Error(result.error);
+    }
   } catch (error) {
     console.error(error);
     errorMsg.value = error.message || 'Error al registrar la cuenta.';

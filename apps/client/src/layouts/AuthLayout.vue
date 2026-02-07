@@ -3,8 +3,10 @@ import heroImage from '@/assets/hero-1.avif';
 </script>
 
 <template>
-  <v-container fluid class="pa-0 fill-height">
-    <v-row no-gutters class="fill-height">
+  <v-app>
+    <v-container fluid class="pa-0 fill-height">
+        <!-- Content kept same -->
+        <v-row no-gutters class="fill-height">
       <!-- Sección Izquierda: Imagen y Branding -->
       <v-col cols="12" md="6" lg="7" class="d-none d-md-flex relative position-relative">
         <v-img
@@ -47,7 +49,8 @@ import heroImage from '@/assets/hero-1.avif';
         </div>
       </v-col>
     </v-row>
-  </v-container>
+    </v-container>
+  </v-app>
 </template>
 
 <style scoped>

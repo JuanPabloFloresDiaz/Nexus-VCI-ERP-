@@ -1,9 +1,11 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { authLogin } from '@/services/auth.service';
+import { useAuth } from '@/hooks/useAuth';
 
 const router = useRouter();
+const { login } = useAuth();
+
 const loading = ref(false);
 const showPassword = ref(false);
 const errorMsg = ref('');
@@ -33,14 +35,14 @@ const handleLogin = async () => {
       clave_acceso: form.password
     };
 
-    const response = await authLogin(payload);
+    const result = await login(payload);
     
-    // Guardar token y usuario (asumiendo estructura de respuesta)
-    localStorage.setItem('jwtToken', response.token);
-    localStorage.setItem('user', JSON.stringify(response.user));
-    
-    // Redireccionar al dashboard
-    router.push('/dashboard');
+    if (result.success) {
+      // Redireccionar al dashboard
+      router.push('/main/dashboard');
+    } else {
+      throw new Error(result.error);
+    }
   } catch (error) {
     console.error(error);
     errorMsg.value = error.message || 'Credenciales inválidas. Por favor intenta de nuevo.';

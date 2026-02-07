@@ -50,7 +50,7 @@ Para Nexus VCI, se propone una paleta **"Slate & Tech Blue"**. El objetivo es re
 * **Funcionalidad:** Pantalla de bienvenida con métricas clave y estadísticas rápidas de ventas.
 
 ### 🛠️ MainLayout (Menú Dinámico)
-* **Opciones:** Dashboard, Usuarios, Clientes, Categorización, Productos, Pedidos, Reportes, Gráficas.
+* **Opciones:** Dashboard, Usuarios, Proveedores, Compras, Clientes, Empresas, Categorización, Productos, Pedidos, Reportes, Gráficas.
 * **Buscador Global:** Capacidad de búsqueda por palabras clave. Ejemplo: Buscar "Filtros" redirigirá o mostrará las opciones de "Gestión de Productos" y "Categorización".
 
 ---

@@ -286,6 +286,18 @@ const menuItems = [
     description: 'Análisis visual de datos',
     category: 'Reportes'
   },
+
+  // Header: Sistema
+  { header: 'Sistema' },
+  {
+    title: 'Papelera',
+    icon: 'mdi-delete-clock-outline',
+    to: '/main/papelera',
+    value: 'papelera',
+    tags: ['borrados', 'restaurar', 'recuperar', 'eliminados', 'historial'],
+    description: 'Recuperación y eliminación definitiva de registros',
+    category: 'Sistema'
+  },
 ];
 
 // --- Search Logic ---
@@ -316,7 +328,7 @@ const handleKeyboardShortcut = (e) => {
 
 const handleLogout = () => {
     logout();
-    location.reload(); // Hard reload to clear all states properly
+    // location.reload(); // Removed to allow router push in store to work
 };
 
 onMounted(() => {

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import router from '@/router';
 import { authLogin, authRegister } from '@/services/auth.service';
 
 export const useAuthStore = defineStore('auth', {
@@ -83,6 +84,8 @@ export const useAuthStore = defineStore('auth', {
             this.user = null;
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            // Redirigir a la pantalla de inicio o al login
+            router.push('/');
             // window.location.reload(); // Optional: force reload to clear all memory states
         }
     }

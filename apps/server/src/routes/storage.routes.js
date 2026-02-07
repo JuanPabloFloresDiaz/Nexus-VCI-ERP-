@@ -45,7 +45,7 @@ const validateRequest = require('../utils/validateRequest');
  *                     filename:
  *                       type: string
  */
-router.post('/storage/upload', upload.single('image'), StorageController.upload);
+router.post('/upload', upload.single('image'), StorageController.upload);
 
 /**
  * @swagger
@@ -65,7 +65,7 @@ router.post('/storage/upload', upload.single('image'), StorageController.upload)
  *       404:
  *         description: Archivo no encontrado
  */
-router.get('/storage/files/:filename', StorageController.getFile);
+router.get('/files/:filename', StorageController.getFile);
 
 /**
  * @swagger
@@ -83,6 +83,6 @@ router.get('/storage/files/:filename', StorageController.getFile);
  *       200:
  *         description: Archivo eliminado
  */
-router.delete('/storage/files/:filename', StorageController.delete);
+router.delete('/files/:filename', StorageController.delete);
 
 module.exports = router;

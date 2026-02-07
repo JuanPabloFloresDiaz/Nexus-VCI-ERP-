@@ -11,6 +11,7 @@ const getPaginatedQuery = (queryParams = {}) => {
   const {
     page = 1,
     limit = 10,
+    offset: explicitOffset, // Extract offset if provided
     sort = 'created_at',
     order = 'DESC',
     search,
@@ -19,6 +20,11 @@ const getPaginatedQuery = (queryParams = {}) => {
 
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = parseInt(limit);
+
+  // Calculate offset from page, or use explicit offset if provided (and valid number)
+  // If page is provided (default 1), we usually ignore offset unless page is explicitly not used.
+  // But here we just want to calculate it correctly.
+  // Standard logic: offset = (page - 1) * limit
   const offset = (pageNum - 1) * limitNum;
 
   // Validación básica de orden

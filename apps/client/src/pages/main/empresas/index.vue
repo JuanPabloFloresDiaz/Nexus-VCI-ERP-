@@ -1,14 +1,25 @@
 <route lang="yaml">
-path: /main/empresas
 meta:
   layout: MainLayout
-  title: Perfil de Empresa
+  title: Gestión de Empresas
 </route>
 
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon size="64" color="primary" class="mb-4">mdi-domain</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Empresa</h2>
-    <p class="text-body-1 text-medium-emphasis">Configuración del perfil corporativo</p>
-  </div>
+  <component :is="activeView" />
 </template>
+
+<script setup>
+import { computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import EmpresasView from '@/components/Views/empresas/EmpresasView.vue';
+import PerfilEmpresaView from '@/components/Views/empresas/PerfilEmpresaView.vue';
+
+const authStore = useAuthStore();
+
+const activeView = computed(() => {
+  if (authStore.isSuperAdmin) {
+    return EmpresasView;
+  }
+  return PerfilEmpresaView;
+});
+</script>

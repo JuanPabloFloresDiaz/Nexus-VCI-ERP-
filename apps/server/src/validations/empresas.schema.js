@@ -78,8 +78,7 @@ const createEmpresaSchema = z.object({
             .nullable(),
         logo_url: z
             .string()
-            .url('Debe ser una URL válida')
-            .max(255)
+            .max(255, 'La URL del logo no puede exceder los 255 caracteres')
             .optional()
             .nullable()
     })
@@ -92,7 +91,7 @@ const updateEmpresaSchema = z.object({
         telefono_empresa: z.string().max(15).optional().nullable(),
         correo_empresa: z.string().email().max(100).optional().nullable(),
         direccion_empresa: z.string().optional().nullable(),
-        logo_url: z.string().url().max(255).optional().nullable()
+        logo_url: z.string().max(255).optional().nullable()
     })
 });
 

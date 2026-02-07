@@ -1,6 +1,6 @@
 const express = require('express');
 const EmpresasController = require('../controllers/empresas.controller');
-// const { verifyToken, isAdmin } = require('../middlewares/auth'); // Uncomment when middlewares are ready
+const { checkAuth, checkAuthAny } = require('../middlewares/checkAuth');
 
 const validateRequest = require('../utils/validateRequest');
 const { createEmpresaSchema, updateEmpresaSchema } = require('../validations/empresas.schema');
@@ -14,11 +14,21 @@ const router = express.Router();
  *   description: API for managing companies
  */
 
+// Route to get the profile of the logged-in user's company (Admin/SuperAdmin)
+router.get('/profile', checkAuthAny(), EmpresasController.getProfile);
+router.put('/profile', checkAuthAny(), validateRequest(updateEmpresaSchema), EmpresasController.updateProfile);
+
+// Routes below this line require SuperAdministrador role
+router.get('/select', checkAuth('SuperAdministrador'), EmpresasController.listSelect);
+router.get('/trashed', checkAuth('SuperAdministrador'), EmpresasController.trashed);
+router.patch('/:id/restore', checkAuth('SuperAdministrador'), EmpresasController.restore);
+router.delete('/:id/force', checkAuth('SuperAdministrador'), EmpresasController.destroyPermanent);
+
 /**
  * @swagger
  * /empresas:
  *   get:
- *     summary: Get all companies (Admin)
+ *     summary: Get all companies (SuperAdmin)
  *     tags: [Empresas]
  *     responses:
  *       200:
@@ -26,16 +36,12 @@ const router = express.Router();
  *   post:
  *     summary: Create a new company
  *     tags: [Empresas]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateEmpresa'
  *     responses:
  *       201:
  *         description: Company created
  */
+router.get('/', checkAuth('SuperAdministrador'), EmpresasController.index);
+router.post('/', checkAuth('SuperAdministrador'), validateRequest(createEmpresaSchema), EmpresasController.store);
 
 /**
  * @swagger
@@ -43,52 +49,24 @@ const router = express.Router();
  *   get:
  *     summary: Get company by ID
  *     tags: [Empresas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Company details
- *       404:
- *         description: Company not found
  *   put:
  *     summary: Update a company
  *     tags: [Empresas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateEmpresa'
  *     responses:
  *       200:
  *         description: Company updated
  *   delete:
  *     summary: Soft delete a company
  *     tags: [Empresas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
  *     responses:
  *       200:
  *         description: Company deleted
  */
-
-// Define routes
-router.get('/', EmpresasController.index);
-router.get('/:id', EmpresasController.getById);
-router.post('/', validateRequest(createEmpresaSchema), EmpresasController.store); // Protect later?
-router.put('/:id', validateRequest(updateEmpresaSchema), EmpresasController.update);
-router.delete('/:id', EmpresasController.destroy);
+router.get('/:id', checkAuth('SuperAdministrador'), EmpresasController.getById);
+router.put('/:id', checkAuth('SuperAdministrador'), validateRequest(updateEmpresaSchema), EmpresasController.update);
+router.delete('/:id', checkAuth('SuperAdministrador'), EmpresasController.destroy);
 
 module.exports = router;

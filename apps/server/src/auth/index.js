@@ -36,7 +36,7 @@ class Auth {
         } else if (userType === 'Administrador') {
             expiresIn = process.env.JWT_EXPIRES_IN_ADMIN;
         } else if (userType === 'SuperAdministrador') {
-            expiresIn = process.env.JWT_EXPIRES_IN_SUPER_ADMIN;
+            expiresIn = process.env.JWT_EXPIRES_IN_SUPERADMIN;
         } else {
             expiresIn = '480m';
         }

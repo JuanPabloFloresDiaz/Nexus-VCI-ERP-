@@ -51,6 +51,29 @@ class StorageController {
         const { filename } = req.params;
 
         try {
+            // Get object stats to retrieve content type
+            const stat = await minioClient.statObject(BUCKET_NAME, filename);
+
+            // Set headers
+            if (stat.metaData && stat.metaData['content-type']) {
+                res.setHeader('Content-Type', stat.metaData['content-type']);
+            } else {
+                // Fallback based on extension or default
+                const ext = path.extname(filename).toLowerCase();
+                const mimeTypes = {
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.png': 'image/png',
+                    '.gif': 'image/gif',
+                    '.webp': 'image/webp',
+                    '.svg': 'image/svg+xml',
+                    '.pdf': 'application/pdf'
+                };
+                res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
+            }
+
+            res.setHeader('Content-Length', stat.size);
+
             const dataStream = await minioClient.getObject(BUCKET_NAME, filename);
             dataStream.pipe(res);
         } catch (err) {

@@ -7,9 +7,16 @@ class DashboardController {
     static routes = '/dashboard';
 
     static getMetrics = catchErrors(async (req, res) => {
-        const totalVentas = await Pedidos.sum('total_pedido');
-        const totalProductos = await Productos.count();
-        
+        const { id_empresa } = req.user;
+
+        const totalVentas = await Pedidos.sum('total_pedido', {
+            where: { id_empresa }
+        });
+
+        const totalProductos = await Productos.count({
+            where: { id_empresa }
+        });
+
         return ApiResponse.success(res, {
             data: {
                 total_ventas: totalVentas || 0,
@@ -22,6 +29,8 @@ class DashboardController {
     });
 
     static getTopProductos = catchErrors(async (req, res) => {
+        const { id_empresa } = req.user;
+
         // Ranking de productos con más items vendidos
         const topProductos = await DetallesPedidos.findAll({
             attributes: [
@@ -31,7 +40,8 @@ class DashboardController {
             include: [{
                 model: Productos,
                 as: 'producto',
-                attributes: ['nombre_producto', 'imagen_url', 'precio_unitario']
+                attributes: ['nombre_producto', 'imagen_url', 'precio_unitario'],
+                where: { id_empresa } // Filter products by company
             }],
             group: ['DetallesPedidos.id_producto', 'producto.id', 'producto.nombre_producto', 'producto.imagen_url', 'producto.precio_unitario'],
             order: [[sequelize.literal('total_vendido'), 'DESC']],
@@ -47,6 +57,8 @@ class DashboardController {
     });
 
     static getTopClientes = catchErrors(async (req, res) => {
+        const { id_empresa } = req.user;
+
         // Top clientes con más pedidos realizados
         const topClientes = await Pedidos.findAll({
             attributes: [
@@ -54,6 +66,7 @@ class DashboardController {
                 [sequelize.fn('COUNT', sequelize.col('Pedidos.id')), 'total_pedidos'],
                 [sequelize.fn('SUM', sequelize.col('total_pedido')), 'total_gastado']
             ],
+            where: { id_empresa }, // Filter orders by company
             include: [{
                 model: Clientes,
                 as: 'cliente',
@@ -64,7 +77,7 @@ class DashboardController {
             limit: 5
         });
 
-         return ApiResponse.success(res, {
+        return ApiResponse.success(res, {
             data: topClientes,
             message: 'Top clientes obtenido correctamente',
             status: 200,

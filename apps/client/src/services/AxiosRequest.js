@@ -8,8 +8,8 @@ async function AxiosRequest(endpoint, method, form = {}, params) {
 
   let data = null;
   const headers = {
-    Authorization: localStorage.getItem('jwtToken')
-      ? `Bearer ${localStorage.getItem('jwtToken')}`
+    Authorization: localStorage.getItem('token')
+      ? `Bearer ${localStorage.getItem('token')}`
       : '',
   };
 

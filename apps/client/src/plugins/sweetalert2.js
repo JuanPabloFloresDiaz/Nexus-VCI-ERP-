@@ -76,3 +76,30 @@ export const showSuccessToast = (title) => fireToast({ icon: 'success', title })
 export const showErrorToast = (title) => fireToast({ icon: 'error', title });
 export const showWarningToast = (title) => fireToast({ icon: 'warning', title });
 export const showInfoToast = (title) => fireToast({ icon: 'info', title });
+
+/**
+ * Muestra un diálogo de confirmación estándar.
+ * @param {string} title - Título del diálogo
+ * @param {string} text - Texto descriptivo
+ * @param {string} icon - Icono ('warning', 'question', etc.)
+ * @returns {Promise<boolean>} - True si el usuario confirma, False si cancela
+ */
+export const showConfirmDialog = async (title, text, icon = 'question') => {
+  const result = await Swal.fire({
+    title,
+    text,
+    icon,
+    showCancelButton: true,
+    confirmButtonColor: COLORS.primary,
+    cancelButtonColor: COLORS.error,
+    confirmButtonText: 'Sí, continuar',
+    cancelButtonText: 'Cancelar',
+    customClass: {
+      popup: 'rounded-xl shadow-lg border border-gray-200 font-roboto',
+      confirmButton: 'rounded-lg px-6 py-2',
+      cancelButton: 'rounded-lg px-6 py-2'
+    },
+    buttonsStyling: true
+  });
+  return result.isConfirmed;
+};

@@ -5,10 +5,20 @@ meta:
   title: Gestión de Usuarios
 </route>
 
+<script setup>
+import { computed } from 'vue';
+import { useAuth } from '@/hooks/useAuth';
+import UsuariosView from '@/components/Views/usuarios/UsuariosView.vue';
+import PerfilUsuario from '@/components/Views/usuarios/PerfilUsuario.vue';
+
+const { user } = useAuth();
+
+const isVendor = computed(() => user.value?.rol_usuario === 'Vendedor');
+</script>
+
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon size="64" color="primary" class="mb-4">mdi-account-group-outline</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Usuarios</h2>
-    <p class="text-body-1 text-medium-emphasis">Gestión de cuentas y roles</p>
+  <div class="fill-height">
+    <PerfilUsuario v-if="isVendor" />
+    <UsuariosView v-else />
   </div>
 </template>

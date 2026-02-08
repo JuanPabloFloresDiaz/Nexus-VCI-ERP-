@@ -40,7 +40,7 @@ class AuthController {
                 id: user.id,
                 correo_electronico: user.correo_electronico,
                 nombre_usuario: user.nombre_usuario,
-                rol: user.rol_usuario, // Keeping it consistent with user object
+                rol_usuario: user.rol_usuario, // Changed from rol to rol_usuario
                 id_empresa: user.id_empresa // Add tenant ID
             },
             user.rol_usuario
@@ -121,7 +121,7 @@ class AuthController {
                 id: result.newUser.id,
                 correo_electronico: result.newUser.correo_electronico,
                 nombre_usuario: result.newUser.nombre_usuario,
-                rol: result.newUser.rol_usuario,
+                rol_usuario: result.newUser.rol_usuario,
             },
             result.newUser.rol_usuario
         );

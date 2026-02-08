@@ -36,6 +36,8 @@ export const getEmpresasSelect = async () => {
     return AxiosRequest(`${RESOURCE}/select`, mapMethod('R'));
 };
 
+export const getAllEmpresas = getEmpresasSelect;
+
 export const getTrashedEmpresas = async (query = '') => {
     return AxiosRequest(`${RESOURCE}/trashed?${query}`, mapMethod('R'));
 };

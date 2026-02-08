@@ -10,46 +10,17 @@ class ClientesController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
 
-        if (search) {
-            where[Op.or] = [
-                { nombre_cliente: { [Op.like]: `%${search}%` } },
-                { apellido_cliente: { [Op.like]: `%${search}%` } },
-                { dui_cliente: { [Op.like]: `%${search}%` } },
-                { telefono_cliente: { [Op.like]: `%${search}%` } },
-                { correo_cliente: { [Op.like]: `%${search}%` } }
-            ];
+        // Si NO es SuperAdministrador, filtrar por su empresa
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            // Si es SuperAdmin y envía id_empresa, filtrar por esa empresa
+            where.id_empresa = req.query.id_empresa;
         }
-
-        const data = await Clientes.findAndCountAll({
-            where,
-            limit,
-            offset,
-            order
-        });
-
-        return ApiResponse.success(res, {
-            data: data.rows,
-            count: data.count,
-            message: 'Listado de clientes obtenido correctamente',
-            status: 200,
-            route: this.routes
-        });
-    });
-
-    static trashed = catchErrors(async (req, res) => {
-        const { query, limit, offset, order } = getPaginatedQuery(req.query);
-        const { search } = req.query;
-        const { id_empresa } = req.user;
-
-        const where = {
-            ...query,
-            id_empresa,
-            deleted_at: { [Op.not]: null }
-        };
 
         if (search) {
             where[Op.or] = [
@@ -66,7 +37,55 @@ class ClientesController {
             limit,
             offset,
             order,
-            paranoid: false
+            include: [
+                { model: require('../models').Empresas, as: 'empresa', attributes: ['id', 'nombre_empresa'] }
+            ]
+        });
+
+        return ApiResponse.success(res, {
+            data: data.rows,
+            count: data.count,
+            message: 'Listado de clientes obtenido correctamente',
+            status: 200,
+            route: this.routes
+        });
+    });
+
+    static trashed = catchErrors(async (req, res) => {
+        const { query, limit, offset, order } = getPaginatedQuery(req.query);
+        const { search } = req.query;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = {
+            ...query,
+            deleted_at: { [Op.not]: null }
+        };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
+
+        if (search) {
+            where[Op.or] = [
+                { nombre_cliente: { [Op.like]: `%${search}%` } },
+                { apellido_cliente: { [Op.like]: `%${search}%` } },
+                { dui_cliente: { [Op.like]: `%${search}%` } },
+                { telefono_cliente: { [Op.like]: `%${search}%` } },
+                { correo_cliente: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        const data = await Clientes.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order,
+            paranoid: false,
+            include: [
+                { model: require('../models').Empresas, as: 'empresa', attributes: ['id', 'nombre_empresa'] }
+            ]
         });
 
         return ApiResponse.success(res, {
@@ -79,11 +98,16 @@ class ClientesController {
     });
 
     static all = catchErrors(async (req, res) => {
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+        const where = {};
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const data = await Clientes.findAll({
-            where: { id_empresa },
+            where,
             attributes: ['id', 'nombre_cliente', 'apellido_cliente'],
-            // Assuming we only want not-deleted (paranoid default)
         });
 
         return ApiResponse.success(res, {
@@ -95,12 +119,18 @@ class ClientesController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { nombre_cliente, apellido_cliente, dui_cliente, telefono_cliente, correo_cliente } = req.body;
-        const { id_empresa } = req.user;
+        const { nombre_cliente, apellido_cliente, dui_cliente, telefono_cliente, correo_cliente, id_empresa: bodyIdEmpresa } = req.body;
+        const { id_empresa: userIdEmpresa, rol_usuario } = req.user;
+
+        // Determinar ID empresa
+        let targetIdEmpresa = userIdEmpresa;
+        if (rol_usuario === 'SuperAdministrador' && bodyIdEmpresa) {
+            targetIdEmpresa = bodyIdEmpresa;
+        }
 
         // Check for existing Dui
         if (dui_cliente) {
-            const existingDui = await Clientes.findOne({ where: { dui_cliente, id_empresa } });
+            const existingDui = await Clientes.findOne({ where: { dui_cliente, id_empresa: targetIdEmpresa } });
             if (existingDui) {
                 return ApiResponse.error(res, {
                     error: 'El DUI ya está registrado',
@@ -111,7 +141,7 @@ class ClientesController {
         }
 
         // Check for existing Email
-        const existingEmail = await Clientes.findOne({ where: { correo_cliente, id_empresa } });
+        const existingEmail = await Clientes.findOne({ where: { correo_cliente, id_empresa: targetIdEmpresa } });
         if (existingEmail) {
             return ApiResponse.error(res, {
                 error: 'El correo electrónico ya está registrado',
@@ -121,7 +151,7 @@ class ClientesController {
         }
 
         const newCliente = await Clientes.create({
-            id_empresa,
+            id_empresa: targetIdEmpresa,
             nombre_cliente,
             apellido_cliente,
             dui_cliente,
@@ -138,11 +168,27 @@ class ClientesController {
     });
 
     static bulkStore = catchErrors(async (req, res) => {
-        const items = req.body.map(item => ({ ...item, id_empresa: req.user.id_empresa }));
+        const { rol_usuario, id_empresa: userIdEmpresa } = req.user;
+
+        // Prepare items with correct id_empresa
+        const items = req.body.map(item => {
+            let targetIdEmpresa = userIdEmpresa;
+            // Si es SuperAdmin y el item tiene id_empresa, usar esa. Si no, usar la del usuario (si es vendor/admin) o error?
+            // El SuperAdmin podría enviar id_empresa en cada item o heredar la suya (que no tiene sentido porque no debe tener registros propios usualmente).
+            // Asumiremos que si es SuperAdmin, debe venir en el body o se asigna a una por defecto si se pasara (pero mejor respetar lógica store).
+
+            if (rol_usuario === 'SuperAdministrador' && item.id_empresa) {
+                targetIdEmpresa = item.id_empresa;
+            }
+            // Si no es SuperAdmin, forzar su empresa
+            if (rol_usuario !== 'SuperAdministrador') {
+                targetIdEmpresa = userIdEmpresa;
+            }
+
+            return { ...item, id_empresa: targetIdEmpresa };
+        });
 
         const result = await Clientes.sequelize.transaction(async (t) => {
-            // Using bulkCreate. Note: This will fail if any unique constraint is violated (email/dui).
-            // validate: true ensures model validations run.
             return await Clientes.bulkCreate(items, { validate: true, transaction: t });
         });
 
@@ -156,10 +202,15 @@ class ClientesController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { nombre_cliente, apellido_cliente, dui_cliente, telefono_cliente, correo_cliente } = req.body;
-        const { id_empresa } = req.user;
+        const { nombre_cliente, apellido_cliente, dui_cliente, telefono_cliente, correo_cliente, id_empresa: bodyIdEmpresa } = req.body;
+        const { id_empresa: userIdEmpresa, rol_usuario } = req.user;
 
-        const cliente = await Clientes.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = userIdEmpresa;
+        }
+
+        const cliente = await Clientes.findOne({ where });
         if (!cliente) {
             return ApiResponse.error(res, {
                 error: 'Cliente no encontrado',
@@ -173,7 +224,7 @@ class ClientesController {
             const existingEmail = await Clientes.findOne({
                 where: {
                     correo_cliente,
-                    id_empresa,
+                    id_empresa: cliente.id_empresa,
                     id: { [Op.ne]: id }
                 }
             });
@@ -191,7 +242,7 @@ class ClientesController {
             const existingDui = await Clientes.findOne({
                 where: {
                     dui_cliente,
-                    id_empresa,
+                    id_empresa: cliente.id_empresa,
                     id: { [Op.ne]: id }
                 }
             });
@@ -202,6 +253,11 @@ class ClientesController {
                     route: `${this.routes}/${id}`
                 });
             }
+        }
+
+        // Update company only if SuperAdmin
+        if (rol_usuario === 'SuperAdministrador' && bodyIdEmpresa) {
+            cliente.id_empresa = bodyIdEmpresa;
         }
 
         await cliente.update({
@@ -222,9 +278,23 @@ class ClientesController {
 
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const cliente = await Clientes.findOne({ where: { id, id_empresa } });
+        // Vendedor no puede eliminar
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para eliminar clientes',
+                status: 403,
+                route: `${this.routes}/${id}`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const cliente = await Clientes.findOne({ where });
         if (!cliente) {
             return ApiResponse.error(res, {
                 error: 'Cliente no encontrado',
@@ -245,10 +315,24 @@ class ClientesController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        // Vendedor no puede restaurar
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para restaurar clientes',
+                status: 403,
+                route: `${this.routes}/${id}/restore`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const cliente = await Clientes.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 
@@ -280,10 +364,24 @@ class ClientesController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        // Vendedor no puede eliminar definitivamente
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para eliminar clientes definitivamente',
+                status: 403,
+                route: `${this.routes}/${id}/force`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const cliente = await Clientes.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
         if (!cliente) {

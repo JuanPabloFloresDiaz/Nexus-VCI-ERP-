@@ -4,6 +4,10 @@ const PedidosController = require('../controllers/pedidos.controller');
 const { index, trashed, all, store, bulkStore, update, destroy, restore, forceDestroy } = require('../controllers/clientes.controller');
 const validateRequest = require('../utils/validateRequest');
 const { createClienteSchema, updateClienteSchema, bulkClienteSchema } = require('../validations/clientes.schema');
+const { checkAuthAny } = require('../middlewares/checkAuth');
+
+router.use(checkAuthAny());
+
 
 /**
  * @swagger

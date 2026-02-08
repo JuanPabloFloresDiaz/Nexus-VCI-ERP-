@@ -6,7 +6,12 @@
         <p class="text-body-1 text-medium-emphasis">Administración total de empresas (SuperAdmin)</p>
       </div>
       <div>
-         <v-btn color="primary" prepend-icon="mdi-plus" elevation="0" disabled>
+         <v-btn 
+            color="primary" 
+            prepend-icon="mdi-plus" 
+            elevation="0" 
+            @click="openCreateModal"
+         >
             Nueva Empresa
          </v-btn>
       </div>
@@ -35,6 +40,7 @@
       <!-- Data Table -->
       <v-data-table-server
         v-model:items-per-page="itemsPerPage"
+        v-model:page="page"
         :headers="headers"
         :items="items"
         :items-length="totalItems"
@@ -42,7 +48,7 @@
         :search="search"
         item-value="id"
         class="elevation-0"
-        @update:options="loadItems"
+        @update:options="handleOptionsUpdate"
       >
         <!-- Logo Column -->
         <template v-slot:item.logo_url="{ item }">
@@ -50,7 +56,7 @@
                 :src="item.logo_url" 
                 :name="item.nombre_empresa" 
                 size="32" 
-                class="elevation-1"
+                class="elevation-1 border"
             />
         </template>
 
@@ -64,27 +70,37 @@
 
         <!-- Actions Column -->
         <template v-slot:item.actions="{ item }">
-            <v-tooltip text="Ver detalles" location="top">
-                <template v-slot:activator="{ props }">
-                    <v-btn icon variant="text" color="info" size="small" v-bind="props" disabled>
-                        <v-icon>mdi-eye-outline</v-icon>
-                    </v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="Editar" location="top">
-                <template v-slot:activator="{ props }">
-                    <v-btn icon variant="text" color="primary" size="small" v-bind="props" disabled>
-                        <v-icon>mdi-pencil-outline</v-icon>
-                    </v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="Mover a papelera" location="top">
-                <template v-slot:activator="{ props }">
-                     <v-btn icon variant="text" color="error" size="small" v-bind="props" @click="handleDelete(item)">
-                        <v-icon>mdi-delete-outline</v-icon>
-                    </v-btn>
-                </template>
-            </v-tooltip>
+            <div class="d-flex justify-end">
+                <v-tooltip text="Ver detalles" location="top">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon variant="text" color="info" size="small" v-bind="props" @click="openDetailModal(item)">
+                            <v-icon>mdi-eye-outline</v-icon>
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Editar" location="top">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon variant="text" color="primary" size="small" v-bind="props" @click="openUpdateModal(item)">
+                            <v-icon>mdi-pencil-outline</v-icon>
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Mover a papelera" location="top">
+                    <template v-slot:activator="{ props }">
+                        <v-btn 
+                            icon 
+                            variant="text" 
+                            color="error" 
+                            size="small" 
+                            v-bind="props" 
+                            @click="openDeleteModal(item)"
+                            :disabled="isOwnCompany(item.id)"
+                        >
+                            <v-icon>mdi-delete-outline</v-icon>
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+            </div>
         </template>
 
         <template v-slot:no-data>
@@ -95,21 +111,43 @@
         </template>
       </v-data-table-server>
     </v-card>
+
+    <!-- Modals -->
+    <CreateEmpresaModal v-model="showCreateModal" />
+    <UpdateEmpresaModal v-model="showUpdateModal" :empresa="selectedItem" />
+    <DeleteEmpresaModal v-model="showDeleteModal" :empresa="selectedItem" />
+    <DetailEmpresaModal v-model="showDetailModal" :empresa="selectedItem" />
   </v-container>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { getEmpresas, deleteEmpresa } from '@/services/empresas.service';
+import { ref, computed, watch } from 'vue';
+import { useQuery, keepPreviousData } from '@tanstack/vue-query';
+import { getEmpresas } from '@/services/empresas.service';
+import { useAuth } from '@/hooks/useAuth';
 import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
-import Swal from 'sweetalert2';
 
-// State
-const search = ref('');
+// Modals
+import CreateEmpresaModal from '@/components/modals/empresas/CreateEmpresaModal.vue';
+import UpdateEmpresaModal from '@/components/modals/empresas/UpdateEmpresaModal.vue';
+import DeleteEmpresaModal from '@/components/modals/empresas/DeleteEmpresaModal.vue';
+import DetailEmpresaModal from '@/components/modals/empresas/DetailEmpresaModal.vue';
+
+// Auth State
+const { user } = useAuth();
+
+// Table State
+const page = ref(1);
 const itemsPerPage = ref(10);
-const items = ref([]);
-const totalItems = ref(0);
-const isLoading = ref(false);
+const search = ref('');
+const sortBy = ref([]);
+
+// Modal State
+const showCreateModal = ref(false);
+const showUpdateModal = ref(false);
+const showDeleteModal = ref(false);
+const showDetailModal = ref(false);
+const selectedItem = ref(null);
 
 // Table Headers
 const headers = [
@@ -118,67 +156,65 @@ const headers = [
   { title: 'Correo', key: 'correo_empresa', align: 'start' },
   { title: 'Teléfono', key: 'telefono_empresa', align: 'start' },
   { title: 'Dirección', key: 'direccion_empresa', align: 'start' },
-  { title: 'Acciones', key: 'actions', sortable: false, align: 'end' },
+  { title: 'Acciones', key: 'actions', sortable: false, align: 'end', width: '150px' },
 ];
 
-/**
- * Load items from API based on current state (page, sort, search)
- */
-const loadItems = async ({ page, itemsPerPage: limit, sortBy }) => {
-  isLoading.value = true;
-  try {
-    const offset = (page - 1) * limit;
+// Query Parameters Construction
+const queryParams = computed(() => {
+    const offset = (page.value - 1) * itemsPerPage.value;
     let order = '';
-    if (sortBy.length) {
-       order = `${sortBy[0].key},${sortBy[0].order.toUpperCase()}`;
+    if (sortBy.value.length) {
+       order = `${sortBy.value[0].key},${sortBy.value[0].order.toUpperCase()}`;
     }
-
-    const queryParams = new URLSearchParams({
-        limit,
+    
+    return new URLSearchParams({
+        limit: itemsPerPage.value,
         offset,
         search: search.value,
         order
     }).toString();
+});
 
-    const response = await getEmpresas(queryParams);
+// Data Fetching
+const { data, isLoading, refetch } = useQuery({
+    queryKey: ['empresas', queryParams],
+    queryFn: () => getEmpresas(queryParams.value),
+    placeholderData: keepPreviousData,
+    select: (response) => response // Access the full response
+});
 
-    if (response.success) {
-        items.value = response.data;
-        totalItems.value = response.count;
-    }
-  } catch (error) {
-    console.error('Error loading empresas:', error);
-  } finally {
-    isLoading.value = false;
-  }
+const items = computed(() => data.value?.data || []);
+const totalItems = computed(() => data.value?.count || 0);
+
+// Handlers
+const handleOptionsUpdate = (options) => {
+    page.value = options.page;
+    itemsPerPage.value = options.itemsPerPage;
+    sortBy.value = options.sortBy;
 };
 
-const refetch = () => {
-    // Manually trigger reload if needed, usually searching or pagination handles it
+// Check if the company is the user's own company
+const isOwnCompany = (companyId) => {
+    return user.value?.id_empresa === companyId;
 };
 
-// ACTIONS
+// Modal Openers
+const openCreateModal = () => {
+    showCreateModal.value = true;
+};
 
-const handleDelete = async (item) => {
-    const result = await Swal.fire({
-        title: '¿Mover a papelera?',
-        text: `La empresa "${item.nombre_empresa}" será desactivada.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, borrar',
-        cancelButtonText: 'Cancelar'
-    });
+const openUpdateModal = (item) => {
+    selectedItem.value = { ...item }; // Copy to avoid direct mutation
+    showUpdateModal.value = true;
+};
 
-    if (result.isConfirmed) {
-        try {
-            await deleteEmpresa(item.id);
-            Swal.fire('¡Borrado!', 'La empresa ha sido movida a la papelera.', 'success');
-             // Trigger reload logic (e.g., refresh items) 
-            items.value = items.value.filter(i => i.id !== item.id);
-            totalItems.value--;
-        } catch (error) {
-             Swal.fire('Error', 'No se pudo borrar la empresa.', 'error');
-        }
-    }
+const openDeleteModal = (item) => {
+    selectedItem.value = item;
+    showDeleteModal.value = true;
+};
+
+const openDetailModal = (item) => {
+    selectedItem.value = item;
+    showDetailModal.value = true;
 };
 </script>

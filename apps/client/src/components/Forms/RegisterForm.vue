@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/hooks/useAuth';
+import { uploadFile } from '@/services/storage.service';
 
 const router = useRouter();
 const { register } = useAuth();
@@ -16,6 +17,7 @@ const form = reactive({
   nit_empresa: '',
   telefono_empresa: '',
   direccion_empresa: '',
+  correo_empresa: '', // New field
   logo: null,
   
   // Step 2: Usuario
@@ -29,7 +31,8 @@ const rules = {
   required: v => !!v || 'Este campo es requerido',
   email: v => /.+@.+\..+/.test(v) || 'El correo debe ser válido',
   min: v => (v && v.length >= 8) || 'Mínimo 8 caracteres',
-  phone: v => !v || /^\d{4}-\d{4}$/.test(v) || 'Formato: 0000-0000'
+  phone: v => !v || v.length === 9 || 'Teléfono incompleto',
+  nit: v => !v || v.length === 17 || 'NIT incompleto' 
 };
 
 const nextStep = () => {
@@ -51,29 +54,40 @@ const handleRegister = async () => {
   errorMsg.value = '';
 
   try {
-    // Usamos el servicio que detecta archivos para FormData si es necesario
-    // Aunque el backend actual espera JSON, preparamos la estructura
+    let logoUrl = null;
+
+    // 1. Upload Logo if exists
+    if (form.logo) {
+        try {
+            const uploadPayload = { image: form.logo };
+            const uploadResponse = await uploadFile(uploadPayload);
+            if (uploadResponse.success && uploadResponse.data?.url) {
+                logoUrl = uploadResponse.data.url;
+            }
+        } catch (uploadError) {
+            console.error('Error uploading logo:', uploadError);
+            // We continue without logo if upload fails, or we could stop. 
+            // For now, let's warn but continue.
+        }
+    }
+
+    // 2. Prepare Payload
     const payload = {
       nombre_empresa: form.nombre_empresa,
       nit_empresa: form.nit_empresa,
       telefono_empresa: form.telefono_empresa,
       direccion_empresa: form.direccion_empresa,
+      correo_empresa: form.correo_empresa,
+      logo_url: logoUrl,
       nombre_usuario: form.nombre_usuario,
       correo_electronico: form.correo_electronico,
       clave_acceso: form.clave_acceso
     };
-    
-    // Si hay logo, el AxiosRequest convertirá todo a FormData
-    if (form.logo) {
-        payload.logo = form.logo;
-    }
 
+    // 3. Register
     const result = await register(payload);
     
     if (result.success) {
-        // Redirigir al login (aunque ya hay auto-login, el flujo visual pide ir a login o dash)
-        // Dado que el store hace auto-login, podríamos ir directo a dashboard
-        // Pero para confirmar al usuario, podemos ir al login o dashboard con mensaje
         router.push({ path: '/auth/login', query: { registered: 'true' } });
     } else {
         throw new Error(result.error);
@@ -140,6 +154,8 @@ const handleRegister = async () => {
                         variant="outlined"
                         color="primary"
                         class="mb-2"
+                        v-maska="'####-######-###-#'"
+                        :rules="[rules.nit]"
                     />
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -151,9 +167,22 @@ const handleRegister = async () => {
                         color="primary"
                         prepend-inner-icon="mdi-phone"
                         class="mb-2"
+                        v-maska="'####-####'"
+                        :rules="[rules.phone]"
                     />
                 </v-col>
             </v-row>
+
+            <v-text-field
+                v-model="form.correo_empresa"
+                label="Correo de la Empresa"
+                placeholder="info@empresa.com"
+                variant="outlined"
+                color="primary"
+                prepend-inner-icon="mdi-email-outline"
+                class="mb-2"
+                :rules="[v => !v || rules.email(v)]"
+            />
 
             <v-textarea
                 v-model="form.direccion_empresa"
@@ -205,7 +234,7 @@ const handleRegister = async () => {
 
             <v-text-field
                 v-model="form.correo_electronico"
-                label="Correo Electrónico *"
+                label="Correo Electrónico Admin *"
                 placeholder="juan@empresa.com"
                 variant="outlined"
                 color="primary"

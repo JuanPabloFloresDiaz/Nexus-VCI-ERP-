@@ -92,7 +92,12 @@ class AuthController {
         const result = await sequelize.transaction(async (t) => {
             // 1. Create the Company
             const newEmpresa = await Empresas.create({
-                nombre_empresa
+                nombre_empresa,
+                nit_empresa: req.body.nit_empresa,
+                telefono_empresa: req.body.telefono_empresa,
+                direccion_empresa: req.body.direccion_empresa,
+                correo_empresa: req.body.correo_empresa,
+                logo_url: req.body.logo_url
             }, { transaction: t });
 
             // 2. Create the Admin User}

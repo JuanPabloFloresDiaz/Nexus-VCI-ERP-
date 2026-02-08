@@ -49,7 +49,7 @@ const loginSchema = z.object({
     body: z.object({
         correo_electronico: z
             .string({ required_error: 'Email is required' })
-            .email('Email must be valid')
+            .regex(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/, 'Email must be valid')
             .max(250, 'Email must not exceed 250 characters'),
         clave_acceso: z
             .string({ required_error: 'Password is required' })
@@ -70,12 +70,17 @@ const registerSchema = z.object({
             .max(100, 'El nombre de usuario no puede exceder los 100 caracteres'),
         correo_electronico: z
             .string({ required_error: 'El correo electrónico es requerido' })
-            .email('Debe ser un correo válido')
+            .regex(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/, 'Debe ser un correo válido')
             .max(100, 'El correo no puede exceder los 100 caracteres'),
         clave_acceso: z
             .string({ required_error: 'La contraseña es requerida' })
             .min(8, 'La contraseña debe tener al menos 8 caracteres')
             .max(255, 'La contraseña no puede exceder los 255 caracteres'),
+        nit_empresa: z.string().nullable().optional(),
+        telefono_empresa: z.string().nullable().optional(),
+        direccion_empresa: z.string().nullable().optional(),
+        correo_empresa: z.string().regex(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+$/, 'Debe ser un correo válido').nullable().optional().or(z.literal('')),
+        logo_url: z.string().nullable().optional(),
     }),
 });
 

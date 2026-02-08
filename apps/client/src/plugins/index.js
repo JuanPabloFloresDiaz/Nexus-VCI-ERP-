@@ -11,6 +11,7 @@ import pinia from '@/stores'
 import router from '@/router'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
+import { vMaska } from 'maska/vue'
 
 export function registerPlugins(app) {
 
@@ -27,5 +28,7 @@ export function registerPlugins(app) {
     .use(router)
     .use(pinia)
     .use(VueQueryPlugin, { queryClient })
+    .use(VueQueryPlugin, { queryClient })
     .component('QuillEditor', QuillEditor)
+    .directive('maska', vMaska)
 }

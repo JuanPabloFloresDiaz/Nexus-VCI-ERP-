@@ -58,6 +58,7 @@
                                 variant="outlined"
                                 density="comfortable"
                                 placeholder="0000-000000-000-0"
+                                v-maska="'####-######-###-#'"
                             ></v-text-field>
                         </v-col>
 
@@ -80,6 +81,7 @@
                                 label="Teléfono"
                                 variant="outlined"
                                 density="comfortable"
+                                v-maska="'####-####'"
                             ></v-text-field>
                         </v-col>
 

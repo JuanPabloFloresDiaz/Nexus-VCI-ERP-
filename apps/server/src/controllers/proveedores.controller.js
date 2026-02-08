@@ -10,9 +10,17 @@ class ProveedoresController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
+
+        // Si NO es SuperAdministrador, filtrar por su empresa
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            // Si es SuperAdmin y envía id_empresa, filtrar por esa empresa
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -26,7 +34,10 @@ class ProveedoresController {
             where,
             limit,
             offset,
-            order
+            order,
+            include: [
+                { model: require('../models').Empresas, as: 'empresa', attributes: ['id', 'nombre_empresa'] }
+            ]
         });
 
         return ApiResponse.success(res, {
@@ -41,13 +52,18 @@ class ProveedoresController {
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -61,7 +77,10 @@ class ProveedoresController {
             limit,
             offset,
             order,
-            paranoid: false
+            paranoid: false,
+            include: [
+                { model: require('../models').Empresas, as: 'empresa', attributes: ['id', 'nombre_empresa'] }
+            ]
         });
 
         return ApiResponse.success(res, {
@@ -75,10 +94,15 @@ class ProveedoresController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const proveedor = await Proveedores.findOne({
-            where: { id, id_empresa },
+            where,
             include: [{
                 model: Compras,
                 as: 'compras',
@@ -105,21 +129,35 @@ class ProveedoresController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor } = req.body;
-        const { id_empresa } = req.user;
+        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor, id_empresa: bodyIdEmpresa } = req.body;
+        const { id_empresa: userIdEmpresa, rol_usuario } = req.user;
+
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para crear proveedores',
+                status: 403,
+                route: this.routes
+            });
+        }
+
+        // Determinar ID empresa
+        let targetIdEmpresa = userIdEmpresa;
+        if (rol_usuario === 'SuperAdministrador' && bodyIdEmpresa) {
+            targetIdEmpresa = bodyIdEmpresa;
+        }
 
         // Check for existing provider name in same company (optional constraint but good practice)
-        const existing = await Proveedores.findOne({ where: { nombre_proveedor, id_empresa } });
+        const existing = await Proveedores.findOne({ where: { nombre_proveedor, id_empresa: targetIdEmpresa } });
         if (existing) {
             return ApiResponse.error(res, {
-                error: 'Ya existe un proveedor con este nombre',
+                error: 'Ya existe un proveedor con este nombre en la empresa',
                 status: 400,
                 route: this.routes
             });
         }
 
         const newProveedor = await Proveedores.create({
-            id_empresa,
+            id_empresa: targetIdEmpresa,
             nombre_proveedor,
             contacto_nombre,
             telefono_proveedor,
@@ -135,7 +173,29 @@ class ProveedoresController {
     });
 
     static bulkStore = catchErrors(async (req, res) => {
-        const items = req.body.map(item => ({ ...item, id_empresa: req.user.id_empresa }));
+        const { rol_usuario, id_empresa: userIdEmpresa } = req.user;
+
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para cargar proveedores masivamente',
+                status: 403,
+                route: `${this.routes}/bulk`
+            });
+        }
+
+        const items = req.body.map(item => {
+            // Si es SuperAdmin y viene id_empresa, usarlo, sino usar el del token (o null si es superadmin sin empresa, cuidado aqui)
+            // Asumiendo LOGICA DE NEGOCIO: Si es superadmin, DEBE venir el id_empresa en el excel o usar un default?
+            // La logica usada en Clientes fue: Si es superadmin usa el del body, si no, usa el del user.
+            // Aqui el item ya trae id_empresa si es superadmin (segun el modal que haremos).
+
+            let targetIdEmpresa = userIdEmpresa;
+            if (rol_usuario === 'SuperAdministrador' && item.id_empresa) {
+                targetIdEmpresa = item.id_empresa;
+            }
+
+            return { ...item, id_empresa: targetIdEmpresa };
+        });
 
         const result = await Proveedores.bulkCreate(items, { validate: true });
 
@@ -149,10 +209,23 @@ class ProveedoresController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor } = req.body;
-        const { id_empresa } = req.user;
+        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor, id_empresa: bodyIdEmpresa } = req.body;
+        const { id_empresa: userIdEmpresa, rol_usuario } = req.user;
 
-        const proveedor = await Proveedores.findOne({ where: { id, id_empresa } });
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para actualizar proveedores',
+                status: 403,
+                route: `${this.routes}/${id}`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = userIdEmpresa;
+        }
+
+        const proveedor = await Proveedores.findOne({ where });
         if (!proveedor) {
             return ApiResponse.error(res, {
                 error: 'Proveedor no encontrado',
@@ -165,7 +238,7 @@ class ProveedoresController {
             const existing = await Proveedores.findOne({
                 where: {
                     nombre_proveedor,
-                    id_empresa,
+                    id_empresa: proveedor.id_empresa,
                     id: { [Op.ne]: id }
                 }
             });
@@ -178,11 +251,17 @@ class ProveedoresController {
             }
         }
 
+        // SuperAdmin can change company
+        if (rol_usuario === 'SuperAdministrador' && bodyIdEmpresa) {
+            proveedor.id_empresa = bodyIdEmpresa;
+        }
+
         await proveedor.update({
             nombre_proveedor,
             contacto_nombre,
             telefono_proveedor,
-            correo_proveedor
+            correo_proveedor,
+            // id_empresa is updated via instance modification above if applicable
         });
 
         return ApiResponse.success(res, {
@@ -195,8 +274,22 @@ class ProveedoresController {
 
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
-        const proveedor = await Proveedores.findOne({ where: { id, id_empresa } });
+        const { id_empresa, rol_usuario } = req.user;
+
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para eliminar proveedores',
+                status: 403,
+                route: `${this.routes}/${id}`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const proveedor = await Proveedores.findOne({ where });
 
         if (!proveedor) {
             return ApiResponse.error(res, {
@@ -218,9 +311,23 @@ class ProveedoresController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para restaurar proveedores',
+                status: 403,
+                route: `${this.routes}/${id}/restore`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const proveedor = await Proveedores.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 
@@ -252,9 +359,23 @@ class ProveedoresController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        if (rol_usuario === 'Vendedor') {
+            return ApiResponse.error(res, {
+                error: 'No tienes permisos para eliminar definitivamente proveedores',
+                status: 403,
+                route: `${this.routes}/${id}/force`
+            });
+        }
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const proveedor = await Proveedores.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 

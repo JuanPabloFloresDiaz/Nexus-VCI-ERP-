@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue';
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { createClientesBulk } from '@/services/clientes.service';
+import { useMutation } from '@tanstack/vue-query';
+import { createBulkProveedores } from '@/services/proveedores.service';
 import { useAuth } from '@/hooks/useAuth';
 import * as XLSX from 'xlsx';
 import { showSuccessToast, showErrorToast } from '@/plugins/sweetalert2';
@@ -14,7 +14,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'success']);
 
 const { isSuperAdmin, user } = useAuth();
-const queryClient = useQueryClient();
 
 // State
 const step = ref(1);
@@ -22,19 +21,17 @@ const loading = ref(false);
 const file = ref(null);
 const parsedItems = ref([]);
 const validationErrors = ref([]);
-const processing = ref(false);
 
 const headers = computed(() => {
     const defaultHeaders = [
-        { title: 'Nombre', key: 'nombre_cliente', sortable: true },
-        { title: 'Apellido', key: 'apellido_cliente', sortable: true },
-        { title: 'Correo', key: 'correo_cliente', sortable: true },
-        { title: 'Teléfono', key: 'telefono_cliente', sortable: true },
-        { title: 'DUI', key: 'dui_cliente', sortable: true },
+        { title: 'Nombre', key: 'nombre_proveedor', sortable: true },
+        { title: 'Contacto', key: 'contacto_nombre', sortable: true },
+        { title: 'Correo', key: 'correo_proveedor', sortable: true },
+        { title: 'Teléfono', key: 'telefono_proveedor', sortable: true },
         { title: 'Acciones', key: 'actions', sortable: false, align: 'end' },
     ];
     if (isSuperAdmin.value) {
-        defaultHeaders.splice(5, 0, { title: 'ID Empresa', key: 'id_empresa', sortable: true });
+        defaultHeaders.splice(4, 0, { title: 'ID Empresa', key: 'id_empresa', sortable: true });
     }
     return defaultHeaders;
 });
@@ -42,27 +39,24 @@ const headers = computed(() => {
 // Form for editing/adding in Step 3
 const editForm = reactive({
     index: -1, // -1 means new item
-    nombre_cliente: '',
-    apellido_cliente: '',
-    correo_cliente: '',
-    telefono_cliente: '',
-    dui_cliente: '',
+    nombre_proveedor: '',
+    contacto_nombre: '',
+    correo_proveedor: '',
+    telefono_proveedor: '',
     id_empresa: ''
 });
 
 // Mutation
 const { mutateAsync: bulkCreate } = useMutation({
-    mutationFn: createClientesBulk,
+    mutationFn: createBulkProveedores,
     onSuccess: (data) => {
-        showSuccessToast('Clientes cargados exitosamente');
+        showSuccessToast('Proveedores cargados exitosamente');
         emit('success');
         resetModal();
     },
     onError: (error) => {
-        const errorMsg = error.response?.data?.error || 'Error al cargar clientes';
+        const errorMsg = error.response?.data?.error || 'Error al cargar proveedores';
         showErrorToast(errorMsg);
-        // If specific errors are returned, we could map them here
-        // For now, we assume transaction rolls back everything
         validationErrors.value = [errorMsg];
     }
 });
@@ -70,18 +64,17 @@ const { mutateAsync: bulkCreate } = useMutation({
 // Methods
 
 const downloadTemplate = () => {
-    const headersConfig = ['nombre_cliente', 'apellido_cliente', 'correo_cliente', 'telefono_cliente', 'dui_cliente'];
+    const headersConfig = ['nombre_proveedor', 'contacto_nombre', 'correo_proveedor', 'telefono_proveedor'];
     if (isSuperAdmin.value) {
         headersConfig.push('id_empresa');
     }
     
     // Create a sample row
     const sampleRow = {
-        nombre_cliente: 'Juan',
-        apellido_cliente: 'Perez',
-        correo_cliente: 'juan@ejemplo.com',
-        telefono_cliente: '7777-7777',
-        dui_cliente: '00000000-0'
+        nombre_proveedor: 'Distribuidora Ejemplo S.A.',
+        contacto_nombre: 'Juan Perez',
+        correo_proveedor: 'ventas@ejemplo.com',
+        telefono_proveedor: '7777-7777'
     };
     if (isSuperAdmin.value) {
         sampleRow.id_empresa = 'UUID-EMPRESA';
@@ -89,12 +82,13 @@ const downloadTemplate = () => {
 
     const ws = XLSX.utils.json_to_sheet([sampleRow], { header: headersConfig });
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Plantilla Clientes");
+    XLSX.utils.book_append_sheet(wb, ws, "Plantilla Proveedores");
+    
     const now = new Date();
     const formattedDate = now.toISOString().slice(0, 19).replace(/T|:/g, '-');
-    XLSX.writeFile(wb, `Plantilla_Clientes_${formattedDate}.xlsx`);
+    XLSX.writeFile(wb, `Plantilla_Proveedores_${formattedDate}.xlsx`);
     
-    step.value = 2; // Auto advance to upload step
+    step.value = 2;
 };
 
 const handleFileUpload = async (event) => {
@@ -114,11 +108,10 @@ const handleFileUpload = async (event) => {
 
             // Basic Mapping and Cleanup
             parsedItems.value = jsonData.map(item => ({
-                nombre_cliente: item.nombre_cliente?.toString().trim() || '',
-                apellido_cliente: item.apellido_cliente?.toString().trim() || '',
-                correo_cliente: item.correo_cliente?.toString().trim() || '',
-                telefono_cliente: item.telefono_cliente?.toString().trim() || '',
-                dui_cliente: item.dui_cliente?.toString().trim() || '',
+                nombre_proveedor: item.nombre_proveedor?.toString().trim() || '',
+                contacto_nombre: item.contacto_nombre?.toString().trim() || '',
+                correo_proveedor: item.correo_proveedor?.toString().trim() || '',
+                telefono_proveedor: item.telefono_proveedor?.toString().trim() || '',
                 id_empresa: item.id_empresa?.toString().trim() || (isSuperAdmin.value ? '' : user.value.id_empresa)
             }));
 
@@ -136,21 +129,19 @@ const handleFileUpload = async (event) => {
 
 const editItem = (item, index) => {
     editForm.index = index;
-    editForm.nombre_cliente = item.nombre_cliente;
-    editForm.apellido_cliente = item.apellido_cliente;
-    editForm.correo_cliente = item.correo_cliente;
-    editForm.telefono_cliente = item.telefono_cliente;
-    editForm.dui_cliente = item.dui_cliente;
+    editForm.nombre_proveedor = item.nombre_proveedor;
+    editForm.contacto_nombre = item.contacto_nombre;
+    editForm.correo_proveedor = item.correo_proveedor;
+    editForm.telefono_proveedor = item.telefono_proveedor;
     editForm.id_empresa = item.id_empresa;
 };
 
 const saveItem = () => {
     const newItem = {
-        nombre_cliente: editForm.nombre_cliente,
-        apellido_cliente: editForm.apellido_cliente,
-        correo_cliente: editForm.correo_cliente,
-        telefono_cliente: editForm.telefono_cliente,
-        dui_cliente: editForm.dui_cliente,
+        nombre_proveedor: editForm.nombre_proveedor,
+        contacto_nombre: editForm.contacto_nombre,
+        correo_proveedor: editForm.correo_proveedor,
+        telefono_proveedor: editForm.telefono_proveedor,
         id_empresa: editForm.id_empresa
     };
 
@@ -162,11 +153,10 @@ const saveItem = () => {
     
     // Reset form
     editForm.index = -1;
-    editForm.nombre_cliente = '';
-    editForm.apellido_cliente = '';
-    editForm.correo_cliente = '';
-    editForm.telefono_cliente = '';
-    editForm.dui_cliente = '';
+    editForm.nombre_proveedor = '';
+    editForm.contacto_nombre = '';
+    editForm.correo_proveedor = '';
+    editForm.telefono_proveedor = '';
     editForm.id_empresa = '';
 };
 
@@ -208,7 +198,7 @@ const resetModal = () => {
     >
         <v-card>
             <v-card-title class="bg-primary text-white d-flex align-center justify-space-between">
-                Carga Masiva de Clientes
+                Carga Masiva de Proveedores
                 <v-btn icon variant="text" @click="emit('update:modelValue', false)">
                     <v-icon color="white">mdi-close</v-icon>
                 </v-btn>
@@ -231,8 +221,8 @@ const resetModal = () => {
                                 <v-icon size="64" color="primary" class="mb-4">mdi-file-excel-outline</v-icon>
                                 <h3 class="text-h6 mb-2">Descarga la plantilla</h3>
                                 <p class="text-body-2 text-medium-emphasis mb-6">
-                                    Descarga el archivo Excel base, llénalo con los datos de tus clientes y guárdalo.<br>
-                                    No cambies los encabezados de las columnas.
+                                    Descarga el archivo Excel base, llénalo con los datos de tus proveedores y guárdalo.<br>
+                                    El nombre del archivo incluirá la fecha y hora de descarga.
                                 </p>
                                 <v-btn color="primary" @click="downloadTemplate" prepend-icon="mdi-download">
                                     Descargar Plantilla
@@ -303,7 +293,7 @@ const resetModal = () => {
                                         </v-col>
                                         <v-col cols="12" md="4">
                                             <v-text-field
-                                                v-model="editForm.nombre_cliente"
+                                                v-model="editForm.nombre_proveedor"
                                                 label="Nombre *"
                                                 density="compact"
                                                 variant="outlined"
@@ -312,8 +302,8 @@ const resetModal = () => {
                                         </v-col>
                                         <v-col cols="12" md="4">
                                             <v-text-field
-                                                v-model="editForm.apellido_cliente"
-                                                label="Apellido *"
+                                                v-model="editForm.contacto_nombre"
+                                                label="Contacto"
                                                 density="compact"
                                                 variant="outlined"
                                                 bg-color="white"
@@ -321,8 +311,8 @@ const resetModal = () => {
                                         </v-col>
                                         <v-col cols="12" md="4">
                                             <v-text-field
-                                                v-model="editForm.correo_cliente"
-                                                label="Correo *"
+                                                v-model="editForm.correo_proveedor"
+                                                label="Correo"
                                                 density="compact"
                                                 variant="outlined"
                                                 bg-color="white"
@@ -330,22 +320,12 @@ const resetModal = () => {
                                         </v-col>
                                         <v-col cols="12" md="4">
                                             <v-text-field
-                                                v-model="editForm.telefono_cliente"
+                                                v-model="editForm.telefono_proveedor"
                                                 label="Teléfono"
                                                 density="compact"
                                                 variant="outlined"
                                                 bg-color="white"
                                                 v-maska="'####-####'"
-                                            ></v-text-field>
-                                        </v-col>
-                                        <v-col cols="12" md="4">
-                                            <v-text-field
-                                                v-model="editForm.dui_cliente"
-                                                label="DUI"
-                                                density="compact"
-                                                variant="outlined"
-                                                bg-color="white"
-                                                v-maska="'########-#'"
                                             ></v-text-field>
                                         </v-col>
                                         <v-col cols="12" class="d-flex justify-end">

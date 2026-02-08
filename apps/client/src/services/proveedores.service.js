@@ -3,16 +3,16 @@ import { mapMethod } from '../utils/MapMethod';
 
 const RESOURCE = 'proveedores';
 
-export const getProveedores = async (params) => {
-    return AxiosRequest(RESOURCE, mapMethod('R'), {}, params);
+export const getProveedores = async (query = '') => {
+    return AxiosRequest(`${RESOURCE}?${query}`, mapMethod('R'));
 };
 
 export const getProveedorById = async (id) => {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('R'));
 };
 
-export const getTrashedProveedores = async (params) => {
-    return AxiosRequest(`${RESOURCE}/trashed`, mapMethod('R'), {}, params);
+export const getTrashedProveedores = async (query = '') => {
+    return AxiosRequest(`${RESOURCE}/trashed?${query}`, mapMethod('R'));
 };
 
 export const createProveedor = async (payload) => {

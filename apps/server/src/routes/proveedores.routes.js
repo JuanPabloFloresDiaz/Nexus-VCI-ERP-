@@ -2,7 +2,7 @@ const router = require('express').Router();
 const ProveedoresController = require('../controllers/proveedores.controller');
 const validateRequest = require('../utils/validateRequest');
 const { createProveedorSchema, updateProveedorSchema, bulkProveedorSchema } = require('../validations/proveedores.schema');
-const { verifyToken } = require('../auth'); // Assuming auth middleware exists
+const { checkAuthAny } = require('../middlewares/checkAuth');
 
 /**
  * @swagger
@@ -176,7 +176,7 @@ const { verifyToken } = require('../auth'); // Assuming auth middleware exists
  */
 
 // Apply auth middleware to all routes
-router.use(verifyToken);
+router.use(checkAuthAny());
 
 router.get('/', ProveedoresController.index);
 router.get('/trashed', ProveedoresController.trashed);

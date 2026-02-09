@@ -12,6 +12,7 @@ const {
     updateSubcategoriaSchema,
     bulkSubcategoriaSchema
 } = require('../validations/categorizacion.schema');
+const { checkAuthAny } = require('../middlewares/checkAuth');
 
 /**
  * @swagger
@@ -21,6 +22,9 @@ const {
  *   - name: Subcategorias
  *     description: Gestión de subcategorías
  */
+
+// Apply auth middleware to all routes
+router.use(checkAuthAny());
 
 // ==========================================
 // RUTAS DE CATEGORIAS
@@ -123,6 +127,26 @@ router.post('/categorias', validateRequest(createCategoriaSchema), CategoriasCon
  *         description: Categorías creadas exitosamente
  */
 router.post('/categorias/bulk', validateRequest(bulkCategoriaSchema), CategoriasController.bulkStore);
+
+/**
+ * @swagger
+ * /categorias/{id}:
+ *   get:
+ *     summary: Obtener categoría por ID
+ *     tags: [Categorias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Categoría obtenida correctamente
+ *       404:
+ *         description: Categoría no encontrada
+ */
+router.get('/categorias/:id', CategoriasController.getById);
 
 /**
  * @swagger

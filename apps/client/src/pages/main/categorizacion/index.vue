@@ -1,14 +1,20 @@
 <route lang="yaml">
-path: /main/categorizacion
 meta:
   layout: MainLayout
   title: Categorización
 </route>
 
+<script setup>
+import { computed } from 'vue';
+import { useAuth } from '@/hooks/useAuth';
+import CategorizacionView from '@/components/Views/categorizacion/CategorizacionView.vue';
+import CategorizacionEmpresaView from '@/components/Views/categorizacion/CategorizacionEmpresaView.vue';
+
+const { isSuperAdmin, isAdmin } = useAuth();
+const isManager = computed(() => isSuperAdmin.value || isAdmin.value);
+</script>
+
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon size="64" color="primary" class="mb-4">mdi-shape-outline</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Categorización</h2>
-    <p class="text-body-1 text-medium-emphasis">Gestión de categorías y filtros</p>
-  </div>
+    <CategorizacionView v-if="isManager" />
+    <CategorizacionEmpresaView v-else />
 </template>

@@ -23,6 +23,10 @@ export const bulkCreateCategorias = async (payload) => {
     return AxiosRequest(`${RESOURCE}/categorias/bulk`, mapMethod('C'), payload);
 };
 
+export const getCategoriaById = async (id) => {
+    return AxiosRequest(`${RESOURCE}/categorias/${id}`, mapMethod('R'));
+};
+
 export const updateCategoria = async (id, payload) => {
     return AxiosRequest(`${RESOURCE}/categorias/${id}`, mapMethod('U'), payload);
 };

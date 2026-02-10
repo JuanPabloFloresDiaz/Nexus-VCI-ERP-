@@ -26,6 +26,7 @@ class CategoriasController {
             limit,
             offset,
             order,
+            distinct: true,
             include: [{
                 model: Subcategorias,
                 as: 'subcategorias',
@@ -109,6 +110,7 @@ class CategoriasController {
             limit,
             offset,
             order,
+            distinct: true,
             paranoid: false,
             include: [{
                 model: Subcategorias,

@@ -1,14 +1,20 @@
 <route lang="yaml">
-path: /main/productos
 meta:
   layout: MainLayout
-  title: Gestión de Productos
+  title: Productos
 </route>
 
+<script setup>
+import { computed } from 'vue';
+import { useAuth } from '@/hooks/useAuth';
+import ProductosView from '@/components/Views/productos/ProductosView.vue';
+import ProductosEmpresaView from '@/components/Views/productos/ProductosEmpresaView.vue';
+
+const { isSuperAdmin, isAdmin } = useAuth();
+const isManager = computed(() => isSuperAdmin.value || isAdmin.value);
+</script>
+
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon size="64" color="primary" class="mb-4">mdi-package-variant-closed</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Productos</h2>
-    <p class="text-body-1 text-medium-emphasis">Catálogo de productos e inventario</p>
-  </div>
+    <ProductosView v-if="isManager" />
+    <ProductosEmpresaView v-else />
 </template>

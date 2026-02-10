@@ -27,11 +27,26 @@ class ProductosController {
             limit,
             offset,
             order,
-            include: [{
-                model: Subcategorias,
-                as: 'subcategoria',
-                attributes: ['id', 'nombre_subcategoria']
-            }]
+            distinct: true,
+            include: [
+                {
+                    model: Subcategorias,
+                    as: 'subcategoria',
+                    attributes: ['id', 'nombre_subcategoria']
+                },
+                {
+                    model: ProductoDetallesFiltros,
+                    as: 'detalles_filtros',
+                    include: [{
+                        model: OpcionesFiltro,
+                        as: 'opcion_filtro',
+                        include: [{
+                            model: Filtros,
+                            as: 'filtro'
+                        }]
+                    }]
+                }
+            ]
         });
 
         return ApiResponse.success(res, {
@@ -66,6 +81,7 @@ class ProductosController {
             limit,
             offset,
             order,
+            distinct: true,
             paranoid: false,
             include: [{
                 model: Subcategorias,
@@ -94,7 +110,7 @@ class ProductosController {
                 {
                     model: Subcategorias,
                     as: 'subcategoria',
-                    attributes: ['id', 'nombre_subcategoria']
+                    attributes: ['id', 'nombre_subcategoria', 'id_categoria']
                 },
                 {
                     model: ProductoDetallesFiltros,
@@ -128,16 +144,17 @@ class ProductosController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { id_subcategoria, id_usuario_gestor, nombre_producto, descripcion_producto, precio_unitario, stock_actual, imagen_url, detalles } = req.body;
+        const { id_subcategoria, nombre_producto, descripcion_producto, precio_unitario, costo_unitario, stock_actual, imagen_url, detalles } = req.body;
 
         const result = await sequelize.transaction(async (t) => {
             const newProducto = await Productos.create({
                 id_empresa: req.user.id_empresa,
                 id_subcategoria,
-                id_usuario_gestor,
+                id_usuario_gestor: req.user.id,
                 nombre_producto,
                 descripcion_producto,
                 precio_unitario,
+                costo_unitario,
                 stock_actual,
                 imagen_url
             }, { transaction: t });
@@ -177,6 +194,7 @@ class ProductosController {
                 const { detalles, ...prodData } = item;
                 const newProd = await Productos.create({
                     ...prodData,
+                    id_usuario_gestor: req.user.id,
                     id_empresa: req.user.id_empresa
                 }, { transaction: t });
 
@@ -203,7 +221,7 @@ class ProductosController {
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
         const { id_empresa } = req.user;
-        const dataToUpdate = req.body;
+        const { id_subcategoria, nombre_producto, descripcion_producto, precio_unitario, costo_unitario, stock_actual, imagen_url, detalles } = req.body;
 
         const producto = await Productos.findOne({ where: { id, id_empresa } });
         if (!producto) {
@@ -214,10 +232,46 @@ class ProductosController {
             });
         }
 
-        await producto.update(dataToUpdate);
+        const result = await sequelize.transaction(async (t) => {
+            // 1. Update Product Basic Info
+            await producto.update({
+                id_subcategoria, // Can change subcategory? If so, we must ensure integrity of details. For now assume yes.
+                nombre_producto,
+                descripcion_producto,
+                precio_unitario,
+                costo_unitario,
+                stock_actual,
+                imagen_url
+            }, { transaction: t });
+
+            // 2. Sync Details (Traits/Filters)
+            // Simplest robust strategy: Delete all existing, re-create new.
+            // Since ProductoDetallesFiltros is a simple link table without extra computed columns, this is efficient enough.
+
+            if (detalles) {
+                // Only sync if 'detalles' is present in body. Use null/undefined to skip (partial update) or empty array to clear.
+
+                // Delete existing details for this product
+                await ProductoDetallesFiltros.destroy({
+                    where: { id_producto: id },
+                    transaction: t
+                });
+
+                // Create new ones
+                if (detalles.length > 0) {
+                    const detallesData = detalles.map(d => ({
+                        id_producto: id,
+                        id_opcion_filtro: d.id_opcion_filtro // Expecting array of { id_opcion_filtro }
+                    }));
+                    await ProductoDetallesFiltros.bulkCreate(detallesData, { transaction: t });
+                }
+            }
+
+            return producto;
+        });
 
         return ApiResponse.success(res, {
-            data: producto,
+            data: result,
             message: 'Producto actualizado exitosamente',
             status: 200,
             route: `${this.routes}/${id}`

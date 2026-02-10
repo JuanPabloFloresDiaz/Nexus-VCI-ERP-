@@ -11,6 +11,7 @@ const {
     updateStockSchema,
     createDetalleSchema
 } = require('../validations/productos.schema');
+const { checkAuthAny } = require('../middlewares/checkAuth');
 
 /**
  * @swagger
@@ -20,6 +21,9 @@ const {
  *   - name: ProductoDetalles
  *     description: Gestión de detalles (filtros) de productos
  */
+
+// Apply auth middleware to all routes
+router.use(checkAuthAny());
 
 // ==========================================
 // RUTAS DE PRODUCTOS

@@ -53,14 +53,14 @@ const { z } = require('zod');
 const createProductoSchema = z.object({
     body: z.object({
         id_subcategoria: z.string().uuid('ID de subcategoría inválido'),
-        id_usuario_gestor: z.string().uuid('ID de usuario gestor inválido'),
+        id_subcategoria: z.string().uuid('ID de subcategoría inválido'),
         nombre_producto: z.string().min(1, 'El nombre es requerido').max(150),
         descripcion_producto: z.string().min(1, 'La descripción es requerida'),
         precio_unitario: z.number({ invalid_type_error: 'El precio debe ser un número' }).positive('El precio debe ser positivo'),
-        costo_unitario: z.number({ invalid_type_error: 'El costo debe ser un número' }).positive('El costo debe ser positivo').default(0),
+        costo_unitario: z.number({ invalid_type_error: 'El costo debe ser un número' }).nonnegative('El costo no puede ser negativo').default(0),
         stock_actual: z.number().int().nonnegative().default(0),
         stock_minimo: z.number().int().nonnegative().default(5),
-        imagen_url: z.string().url().optional().nullable(),
+        imagen_url: z.union([z.string(), z.literal(''), z.null()]).optional(),
         detalles: z.array(
             z.object({
                 id_opcion_filtro: z.string().uuid('ID de opción inválido')
@@ -76,10 +76,10 @@ const updateProductoSchema = z.object({
         nombre_producto: z.string().min(1).max(150).optional(),
         descripcion_producto: z.string().min(1).optional(),
         precio_unitario: z.number().positive().optional(),
-        costo_unitario: z.number().positive().optional(),
+        costo_unitario: z.number().nonnegative().optional(),
         stock_actual: z.number().int().nonnegative().optional(),
         stock_minimo: z.number().int().nonnegative().optional(),
-        imagen_url: z.string().url().optional().nullable(),
+        imagen_url: z.union([z.string(), z.literal(''), z.null()]).optional(),
         estado_producto: z.boolean().optional(),
         id_empresa: z.string().uuid().optional()
     })
@@ -89,14 +89,14 @@ const bulkProductoSchema = z.object({
     body: z.array(
         z.object({
             id_subcategoria: z.string().uuid(),
-            id_usuario_gestor: z.string().uuid(),
+            // id_usuario_gestor removed from body requirement as it comes from auth
             nombre_producto: z.string().min(1).max(150),
             descripcion_producto: z.string().min(1),
             precio_unitario: z.number().positive(),
-            costo_unitario: z.number().positive().default(0),
+            costo_unitario: z.number().nonnegative().default(0),
             stock_actual: z.number().int().nonnegative().default(0),
             stock_minimo: z.number().int().nonnegative().default(5),
-            imagen_url: z.string().url().optional().nullable(),
+            imagen_url: z.union([z.string(), z.literal(''), z.null()]).optional(),
             detalles: z.array(z.object({ id_opcion_filtro: z.string().uuid() })).optional(),
             id_empresa: z.string().uuid().optional()
         })

@@ -39,6 +39,10 @@ class DetallesPedidos extends BaseEntity {
                 subtotal: {
                     type: DataTypes.DECIMAL(10, 2),
                     allowNull: false
+                },
+                detalles_producto: {
+                    type: DataTypes.JSON,
+                    allowNull: true
                 }
             },
             {

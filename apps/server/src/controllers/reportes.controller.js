@@ -221,6 +221,8 @@ class ReportesController {
     // 5. Factura de Pedido
     static getFacturaPedido = catchErrors(async (req, res) => {
         const { id } = req.params;
+        const { generateInvoiceDefinition } = require('../utils/invoiceGenerator');
+
         const pedido = await Pedidos.findByPk(id, {
             include: [
                 { model: Clientes, as: 'cliente' },
@@ -236,56 +238,7 @@ class ReportesController {
             return res.status(404).json({ error: 'Pedido no encontrado' });
         }
 
-        const detallesBody = [
-            [{ text: 'Producto', style: 'tableHeader' }, { text: 'Cant', style: 'tableHeader' }, { text: 'Precio Unit.', style: 'tableHeader' }, { text: 'Subtotal', style: 'tableHeader' }]
-        ];
-
-        pedido.detalles.forEach(d => {
-            detallesBody.push([
-                d.producto?.nombre_producto || 'Producto Eliminado',
-                d.cantidad.toString(),
-                `$${d.precio_historico}`,
-                `$${d.subtotal}`
-            ]);
-        });
-
-        // Totals row
-        detallesBody.push([
-            { text: 'TOTAL', colSpan: 3, bold: true, alignment: 'right' },
-            {}, {},
-            { text: `$${pedido.total_pedido}`, bold: true }
-        ]);
-
-        const docDefinition = {
-            content: [
-                { text: 'FACTURA DE COMPRA', style: 'header', alignment: 'center', margin: [0, 0, 0, 20] },
-                {
-                    columns: [
-                        [
-                            { text: 'Cliente:', bold: true },
-                            { text: `${pedido.cliente.nombre_cliente} ${pedido.cliente.apellido_cliente}` },
-                            { text: `DUI: ${pedido.cliente.dui_cliente || 'N/A'}` },
-                            { text: `Correo: ${pedido.cliente.correo_cliente}` }
-                        ],
-                        [
-                            { text: `Pedido #${pedido.id.substring(0, 8)}`, bold: true, alignment: 'right' },
-                            { text: `Fecha: ${new Date(pedido.created_at).toLocaleDateString()}`, alignment: 'right' },
-                            { text: `Estado: ${pedido.estado_pedido}`, alignment: 'right' }
-                        ]
-                    ]
-                },
-                { text: ' ', margin: [0, 10] },
-                {
-                    table: {
-                        headerRows: 1,
-                        widths: ['*', 'auto', 'auto', 'auto'],
-                        body: detallesBody
-                    },
-                    layout: 'lightHorizontalLines'
-                },
-                { text: 'Gracias por su compra', style: 'small', alignment: 'center', margin: [0, 30] }
-            ]
-        };
+        const docDefinition = generateInvoiceDefinition(pedido);
 
         const pdfStream = await createPdfStream(docDefinition);
         res.setHeader('Content-Type', 'application/pdf');

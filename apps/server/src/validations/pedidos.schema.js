@@ -54,7 +54,8 @@ const createPedidoSchema = z.object({
             z.object({
                 id_producto: z.string().uuid('ID de producto inválido'),
                 cantidad: z.number().int().positive('La cantidad debe ser positiva'),
-                precio_historico: z.number().positive('El precio debe ser positivo')
+                precio_historico: z.number().positive('El precio debe ser positivo'),
+                detalles_producto: z.record(z.any()).optional()
             })
         ).min(1, 'El pedido debe tener al menos un detalle'),
         id_empresa: z.string().uuid().optional()
@@ -78,7 +79,8 @@ const bulkPedidoSchema = z.object({
                 z.object({
                     id_producto: z.string().uuid(),
                     cantidad: z.number().int().positive(),
-                    precio_historico: z.number().positive()
+                    precio_historico: z.number().positive(),
+                    detalles_producto: z.record(z.any()).optional()
                 })
             ).min(1),
             id_empresa: z.string().uuid().optional()

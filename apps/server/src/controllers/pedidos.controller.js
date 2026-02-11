@@ -57,16 +57,26 @@ class PedidosController {
             limit,
             offset,
             order,
+            distinct: true,
             include: [
                 {
                     model: Clientes,
                     as: 'cliente',
-                    attributes: ['id', 'nombre_cliente', 'apellido_cliente', 'correo_cliente']
+                    attributes: ['id', 'nombre_cliente', 'apellido_cliente', 'correo_cliente', 'telefono_cliente', 'created_at', 'updated_at', 'deleted_at']
                 },
                 {
                     model: Usuarios,
                     as: 'usuario_creador',
                     attributes: ['id', 'nombre_usuario']
+                },
+                {
+                    model: DetallesPedidos,
+                    as: 'detalles',
+                    include: [{
+                        model: Productos,
+                        as: 'producto',
+                        attributes: ['id', 'nombre_producto', 'imagen_url']
+                    }]
                 }
             ]
         });
@@ -261,30 +271,37 @@ class PedidosController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { id_cliente, detalles } = req.body;
-        const { id: id_usuario_creador } = req.user; // Get creator from token
-        const { id_empresa } = req.user;
+        const { id_cliente, detalles, estado_pedido } = req.body;
+        const { id, id_empresa } = req.user;
+        const id_usuario_creador = id;
 
         const result = await sequelize.transaction(async (t) => {
-            // 1. Verify Client
-            const cliente = await Clientes.findOne({ where: { id: id_cliente, id_empresa }, transaction: t });
+            const cliente = await Clientes.findOne({
+                where: { id: id_cliente, id_empresa },
+                transaction: t
+            });
             if (!cliente) throw new Error('Cliente no encontrado');
 
             let totalPedido = 0;
             const detallesToCreate = [];
             const emailDetalles = [];
 
-            // 2. Validate Stock & Prepare Details
             for (const item of detalles) {
-                const producto = await Productos.findOne({ where: { id: item.id_producto, id_empresa }, transaction: t });
+                const producto = await Productos.findOne({
+                    where: { id: item.id_producto, id_empresa },
+                    transaction: t
+                });
+
                 if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado`);
 
                 if (producto.stock_actual < item.cantidad) {
-                    throw new Error(`Stock insuficiente para el producto: ${producto.nombre_producto}. Stock actual: ${producto.stock_actual}`);
+                    throw new Error(`Stock insuficiente para: ${producto.nombre_producto}`);
                 }
 
-                // Deduct stock
-                await producto.decrement('stock_actual', { by: item.cantidad, transaction: t });
+                await producto.decrement('stock_actual', {
+                    by: item.cantidad,
+                    transaction: t
+                });
 
                 const subtotal = Number(item.cantidad) * Number(item.precio_historico);
                 totalPedido += subtotal;
@@ -293,7 +310,8 @@ class PedidosController {
                     id_producto: item.id_producto,
                     cantidad: item.cantidad,
                     precio_historico: item.precio_historico,
-                    subtotal
+                    subtotal,
+                    detalles_producto: item.detalles_producto
                 });
 
                 emailDetalles.push({
@@ -303,43 +321,59 @@ class PedidosController {
                 });
             }
 
-            // 3. Create Pedido
             const newPedido = await Pedidos.create({
-                id_empresa: req.user.id_empresa,
-                id_cliente,
-                id_usuario_creador,
+                id_empresa: id_empresa,
+                id_cliente: id_cliente,
+                id_usuario_creador: id_usuario_creador,
                 total_pedido: totalPedido,
-                estado_pedido: 'Pendiente'
+                estado_pedido: estado_pedido || 'Pendiente'
             }, { transaction: t });
 
-            // 4. Create Detalles
-            const detallesWithPedidoId = detallesToCreate.map(d => ({ ...d, id_pedido: newPedido.id }));
+            const detallesWithPedidoId = detallesToCreate.map(d => ({
+                ...d,
+                id_pedido: newPedido.id
+            }));
+
             await DetallesPedidos.bulkCreate(detallesWithPedidoId, { transaction: t });
 
             return { pedido: newPedido, cliente, emailDetalles };
         });
 
-        // 5. Send Email (Outside transaction usually, or handled gracefully if fails)
         try {
+            const { generateInvoicePdfBuffer } = require('../utils/invoiceGenerator');
+
+            // Re-fetch full pedido with details for invoice generation (since we only have partial objects in transaction result)
+            // Or construct it from available data if sufficient. 
+            // Better to fetch to ensure consistency with ReportesController logic which expects loaded relations.
+            const fullPedidoForInvoice = await Pedidos.findByPk(result.pedido.id, {
+                include: [
+                    { model: Clientes, as: 'cliente' },
+                    {
+                        model: DetallesPedidos,
+                        as: 'detalles',
+                        include: [{ model: Productos, as: 'producto' }]
+                    }
+                ]
+            });
+
+            const pdfBuffer = await generateInvoicePdfBuffer(fullPedidoForInvoice);
+
             await sendMail({
                 from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
                 recipient: result.cliente.correo_cliente,
                 subject: `Confirmación de Pedido #${result.pedido.id.substring(0, 8)}`,
-                text: `Hola ${result.cliente.nombre_cliente}, gracias por tu compra. Tu pedido #${result.pedido.id} ha sido registrado. Total: $${result.pedido.total_pedido}.`,
-                html: `
-            <h1>¡Gracias por tu compra, ${result.cliente.nombre_cliente}!</h1>
-            <p>Tu pedido ha sido registrado con éxito.</p>
-            <h3>Resumen del Pedido:</h3>
-            <ul>
-                ${result.emailDetalles.map(d => `<li>${d.nombre_producto} x ${d.cantidad} - $${d.subtotal}</li>`).join('')}
-            </ul>
-            <p><strong>Total: $${result.pedido.total_pedido}</strong></p>
-            <p>Este es un correo automático, por favor no respondas a esta dirección.</p>
-        `
+                text: `Pedido registrado. Total: ${result.pedido.total_pedido}`,
+                html: `<h1>Pedido Registrado</h1><p>Total: ${result.pedido.total_pedido}</p><p>Adjunto encontrará su factura.</p>`,
+                attachments: [
+                    {
+                        filename: `factura-${result.pedido.id.substring(0, 8)}.pdf`,
+                        content: pdfBuffer,
+                        contentType: 'application/pdf'
+                    }
+                ]
             });
         } catch (mailError) {
-            console.error('Error enviando correo:', mailError);
-            // We don't fail the request if mail fails, but we might want to log it
+            console.error('Error enviando correo o generando factura:', mailError);
         }
 
         return ApiResponse.success(res, {
@@ -352,6 +386,7 @@ class PedidosController {
 
     static bulkStore = catchErrors(async (req, res) => {
         const pedidos = req.body;
+        const { id_empresa, id: id_usuario_actual } = req.user; // Destructure id_empresa and current user's id
 
         // Iterating transaction approach for correctness of stock logic
         const result = await sequelize.transaction(async (t) => {
@@ -363,7 +398,10 @@ class PedidosController {
                 const detallesToCreate = [];
 
                 for (const item of detalles) {
-                    const producto = await Productos.findByPk(item.id_producto, { transaction: t });
+                    const producto = await Productos.findOne({
+                        where: { id: item.id_producto, id_empresa }, // Use destructured id_empresa
+                        transaction: t
+                    });
                     if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado en carga masiva`);
 
                     if (producto.stock_actual < item.cantidad) {
@@ -379,14 +417,15 @@ class PedidosController {
                         id_producto: item.id_producto,
                         cantidad: item.cantidad,
                         precio_historico: item.precio_historico,
-                        subtotal
+                        subtotal,
+                        detalles_producto: item.detalles_producto // Ensure this is included if it exists in the schema
                     });
                 }
 
                 const newPedido = await Pedidos.create({
-                    id_empresa: req.user.id_empresa,
+                    id_empresa, // Use destructured id_empresa
                     id_cliente, // Should ideally check if client belongs to empresa too, but constraints/logic might suffice for now
-                    id_usuario_creador: id_usuario_creador || req.user.id,
+                    id_usuario_creador: id_usuario_creador || id_usuario_actual, // Use id_usuario_actual if not provided in bulk data
                     total_pedido: totalPedido,
                     estado_pedido: 'Completado' // Bulk load usually implies historical data? Or 'Pendiente'? Let's default 'Pendiente' or per requirement. User said "registros previos" so maybe 'Completado' makes sense or passed in body. But schema doesn't have status in create. Let's stick to default or logic. Assuming 'Pendiente' for consistency unless specified. User mentioned "registro de pedidos previos", implies history.
                     // Let's assume 'Pendiente' if not specified, or allow status in body for bulk?
@@ -514,6 +553,6 @@ class PedidosController {
             route: `${this.routes}/${id}/force`
         });
     });
-}
+};
 
 module.exports = PedidosController;

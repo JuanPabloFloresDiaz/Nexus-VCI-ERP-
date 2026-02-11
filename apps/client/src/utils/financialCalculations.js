@@ -2,48 +2,47 @@
  * Utility functions for financial calculations on products
  */
 
-export const calculateFinancials = (precio, costo, stock) => {
+export const calculateFinancials = (precio, costo, stockActual, stockInicial = null) => {
     const p = parseFloat(precio) || 0;
     const c = parseFloat(costo) || 0; // Costo Variable Unitario
-    const q = parseInt(stock) || 0;
+    const qActual = parseInt(stockActual) || 0;
+    // Use initial stock for investment/break-even if available, otherwise fallback to current
+    const qInicial = stockInicial !== null ? parseInt(stockInicial) || 0 : qActual;
 
     // 1. Margen Unitario de Contribución (Price - Cost)
     const margenUnitario = p - c;
 
     // 2. Porcentaje de Margen (Profit Margin)
-    // (P - C) / P
     const margenPorcentaje = p > 0 ? (margenUnitario / p) * 100 : 0;
 
-    // 3. Markup (Sobrecosto)
-    // (P - C) / C
-    const markupPorcentaje = c > 0 ? (margenUnitario / c) * 100 : 0;
+    // 3. Inversión Total (Based on INITIAL stock if provided, representing sunk cost of the batch)
+    const inversionTotal = c * qInicial;
 
-    // 4. Inversión Total en Inventario (Costo Total del Stock Actual)
-    // CT_Stock = c * q
-    const inversionTotal = c * q;
+    // 4. Valor del Stock Actual (Inventory Value)
+    const valorStockActual = c * qActual;
 
-    // 5. Ingreso Total Potencial del Stock (Ventas Totales Proyectadas)
-    // IT_Stock = p * q
-    const ingresoTotalPotencial = p * q;
+    // 5. Ingreso Total Potencial (If we sell EVERYTHING from the start, or just what's left?)
+    // Usually "Potential of the Product Line" implies full batch. 
+    // Let's return both: Total Potential (Initial) and Remaining Potential (Actual).
+    const ingresoTotalPotencial = p * qInicial;
+    const ingresoRestantePotencial = p * qActual;
 
-    // 6. Utilidad Total Potencial del Stock
-    // U = IT - CT
+    // 6. Utilidad Total Potencial (Projected Profit for the whole batch)
     const utilidadTotalPotencial = ingresoTotalPotencial - inversionTotal;
 
     // 7. Punto de Equilibrio (Break-even Quantity to recover Investment)
     // Cuántas unidades debo vender para recuperar la inversión total del lote?
     // Inversión Total = Q_ventas * Precio
-    // Q_equilibrio = Inversión Total / Precio
-    // Esto asume que el costo ya está "pagado" (sunk cost) y queremos recuperar ese dinero.
     const puntoEquilibrioUnidades = p > 0 ? inversionTotal / p : 0;
 
     return {
         margenUnitario,
         margenPorcentaje,
-        markupPorcentaje,
-        inversionTotal,
-        ingresoTotalPotencial,
-        utilidadTotalPotencial,
-        puntoEquilibrioUnidades
+        inversionTotal,       // Cost of Initial Stock
+        valorStockActual,     // Cost of Current Stock
+        ingresoTotalPotencial,// Revenue if all Initial Stock sold
+        utilidadTotalPotencial, // Profit if all Initial Stock sold
+        puntoEquilibrioUnidades,
+        qInicial
     };
 };

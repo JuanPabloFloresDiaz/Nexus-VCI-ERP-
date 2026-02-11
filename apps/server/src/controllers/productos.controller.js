@@ -10,16 +10,39 @@ class ProductosController {
 
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
-        const { search } = req.query;
+        const { search, id_categoria, min_price, max_price } = req.query;
         const { id_empresa } = req.user;
 
-        const where = { ...query, id_empresa };
+        // Remove non-column filters from query object to avoid SQL errors
+        // "query" contains everything not extracted by getPaginatedQuery (page, limit, sort, order, search)
+        // so it includes id_categoria, min_price, max_price which are NOT columns on Productos
+        const {
+            id_categoria: _cat,
+            min_price: _min,
+            max_price: _max,
+            ...cleanQuery
+        } = query;
+
+        const where = { ...cleanQuery, id_empresa };
 
         if (search) {
             where[Op.or] = [
                 { nombre_producto: { [Op.like]: `%${search}%` } },
                 { descripcion_producto: { [Op.like]: `%${search}%` } }
             ];
+        }
+
+        // Filter by Price Range
+        if (min_price !== undefined || max_price !== undefined) {
+            where.precio_unitario = {};
+            if (min_price) where.precio_unitario[Op.gte] = min_price;
+            if (max_price) where.precio_unitario[Op.lte] = max_price;
+        }
+
+        // Filter by Category (via Subcategory)
+        const subcategoriaWhere = {};
+        if (id_categoria) {
+            subcategoriaWhere.id_categoria = id_categoria;
         }
 
         const data = await Productos.findAndCountAll({
@@ -32,7 +55,8 @@ class ProductosController {
                 {
                     model: Subcategorias,
                     as: 'subcategoria',
-                    attributes: ['id', 'nombre_subcategoria']
+                    attributes: ['id', 'nombre_subcategoria', 'id_categoria'],
+                    where: subcategoriaWhere // Apply category filter here
                 },
                 {
                     model: ProductoDetallesFiltros,
@@ -156,6 +180,7 @@ class ProductosController {
                 precio_unitario,
                 costo_unitario,
                 stock_actual,
+                stock_inicial: stock_actual,
                 imagen_url
             }, { transaction: t });
 
@@ -194,6 +219,7 @@ class ProductosController {
                 const { detalles, ...prodData } = item;
                 const newProd = await Productos.create({
                     ...prodData,
+                    stock_inicial: prodData.stock_actual,
                     id_usuario_gestor: req.user.id,
                     id_empresa: req.user.id_empresa
                 }, { transaction: t });

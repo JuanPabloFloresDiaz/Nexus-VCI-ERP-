@@ -3,6 +3,7 @@ const router = express.Router();
 
 const PedidosController = require('../controllers/pedidos.controller');
 const validateRequest = require('../utils/validateRequest');
+const { checkAuthAny } = require('../middlewares/checkAuth');
 const {
     createPedidoSchema,
     updateEstadoSchema,
@@ -42,7 +43,7 @@ const {
  *       200:
  *         description: Listado obtenido correctamente
  */
-router.get('/pedidos', PedidosController.index);
+router.get('/pedidos', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), PedidosController.index);
 
 /**
  * @swagger
@@ -60,7 +61,7 @@ router.get('/pedidos', PedidosController.index);
  *       200:
  *         description: Listado de papelera obtenido correctamente
  */
-router.get('/pedidos/trashed', PedidosController.trashed);
+router.get('/pedidos/trashed', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), PedidosController.trashed);
 
 /**
  * @swagger
@@ -78,7 +79,7 @@ router.get('/pedidos/trashed', PedidosController.trashed);
  *       200:
  *         description: Pedido obtenido correctamente
  */
-router.get('/pedidos/:id', PedidosController.getById);
+router.get('/pedidos/:id', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), PedidosController.getById);
 
 /**
  * @swagger
@@ -95,8 +96,10 @@ router.get('/pedidos/:id', PedidosController.getById);
  *     responses:
  *       201:
  *         description: Pedido creado exitosamente
+ *     security:
+ *       - bearerAuth: []
  */
-router.post('/pedidos', validateRequest(createPedidoSchema), PedidosController.store);
+router.post('/pedidos', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), validateRequest(createPedidoSchema), PedidosController.store);
 
 /**
  * @swagger
@@ -116,7 +119,7 @@ router.post('/pedidos', validateRequest(createPedidoSchema), PedidosController.s
  *       201:
  *         description: Pedidos creados exitosamente
  */
-router.post('/pedidos/bulk', validateRequest(bulkPedidoSchema), PedidosController.bulkStore);
+router.post('/pedidos/bulk', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), validateRequest(bulkPedidoSchema), PedidosController.bulkStore);
 
 /**
  * @swagger
@@ -140,7 +143,7 @@ router.post('/pedidos/bulk', validateRequest(bulkPedidoSchema), PedidosControlle
  *       200:
  *         description: Estado actualizado correctamente
  */
-router.patch('/pedidos/estado/:id', validateRequest(updateEstadoSchema), PedidosController.updateEstado);
+router.patch('/pedidos/estado/:id', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), validateRequest(updateEstadoSchema), PedidosController.updateEstado);
 
 /**
  * @swagger
@@ -158,9 +161,9 @@ router.patch('/pedidos/estado/:id', validateRequest(updateEstadoSchema), Pedidos
  *       200:
  *         description: Pedido eliminado correctamente
  */
-router.delete('/pedidos/:id', PedidosController.destroy);
+router.delete('/pedidos/:id', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), PedidosController.destroy);
 
-router.put('/pedidos/:id/restore', PedidosController.restore);
-router.delete('/pedidos/:id/force', PedidosController.forceDestroy);
+router.put('/pedidos/:id/restore', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), PedidosController.restore);
+router.delete('/pedidos/:id/force', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), PedidosController.forceDestroy);
 
 module.exports = router;

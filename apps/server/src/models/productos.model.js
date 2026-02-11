@@ -58,6 +58,11 @@ class Productos extends BaseEntity {
                     defaultValue: 0.00,
                     unsigned: true
                 },
+                stock_inicial: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0
+                },
                 stock_actual: {
                     type: DataTypes.INTEGER,
                     allowNull: false,

@@ -61,6 +61,7 @@ const detailsList = computed(() => {
     if (!fullProduct.value?.detalles_filtros) return [];
     
     return fullProduct.value.detalles_filtros.map(d => ({
+        filtro: d.opcion_filtro?.filtro?.nombre_filtro || 'Especificación',
         opcion: d.opcion_filtro?.valor_opcion || '?'
     }));
 });
@@ -72,7 +73,8 @@ const stockFinancials = computed(() => {
     return calculateFinancials(
         fullProduct.value.precio_unitario,
         fullProduct.value.costo_unitario,
-        fullProduct.value.stock_actual
+        fullProduct.value.stock_actual,
+        fullProduct.value.stock_inicial // Pass Initial Stock
     );
 });
 
@@ -150,14 +152,14 @@ const stockFinancials = computed(() => {
 
                             <!-- Financial Analysis -->
                             <v-card variant="tonal" color="info" class="mb-4 pa-3">
-                                <div class="text-subtitle-2 font-weight-bold mb-2">Análisis de Rentabilidad</div>
+                                <div class="text-subtitle-2 font-weight-bold mb-2">Análisis de Rentabilidad (Lote Completo)</div>
                                 <v-row dense>
                                     <v-col cols="6" md="4">
                                         <div class="text-caption font-weight-bold">Margen Unitario</div>
                                         <div>{{ formatCurrency(stockFinancials.margenUnitario) }} ({{ stockFinancials.margenPorcentaje.toFixed(1) }}%)</div>
                                     </v-col>
                                     <v-col cols="6" md="4">
-                                        <div class="text-caption font-weight-bold">Ingreso Potencial</div>
+                                        <div class="text-caption font-weight-bold">Ingreso Potencial (Total)</div>
                                         <div>{{ formatCurrency(stockFinancials.ingresoTotalPotencial) }}</div>
                                     </v-col>
                                     <v-col cols="6" md="4">
@@ -165,11 +167,11 @@ const stockFinancials = computed(() => {
                                         <div class="text-success font-weight-bold">{{ formatCurrency(stockFinancials.utilidadTotalPotencial) }}</div>
                                     </v-col>
                                     <v-col cols="12" class="mt-2">
-                                        <div class="text-caption font-weight-bold">Punto de Equilibrio (Stock Actual)</div>
+                                        <div class="text-caption font-weight-bold">Punto de Equilibrio (Stock Inicial: {{ stockFinancials.qInicial }})</div>
                                         <div class="text-caption">
-                                            Para recuperar la inversión de <strong>{{ formatCurrency(stockFinancials.inversionTotal) }}</strong>, debes vender:
+                                            Para recuperar la inversión inicial de <strong>{{ formatCurrency(stockFinancials.inversionTotal) }}</strong>, debes vender:
                                             <strong class="text-primary">{{ Math.ceil(stockFinancials.puntoEquilibrioUnidades) }} unidades</strong>
-                                            (aprox. {{ ((stockFinancials.puntoEquilibrioUnidades / fullProduct.stock_actual) * 100).toFixed(1) }}% del stock)
+                                            (aprox. {{ ((stockFinancials.puntoEquilibrioUnidades / stockFinancials.qInicial) * 100).toFixed(1) }}% del lote)
                                         </div>
                                     </v-col>
                                 </v-row>

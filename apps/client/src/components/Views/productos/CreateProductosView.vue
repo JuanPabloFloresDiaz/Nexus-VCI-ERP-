@@ -416,7 +416,6 @@ const handleSubmit = async () => {
                                         size="small"
                                         class="mt-2"
                                         @click="addDetalle"
-                                        :disabled="form.detalles.length >= availableFilters.length"
                                     >
                                         Agregar Especificación
                                     </v-btn>

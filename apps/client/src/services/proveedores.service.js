@@ -1,40 +1,40 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'proveedores';
 
-export const getProveedores = async (query = '') => {
+export async function getProveedores (query = '') {
     return AxiosRequest(`${RESOURCE}?${query}`, mapMethod('R'));
-};
+}
 
-export const getProveedorById = async (id) => {
+export async function getProveedorById (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('R'));
-};
+}
 
-export const getTrashedProveedores = async (query = '') => {
+export async function getTrashedProveedores (query = '') {
     return AxiosRequest(`${RESOURCE}/trashed?${query}`, mapMethod('R'));
-};
+}
 
-export const createProveedor = async (payload) => {
+export async function createProveedor (payload) {
     return AxiosRequest(RESOURCE, mapMethod('C'), payload);
-};
+}
 
-export const createBulkProveedores = async (payload) => {
+export async function createBulkProveedores (payload) {
     return AxiosRequest(`${RESOURCE}/bulk`, mapMethod('C'), payload);
-};
+}
 
-export const updateProveedor = async (id, payload) => {
+export async function updateProveedor (id, payload) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const restoreProveedor = async (id) => {
+export async function restoreProveedor (id) {
     return AxiosRequest(`${RESOURCE}/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const deleteProveedor = async (id) => {
+export async function deleteProveedor (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('D'));
-};
+}
 
-export const forceDeleteProveedor = async (id) => {
+export async function forceDeleteProveedor (id) {
     return AxiosRequest(`${RESOURCE}/${id}/force`, mapMethod('D'));
-};
+}

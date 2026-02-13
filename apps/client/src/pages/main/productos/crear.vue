@@ -5,9 +5,9 @@ meta:
 </route>
 
 <script setup>
-import CreateProductosView from '@/components/Views/productos/CreateProductosView.vue';
+  import CreateProductosView from '@/components/Views/productos/CreateProductosView.vue';
 </script>
 
 <template>
-    <CreateProductosView />
+  <CreateProductosView />
 </template>

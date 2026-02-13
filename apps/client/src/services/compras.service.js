@@ -1,40 +1,40 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'compras';
 
-export const getCompras = async (params) => {
+export async function getCompras (params) {
     return AxiosRequest(RESOURCE, mapMethod('R'), {}, params);
-};
+}
 
-export const getCompraById = async (id) => {
+export async function getCompraById (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('R'));
-};
+}
 
-export const getTrashedCompras = async (params) => {
+export async function getTrashedCompras (params) {
     return AxiosRequest(`${RESOURCE}/trashed`, mapMethod('R'), {}, params);
-};
+}
 
-export const createCompra = async (payload) => {
+export async function createCompra (payload) {
     return AxiosRequest(RESOURCE, mapMethod('C'), payload);
-};
+}
 
-export const createBulkCompras = async (payload) => {
+export async function createBulkCompras (payload) {
     return AxiosRequest(`${RESOURCE}/bulk`, mapMethod('C'), payload);
-};
+}
 
-export const updateCompra = async (id, payload) => {
+export async function updateCompra (id, payload) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const restoreCompra = async (id) => {
+export async function restoreCompra (id) {
     return AxiosRequest(`${RESOURCE}/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const deleteCompra = async (id) => {
+export async function deleteCompra (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('D'));
-};
+}
 
-export const forceDeleteCompra = async (id) => {
+export async function forceDeleteCompra (id) {
     return AxiosRequest(`${RESOURCE}/${id}/force`, mapMethod('D'));
-};
+}

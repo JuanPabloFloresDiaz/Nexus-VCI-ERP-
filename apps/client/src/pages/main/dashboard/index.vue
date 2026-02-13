@@ -5,7 +5,7 @@ meta:
 </route>
 
 <script setup>
-import DashboardView from '@/components/Views/DashboardView.vue';
+  import DashboardView from '@/components/Views/DashboardView.vue';
 </script>
 
 <template>

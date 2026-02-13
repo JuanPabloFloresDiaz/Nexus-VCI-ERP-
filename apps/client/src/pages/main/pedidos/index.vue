@@ -5,9 +5,9 @@ meta:
 </route>
 
 <script setup>
-import PedidosView from '@/components/Views/pedidos/PedidosView.vue';
+  import PedidosView from '@/components/Views/pedidos/PedidosView.vue';
 </script>
 
 <template>
-    <PedidosView />
+  <PedidosView />
 </template>

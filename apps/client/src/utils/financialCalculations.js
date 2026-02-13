@@ -2,12 +2,12 @@
  * Utility functions for financial calculations on products
  */
 
-export const calculateFinancials = (precio, costo, stockActual, stockInicial = null) => {
-    const p = parseFloat(precio) || 0;
-    const c = parseFloat(costo) || 0; // Costo Variable Unitario
-    const qActual = parseInt(stockActual) || 0;
+export function calculateFinancials (precio, costo, stockActual, stockInicial = null) {
+    const p = Number.parseFloat(precio) || 0;
+    const c = Number.parseFloat(costo) || 0; // Costo Variable Unitario
+    const qActual = Number.parseInt(stockActual) || 0;
     // Use initial stock for investment/break-even if available, otherwise fallback to current
-    const qInicial = stockInicial !== null ? parseInt(stockInicial) || 0 : qActual;
+    const qInicial = stockInicial === null ? qActual : Number.parseInt(stockInicial) || 0;
 
     // 1. Margen Unitario de Contribución (Price - Cost)
     const margenUnitario = p - c;
@@ -45,4 +45,4 @@ export const calculateFinancials = (precio, costo, stockActual, stockInicial = n
         puntoEquilibrioUnidades,
         qInicial
     };
-};
+}

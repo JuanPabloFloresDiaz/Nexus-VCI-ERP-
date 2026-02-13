@@ -1,24 +1,24 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'charts';
 
-export const getSalesByMonth = async () => {
+export async function getSalesByMonth () {
     return AxiosRequest(`${RESOURCE}/sales-by-month`, mapMethod('R'));
-};
+}
 
-export const getTopSellingProducts = async () => {
+export async function getTopSellingProducts () {
     return AxiosRequest(`${RESOURCE}/top-selling-products`, mapMethod('R'));
-};
+}
 
-export const getClientsByState = async () => {
+export async function getClientsByState () {
     return AxiosRequest(`${RESOURCE}/sales-by-month`, mapMethod('R'));
-};
+}
 
-export const getOrdersByStatus = async () => {
+export async function getOrdersByStatus () {
     return AxiosRequest(`${RESOURCE}/orders-by-status`, mapMethod('R'));
-};
+}
 
-export const getCategoryDistribution = async () => {
+export async function getCategoryDistribution () {
     return AxiosRequest(`${RESOURCE}/category-distribution`, mapMethod('R'));
-};
+}

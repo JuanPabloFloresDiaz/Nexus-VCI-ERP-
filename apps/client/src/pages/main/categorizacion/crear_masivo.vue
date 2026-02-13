@@ -5,9 +5,9 @@ meta:
 </route>
 
 <script setup>
-import BulkCreateCategorizacionView from '@/components/Views/categorizacion/BulkCreateCategorizacionView.vue';
+  import BulkCreateCategorizacionView from '@/components/Views/categorizacion/BulkCreateCategorizacionView.vue';
 </script>
 
 <template>
-    <BulkCreateCategorizacionView />
+  <BulkCreateCategorizacionView />
 </template>

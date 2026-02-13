@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup>
-import RegisterForm from '@/components/Forms/RegisterForm.vue';
+  import RegisterForm from '@/components/Forms/RegisterForm.vue';
 </script>
 
 <template>

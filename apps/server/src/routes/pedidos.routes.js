@@ -103,6 +103,30 @@ router.post('/pedidos', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']
 
 /**
  * @swagger
+ * /pedidos/{id}:
+ *   put:
+ *     summary: Actualizar pedido existente (Full Update)
+ *     tags: [Pedidos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreatePedido'
+ *     responses:
+ *       200:
+ *         description: Pedido actualizado exitosamente
+ */
+router.put('/pedidos/:id', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), validateRequest(createPedidoSchema), PedidosController.update);
+
+/**
+ * @swagger
  * /pedidos/bulk:
  *   post:
  *     summary: Creación masiva de pedidos

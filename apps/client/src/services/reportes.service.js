@@ -1,10 +1,10 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'reportes';
 
 // Helper to trigger download
-const downloadReport = async (url) => {
+async function downloadReport (url) {
     // Para la descarga de archivos usualmente necesitamos responseType: 'blob'
     // AxiosRequest podría necesitar ajustes o usar una llamada dedicada si AxiosRequest envuelve JSON genérico.
     // Asumiendo que AxiosRequest maneja JSON estándar. Para blobs, podríamos necesitar omitirlo o agregar una opción.
@@ -16,32 +16,32 @@ const downloadReport = async (url) => {
     // En realidad, los reportes usualmente devuelven un flujo/blob.
     // Implementemos métodos estándar.
     return AxiosRequest(url, mapMethod('R'), {}, {}, { responseType: 'blob' });
-};
+}
 
-export const getCategorizationReport = async () => {
+export async function getCategorizationReport () {
     return AxiosRequest(`${RESOURCE}/categorizacion`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-};
+}
 
-export const getProductsReport = async () => {
+export async function getProductsReport () {
     return AxiosRequest(`${RESOURCE}/productos`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-};
+}
 
-export const getProductsByCategoryReport = async (id_categoria) => {
+export async function getProductsByCategoryReport (id_categoria) {
     return AxiosRequest(`${RESOURCE}/productos-categoria/${id_categoria}`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-};
+}
 
-export const getClientesReport = async () => {
+export async function getClientesReport () {
     return AxiosRequest(`${RESOURCE}/clientes`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-};
+}
 
-export const getBitacoraPedidosReport = async (params) => { // fecha_inicio, fecha_fin
+export async function getBitacoraPedidosReport (params) { // fecha_inicio, fecha_fin
     return AxiosRequest(`${RESOURCE}/bitacora-pedidos`, mapMethod('R'), {}, params, { responseType: 'blob' });
-};
+}
 
-export const getFacturaPedidoReport = async (id_pedido) => {
+export async function getFacturaPedidoReport (id_pedido) {
     return AxiosRequest(`${RESOURCE}/factura-pedido/${id_pedido}`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-};
+}
 
-export const getMasivoPedidosExcel = async (params) => { // fecha_inicio, fecha_fin
+export async function getMasivoPedidosExcel (params) { // fecha_inicio, fecha_fin
     return AxiosRequest(`${RESOURCE}/masivo-pedidos-excel`, mapMethod('R'), {}, params, { responseType: 'blob' }); // Excel download
-};
+}

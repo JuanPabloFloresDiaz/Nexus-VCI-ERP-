@@ -10,9 +10,9 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL;
  * @param {string} path - The relative path or filename of the image.
  * @returns {Promise<string|null>} - Resolves to the object URL of the image, or null if failed.
  */
-export const getImage = async (path) => {
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('blob:')) return path;
+export async function getImage (path) {
+    if (!path) {return null;}
+    if (path.startsWith('http') || path.startsWith('blob:')) {return path;}
 
     // Extract filename if path includes /api/storage/files/
     const filename = path.split('/').pop();
@@ -32,4 +32,4 @@ export const getImage = async (path) => {
         console.error('Error loading image:', error);
     }
     return null;
-};
+}

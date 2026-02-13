@@ -5,16 +5,16 @@ meta:
 </route>
 
 <script setup>
-import { computed } from 'vue';
-import { useAuth } from '@/hooks/useAuth';
-import CategorizacionView from '@/components/Views/categorizacion/CategorizacionView.vue';
-import CategorizacionEmpresaView from '@/components/Views/categorizacion/CategorizacionEmpresaView.vue';
+  import { computed } from 'vue';
+  import CategorizacionEmpresaView from '@/components/Views/categorizacion/CategorizacionEmpresaView.vue';
+  import CategorizacionView from '@/components/Views/categorizacion/CategorizacionView.vue';
+  import { useAuth } from '@/hooks/useAuth';
 
-const { isSuperAdmin, isAdmin } = useAuth();
-const isManager = computed(() => isSuperAdmin.value || isAdmin.value);
+  const { isSuperAdmin, isAdmin } = useAuth();
+  const isManager = computed(() => isSuperAdmin.value || isAdmin.value);
 </script>
 
 <template>
-    <CategorizacionView v-if="isManager" />
-    <CategorizacionEmpresaView v-else />
+  <CategorizacionView v-if="isManager" />
+  <CategorizacionEmpresaView v-else />
 </template>

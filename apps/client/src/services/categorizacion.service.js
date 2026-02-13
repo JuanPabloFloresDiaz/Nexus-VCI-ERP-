@@ -1,5 +1,5 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'categorizacion';
 
@@ -7,82 +7,82 @@ const RESOURCE = 'categorizacion';
 // CATEGORIAS
 // ==========================================
 
-export const getCategorias = async (params) => {
+export async function getCategorias (params) {
     return AxiosRequest(`${RESOURCE}/categorias`, mapMethod('R'), {}, params);
-};
+}
 
-export const getAllCategorias = async () => {
+export async function getAllCategorias () {
     return AxiosRequest(`${RESOURCE}/categorias/all`, mapMethod('R'));
-};
+}
 
-export const createCategoria = async (payload) => {
+export async function createCategoria (payload) {
     return AxiosRequest(`${RESOURCE}/categorias`, mapMethod('C'), payload);
-};
+}
 
-export const bulkCreateCategorias = async (payload) => {
+export async function bulkCreateCategorias (payload) {
     return AxiosRequest(`${RESOURCE}/categorias/bulk`, mapMethod('C'), payload);
-};
+}
 
-export const getCategoriaById = async (id) => {
+export async function getCategoriaById (id) {
     return AxiosRequest(`${RESOURCE}/categorias/${id}`, mapMethod('R'));
-};
+}
 
-export const updateCategoria = async (id, payload) => {
+export async function updateCategoria (id, payload) {
     return AxiosRequest(`${RESOURCE}/categorias/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const deleteCategoria = async (id) => {
+export async function deleteCategoria (id) {
     return AxiosRequest(`${RESOURCE}/categorias/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreCategoria = async (id) => {
+export async function restoreCategoria (id) {
     return AxiosRequest(`${RESOURCE}/categorias/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyCategoria = async (id) => {
+export async function destroyCategoria (id) {
     return AxiosRequest(`${RESOURCE}/categorias/${id}/force`, mapMethod('D'));
-};
+}
 
 // ==========================================
 // SUBCATEGORIAS
 // ==========================================
 
-export const getSubcategorias = async (params) => {
+export async function getSubcategorias (params) {
     return AxiosRequest(`${RESOURCE}/subcategorias`, mapMethod('R'), {}, params);
-};
+}
 
-export const getSubcategoriasByCategoria = async (id) => {
+export async function getSubcategoriasByCategoria (id) {
     return AxiosRequest(`${RESOURCE}/subcategorias/by-categoria/${id}`, mapMethod('R'));
-};
+}
 
-export const createSubcategoria = async (payload) => {
+export async function createSubcategoria (payload) {
     return AxiosRequest(`${RESOURCE}/subcategorias`, mapMethod('C'), payload);
-};
+}
 
-export const bulkCreateSubcategorias = async (payload) => {
+export async function bulkCreateSubcategorias (payload) {
     return AxiosRequest(`${RESOURCE}/subcategorias/bulk`, mapMethod('C'), payload);
-};
+}
 
-export const updateSubcategoria = async (id, payload) => {
+export async function updateSubcategoria (id, payload) {
     return AxiosRequest(`${RESOURCE}/subcategorias/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const deleteSubcategoria = async (id) => {
+export async function deleteSubcategoria (id) {
     return AxiosRequest(`${RESOURCE}/subcategorias/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreSubcategoria = async (id) => {
+export async function restoreSubcategoria (id) {
     return AxiosRequest(`${RESOURCE}/subcategorias/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroySubcategoria = async (id) => {
+export async function destroySubcategoria (id) {
     return AxiosRequest(`${RESOURCE}/subcategorias/${id}/force`, mapMethod('D'));
-};
+}
 
-export const getTrashedCategorias = async (params) => {
+export async function getTrashedCategorias (params) {
     return AxiosRequest(`${RESOURCE}/categorias/trashed`, mapMethod('R'), {}, params);
-};
+}
 
-export const getTrashedSubcategorias = async (params) => {
+export async function getTrashedSubcategorias (params) {
     return AxiosRequest(`${RESOURCE}/subcategorias/trashed`, mapMethod('R'), {}, params);
-};
+}

@@ -1,51 +1,51 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'empresas';
 
-export const getEmpresas = async (query = '') => {
+export async function getEmpresas (query = '') {
     return AxiosRequest(`${RESOURCE}?${query}`, mapMethod('R'));
-};
+}
 
-export const getEmpresaById = async (id) => {
+export async function getEmpresaById (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('R'));
-};
+}
 
-export const createEmpresa = async (data) => {
+export async function createEmpresa (data) {
     return AxiosRequest(RESOURCE, mapMethod('C'), data);
-};
+}
 
-export const updateEmpresa = async (id, data) => {
+export async function updateEmpresa (id, data) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('U'), data);
-};
+}
 
-export const deleteEmpresa = async (id) => {
+export async function deleteEmpresa (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('D'));
-};
+}
 
 // New methods
-export const getEmpresaProfile = async () => {
+export async function getEmpresaProfile () {
     return AxiosRequest(`${RESOURCE}/profile`, mapMethod('R'));
-};
+}
 
-export const updateEmpresaProfile = async (data) => {
+export async function updateEmpresaProfile (data) {
     return AxiosRequest(`${RESOURCE}/profile`, mapMethod('U'), data);
-};
+}
 
-export const getEmpresasSelect = async () => {
+export async function getEmpresasSelect () {
     return AxiosRequest(`${RESOURCE}/select`, mapMethod('R'));
-};
+}
 
 export const getAllEmpresas = getEmpresasSelect;
 
-export const getTrashedEmpresas = async (query = '') => {
+export async function getTrashedEmpresas (query = '') {
     return AxiosRequest(`${RESOURCE}/trashed?${query}`, mapMethod('R'));
-};
+}
 
-export const restoreEmpresa = async (id) => {
+export async function restoreEmpresa (id) {
     return AxiosRequest(`${RESOURCE}/${id}/restore`, mapMethod('P')); // PATCH
-};
+}
 
-export const forceDeleteEmpresa = async (id) => {
+export async function forceDeleteEmpresa (id) {
     return AxiosRequest(`${RESOURCE}/${id}/force`, mapMethod('D'));
-};
+}

@@ -1,44 +1,44 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'clientes';
 
-export const getClientes = async (params) => {
+export async function getClientes (params) {
     return AxiosRequest(RESOURCE, mapMethod('R'), {}, params);
-};
+}
 
-export const getAllClientes = async () => {
+export async function getAllClientes () {
     return AxiosRequest(`${RESOURCE}/all`, mapMethod('R'));
-};
+}
 
-export const createCliente = async (payload) => {
+export async function createCliente (payload) {
     return AxiosRequest(RESOURCE, mapMethod('C'), payload);
-};
+}
 
-export const updateCliente = async (id, payload) => {
+export async function updateCliente (id, payload) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const deleteCliente = async (id) => {
+export async function deleteCliente (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreCliente = async (id) => {
+export async function restoreCliente (id) {
     return AxiosRequest(`${RESOURCE}/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyCliente = async (id) => {
+export async function destroyCliente (id) {
     return AxiosRequest(`${RESOURCE}/${id}/force`, mapMethod('D'));
-};
+}
 
-export const createClientesBulk = async (data) => {
+export async function createClientesBulk (data) {
     return AxiosRequest(`${RESOURCE}/bulk`, mapMethod('C'), data);
-};
+}
 
-export const getTrashedClientes = async (params) => {
+export async function getTrashedClientes (params) {
     return AxiosRequest(`${RESOURCE}/trashed`, mapMethod('R'), {}, params);
-};
+}
 
-export const getClientePedidosHistory = async (id, params) => {
+export async function getClientePedidosHistory (id, params) {
     return AxiosRequest(`${RESOURCE}/${id}/pedidos`, mapMethod('R'), {}, params);
-};
+}

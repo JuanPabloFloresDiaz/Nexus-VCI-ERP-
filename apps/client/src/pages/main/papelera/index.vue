@@ -5,7 +5,7 @@ meta:
 </route>
 
 <script setup>
-import PapeleraMainView from '@/components/Views/papelera/PapeleraView.vue';
+  import PapeleraMainView from '@/components/Views/papelera/PapeleraView.vue';
 </script>
 
 <template>

@@ -1,5 +1,5 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'filtros';
 
@@ -7,70 +7,70 @@ const RESOURCE = 'filtros';
 // FILTROS
 // ==========================================
 
-export const getFiltros = async (params) => {
+export async function getFiltros (params) {
     return AxiosRequest(`${RESOURCE}/filtros`, mapMethod('R'), {}, params);
-};
+}
 
-export const getFiltrosBySubcategoria = async (id) => {
+export async function getFiltrosBySubcategoria (id) {
     return AxiosRequest(`${RESOURCE}/filtros/by-subcategoria/${id}`, mapMethod('R'));
-};
+}
 
-export const createFiltro = async (payload) => {
+export async function createFiltro (payload) {
     return AxiosRequest(`${RESOURCE}/filtros`, mapMethod('C'), payload);
-};
+}
 
-export const updateFiltro = async (id, payload) => {
+export async function updateFiltro (id, payload) {
     return AxiosRequest(`${RESOURCE}/filtros/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const deleteFiltro = async (id) => {
+export async function deleteFiltro (id) {
     return AxiosRequest(`${RESOURCE}/filtros/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreFiltro = async (id) => {
+export async function restoreFiltro (id) {
     return AxiosRequest(`${RESOURCE}/filtros/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyFiltro = async (id) => {
+export async function destroyFiltro (id) {
     return AxiosRequest(`${RESOURCE}/filtros/${id}/force`, mapMethod('D'));
-};
+}
 
 // ==========================================
 // OPCIONES DE FILTRO
 // ==========================================
 
-export const getOpcionesFiltro = async (params) => {
+export async function getOpcionesFiltro (params) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro`, mapMethod('R'), {}, params);
-};
+}
 
-export const createOpcionFiltro = async (payload) => {
+export async function createOpcionFiltro (payload) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro`, mapMethod('C'), payload);
-};
+}
 
-export const bulkCreateOpcionesFiltro = async (payload) => {
+export async function bulkCreateOpcionesFiltro (payload) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro/bulk-options`, mapMethod('C'), payload);
-};
+}
 
-export const updateOpcionFiltro = async (id, payload) => {
+export async function updateOpcionFiltro (id, payload) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const deleteOpcionFiltro = async (id) => {
+export async function deleteOpcionFiltro (id) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreOpcionFiltro = async (id) => {
+export async function restoreOpcionFiltro (id) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyOpcionFiltro = async (id) => {
+export async function destroyOpcionFiltro (id) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro/${id}/force`, mapMethod('D'));
-};
+}
 
-export const getTrashedFiltros = async (params) => {
+export async function getTrashedFiltros (params) {
     return AxiosRequest(`${RESOURCE}/filtros/trashed`, mapMethod('R'), {}, params);
-};
+}
 
-export const getTrashedOpcionesFiltro = async (params) => {
+export async function getTrashedOpcionesFiltro (params) {
     return AxiosRequest(`${RESOURCE}/opciones-filtro/trashed`, mapMethod('R'), {}, params);
-};
+}

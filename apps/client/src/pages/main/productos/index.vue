@@ -5,16 +5,16 @@ meta:
 </route>
 
 <script setup>
-import { computed } from 'vue';
-import { useAuth } from '@/hooks/useAuth';
-import ProductosView from '@/components/Views/productos/ProductosView.vue';
-import ProductosEmpresaView from '@/components/Views/productos/ProductosEmpresaView.vue';
+  import { computed } from 'vue';
+  import ProductosEmpresaView from '@/components/Views/productos/ProductosEmpresaView.vue';
+  import ProductosView from '@/components/Views/productos/ProductosView.vue';
+  import { useAuth } from '@/hooks/useAuth';
 
-const { isSuperAdmin, isAdmin } = useAuth();
-const isManager = computed(() => isSuperAdmin.value || isAdmin.value);
+  const { isSuperAdmin, isAdmin } = useAuth();
+  const isManager = computed(() => isSuperAdmin.value || isAdmin.value);
 </script>
 
 <template>
-    <ProductosView v-if="isManager" />
-    <ProductosEmpresaView v-else />
+  <ProductosView v-if="isManager" />
+  <ProductosEmpresaView v-else />
 </template>

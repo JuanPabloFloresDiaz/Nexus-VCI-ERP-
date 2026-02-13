@@ -5,9 +5,9 @@ meta:
 </route>
 
 <script setup>
-import BulkCreateProductosView from '@/components/Views/productos/BulkCreateProductosView.vue';
+  import BulkCreateProductosView from '@/components/Views/productos/BulkCreateProductosView.vue';
 </script>
 
 <template>
-    <BulkCreateProductosView />
+  <BulkCreateProductosView />
 </template>

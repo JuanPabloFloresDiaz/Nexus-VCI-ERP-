@@ -8,7 +8,7 @@ meta:
 </script>
 
 <template>
-  <v-card flat class="bg-transparent">
+  <v-card class="bg-transparent" flat>
     <div class="mb-8">
       <h2 class="text-h4 font-weight-bold text-primary mb-2">Recuperar Contraseña</h2>
       <p class="text-body-1 text-medium-emphasis">
@@ -17,16 +17,16 @@ meta:
     </div>
 
     <!-- TODO: Implement recovery logic -->
-    <v-alert type="info" variant="tonal" class="mb-6">
-        Funcionalidad en construcción.
+    <v-alert class="mb-6" type="info" variant="tonal">
+      Funcionalidad en construcción.
     </v-alert>
 
     <div class="text-center text-body-2 text-medium-emphasis">
       <router-link 
-        to="/auth/login" 
-        class="text-primary text-decoration-none font-weight-bold"
+        class="text-primary text-decoration-none font-weight-bold" 
+        to="/auth/login"
       >
-        <v-icon start icon="mdi-arrow-left" size="small" />
+        <v-icon icon="mdi-arrow-left" size="small" start />
         Volver al inicio
       </router-link>
     </div>

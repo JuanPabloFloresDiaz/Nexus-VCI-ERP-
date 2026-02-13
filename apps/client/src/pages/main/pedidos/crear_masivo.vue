@@ -5,9 +5,9 @@ meta:
 </route>
 
 <script setup>
-import BulkCreatePedidosView from '@/components/Views/pedidos/BulkCreatePedidosView.vue';
+  import BulkCreatePedidosView from '@/components/Views/pedidos/BulkCreatePedidosView.vue';
 </script>
 
 <template>
-    <BulkCreatePedidosView />
+  <BulkCreatePedidosView />
 </template>

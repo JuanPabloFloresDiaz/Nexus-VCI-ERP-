@@ -1,36 +1,36 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'usuarios';
 
-export const getUsuarios = async (params) => {
+export async function getUsuarios (params) {
     return AxiosRequest(RESOURCE, mapMethod('R'), {}, params);
-};
+}
 
-export const getAllUsuarios = async () => {
+export async function getAllUsuarios () {
     return AxiosRequest(`${RESOURCE}/all`, mapMethod('R'));
-};
+}
 
-export const createUsuario = async (payload) => {
+export async function createUsuario (payload) {
     return AxiosRequest(RESOURCE, mapMethod('C'), payload);
-};
+}
 
-export const updateUsuario = async (id, payload) => {
+export async function updateUsuario (id, payload) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const deleteUsuario = async (id) => {
+export async function deleteUsuario (id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreUsuario = async (id) => {
+export async function restoreUsuario (id) {
     return AxiosRequest(`${RESOURCE}/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyUsuario = async (id) => {
+export async function destroyUsuario (id) {
     return AxiosRequest(`${RESOURCE}/${id}/force`, mapMethod('D'));
-};
+}
 
-export const getTrashedUsuarios = async (params) => {
+export async function getTrashedUsuarios (params) {
     return AxiosRequest(`${RESOURCE}/trashed`, mapMethod('R'), {}, params);
-};
+}

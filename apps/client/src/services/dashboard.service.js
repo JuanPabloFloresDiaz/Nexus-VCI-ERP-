@@ -1,16 +1,16 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'dashboard';
 
-export const getGeneralMetrics = async () => {
+export async function getGeneralMetrics () {
     return AxiosRequest(`${RESOURCE}/metrics`, mapMethod('R'));
-};
+}
 
-export const getTopProducts = async () => {
+export async function getTopProducts () {
     return AxiosRequest(`${RESOURCE}/top-products`, mapMethod('R'));
-};
+}
 
-export const getTopClients = async () => {
+export async function getTopClients () {
     return AxiosRequest(`${RESOURCE}/top-clients`, mapMethod('R'));
-};
+}

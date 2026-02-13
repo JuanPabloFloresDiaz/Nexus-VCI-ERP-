@@ -6,9 +6,9 @@ meta:
 </route>
 
 <script setup>
-import UpdateProductosView from '@/components/Views/productos/UpdateProductosView.vue';
+  import UpdateProductosView from '@/components/Views/productos/UpdateProductosView.vue';
 </script>
 
 <template>
-    <UpdateProductosView />
+  <UpdateProductosView />
 </template>

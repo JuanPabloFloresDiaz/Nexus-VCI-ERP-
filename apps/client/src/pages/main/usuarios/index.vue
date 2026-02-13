@@ -6,14 +6,14 @@ meta:
 </route>
 
 <script setup>
-import { computed } from 'vue';
-import { useAuth } from '@/hooks/useAuth';
-import UsuariosView from '@/components/Views/usuarios/UsuariosView.vue';
-import PerfilUsuario from '@/components/Views/usuarios/PerfilUsuario.vue';
+  import { computed } from 'vue';
+  import PerfilUsuario from '@/components/Views/usuarios/PerfilUsuario.vue';
+  import UsuariosView from '@/components/Views/usuarios/UsuariosView.vue';
+  import { useAuth } from '@/hooks/useAuth';
 
-const { user } = useAuth();
+  const { user } = useAuth();
 
-const isVendor = computed(() => user.value?.rol_usuario === 'Vendedor');
+  const isVendor = computed(() => user.value?.rol_usuario === 'Vendedor');
 </script>
 
 <template>

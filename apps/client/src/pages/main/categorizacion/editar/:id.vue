@@ -6,9 +6,9 @@ meta:
 </route>
 
 <script setup>
-import UpdateCategorizacionView from '@/components/Views/categorizacion/UpdateCategorizacionView.vue';
+  import UpdateCategorizacionView from '@/components/Views/categorizacion/UpdateCategorizacionView.vue';
 </script>
 
 <template>
-    <UpdateCategorizacionView />
+  <UpdateCategorizacionView />
 </template>

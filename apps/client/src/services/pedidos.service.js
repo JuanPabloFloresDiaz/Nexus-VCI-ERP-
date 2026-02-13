@@ -1,40 +1,44 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'pedidos';
 
-export const getPedidos = async (params) => {
+export async function getPedidos (params) {
     return AxiosRequest(`${RESOURCE}/pedidos`, mapMethod('R'), {}, params);
-};
+}
 
-export const getPedidoById = async (id) => {
+export async function getPedidoById (id) {
     return AxiosRequest(`${RESOURCE}/pedidos/${id}`, mapMethod('R'));
-};
+}
 
-export const createPedido = async (payload) => {
+export async function createPedido (payload) {
     return AxiosRequest(`${RESOURCE}/pedidos`, mapMethod('C'), payload);
-};
+}
 
-export const bulkCreatePedidos = async (payload) => {
+export async function bulkCreatePedidos (payload) {
     return AxiosRequest(`${RESOURCE}/pedidos/bulk`, mapMethod('C'), payload);
-};
+}
 
-export const updateEstadoPedido = async (id, payload) => {
+export async function updatePedido (id, payload) {
+    return AxiosRequest(`${RESOURCE}/pedidos/${id}`, mapMethod('U'), payload);
+}
+
+export async function updateEstadoPedido (id, payload) {
     return AxiosRequest(`${RESOURCE}/pedidos/estado/${id}`, mapMethod('P'), payload);
-};
+}
 
-export const deletePedido = async (id) => {
+export async function deletePedido (id) {
     return AxiosRequest(`${RESOURCE}/pedidos/${id}`, mapMethod('D'));
-};
+}
 
-export const restorePedido = async (id) => {
+export async function restorePedido (id) {
     return AxiosRequest(`${RESOURCE}/pedidos/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyPedido = async (id) => {
+export async function destroyPedido (id) {
     return AxiosRequest(`${RESOURCE}/pedidos/${id}/force`, mapMethod('D'));
-};
+}
 
-export const getTrashedPedidos = async (params) => {
+export async function getTrashedPedidos (params) {
     return AxiosRequest(`${RESOURCE}/pedidos/trashed`, mapMethod('R'), {}, params);
-};
+}

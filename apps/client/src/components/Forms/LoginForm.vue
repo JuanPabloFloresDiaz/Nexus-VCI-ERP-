@@ -1,59 +1,59 @@
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuth } from '@/hooks/useAuth';
+  import { reactive, ref } from 'vue';
+  import { useRouter } from 'vue-router';
+  import { useAuth } from '@/hooks/useAuth';
 
-const router = useRouter();
-const { login } = useAuth();
+  const router = useRouter();
+  const { login } = useAuth();
 
-const loading = ref(false);
-const showPassword = ref(false);
-const errorMsg = ref('');
+  const loading = ref(false);
+  const showPassword = ref(false);
+  const errorMsg = ref('');
 
-const form = reactive({
-  email: '',
-  password: '',
-  rememberMe: false
-});
+  const form = reactive({
+    email: '',
+    password: '',
+    rememberMe: false
+  });
 
-// Reglas de validación simples para UI
-const rules = {
-  required: v => !!v || 'Este campo es requerido',
-  email: v => /.+@.+\..+/.test(v) || 'El correo debe ser válido',
-  min: v => v.length >= 8 || 'Mínimo 8 caracteres'
-};
+  // Reglas de validación simples para UI
+  const rules = {
+    required: v => !!v || 'Este campo es requerido',
+    email: v => /.+@.+\..+/.test(v) || 'El correo debe ser válido',
+    min: v => v.length >= 8 || 'Mínimo 8 caracteres'
+  };
 
-const handleLogin = async () => {
-  if (!form.email || !form.password) return;
+  async function handleLogin () {
+    if (!form.email || !form.password) return;
   
-  loading.value = true;
-  errorMsg.value = '';
+    loading.value = true;
+    errorMsg.value = '';
 
-  try {
-    const payload = {
-      correo_electronico: form.email,
-      clave_acceso: form.password
-    };
+    try {
+      const payload = {
+        correo_electronico: form.email,
+        clave_acceso: form.password
+      };
 
-    const result = await login(payload);
+      const result = await login(payload);
     
-    if (result.success) {
-      // Redireccionar al dashboard
-      router.push('/main/dashboard');
-    } else {
-      throw new Error(result.error);
+      if (result.success) {
+        // Redireccionar al dashboard
+        router.push('/main/dashboard');
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error(error);
+      errorMsg.value = error.message || 'Credenciales inválidas. Por favor intenta de nuevo.';
+    } finally {
+      loading.value = false;
     }
-  } catch (error) {
-    console.error(error);
-    errorMsg.value = error.message || 'Credenciales inválidas. Por favor intenta de nuevo.';
-  } finally {
-    loading.value = false;
   }
-};
 </script>
 
 <template>
-  <v-card flat class="bg-transparent">
+  <v-card class="bg-transparent" flat>
     <div class="mb-8">
       <h2 class="text-h4 font-weight-bold text-primary mb-2">Bienvenido de nuevo</h2>
       <p class="text-body-1 text-medium-emphasis">
@@ -63,10 +63,10 @@ const handleLogin = async () => {
 
     <v-alert
       v-if="errorMsg"
-      type="error"
-      variant="tonal"
       class="mb-6"
       closable
+      type="error"
+      variant="tonal"
       @click:close="errorMsg = ''"
     >
       {{ errorMsg }}
@@ -75,54 +75,54 @@ const handleLogin = async () => {
     <v-form @submit.prevent="handleLogin">
       <v-text-field
         v-model="form.email"
+        class="mb-2"
+        color="primary"
         label="Correo electrónico"
         placeholder="ejemplo@empresa.com"
-        variant="outlined"
-        color="primary"
         prepend-inner-icon="mdi-email-outline"
         :rules="[rules.required, rules.email]"
-        class="mb-2"
+        variant="outlined"
       />
 
       <v-text-field
         v-model="form.password"
-        :type="showPassword ? 'text' : 'password'"
-        label="Contraseña"
-        placeholder="Ingresa tu contraseña"
-        variant="outlined"
-        color="primary"
-        prepend-inner-icon="mdi-lock-outline"
         :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-        @click:append-inner="showPassword = !showPassword"
-        :rules="[rules.required]"
+        color="primary"
+        label="Contraseña"
         class="mb-4"
+        placeholder="Ingresa tu contraseña"
+        prepend-inner-icon="mdi-lock-outline"
+        :rules="[rules.required]"
+        :type="showPassword ? 'text' : 'password'"
+        variant="outlined"
+        @click:append-inner="showPassword = !showPassword"
       />
 
       <div class="d-flex align-center justify-space-between mb-6">
         <v-checkbox
           v-model="form.rememberMe"
-          label="Recordarme"
           color="primary"
-          hide-details
           density="compact"
+          hide-details
+          label="Recordarme"
         />
         
         <router-link 
-          to="/auth/recovery" 
-          class="text-body-2 text-primary text-decoration-none font-weight-medium"
+          class="text-body-2 text-primary text-decoration-none font-weight-medium" 
+          to="/auth/recovery"
         >
           ¿Olvidaste tu contraseña?
         </router-link>
       </div>
 
       <v-btn
-        type="submit"
         block
-        color="primary"
-        size="large"
-        :loading="loading"
         class="text-none font-weight-bold mb-6"
+        color="primary"
         elevation="2"
+        :loading="loading"
+        size="large"
+        type="submit"
       >
         Iniciar Sesión
       </v-btn>
@@ -131,8 +131,8 @@ const handleLogin = async () => {
     <div class="text-center text-body-2 text-medium-emphasis">
       ¿Aún no tienes cuenta? 
       <router-link 
-        to="/auth/register" 
-        class="text-primary text-decoration-none font-weight-bold ml-1"
+        class="text-primary text-decoration-none font-weight-bold ml-1" 
+        to="/auth/register"
       >
         Regístrate aquí
       </router-link>

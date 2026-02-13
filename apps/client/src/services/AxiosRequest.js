@@ -18,9 +18,9 @@ async function AxiosRequest(endpoint, method, form = {}, params, config = {}) {
     if (hasFile) {
       // Si hay un archivo, usar FormData
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(form)) {
         formData.append(key, value);
-      });
+      }
       data = formData;
     } else {
       // Si no hay archivo, enviar como JSON

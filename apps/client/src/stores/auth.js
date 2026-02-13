@@ -7,9 +7,9 @@ export const useAuthStore = defineStore('auth', {
         let parsedUser = null;
         try {
             const stored = localStorage.getItem('user');
-            if (stored) parsedUser = JSON.parse(stored);
-        } catch (e) {
-            console.warn('Corrupted user session data, clearing.', e);
+            if (stored) {parsedUser = JSON.parse(stored);}
+        } catch (error) {
+            console.warn('Corrupted user session data, clearing.', error);
             localStorage.removeItem('user');
         }
         return {

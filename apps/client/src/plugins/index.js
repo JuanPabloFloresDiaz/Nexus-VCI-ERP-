@@ -5,13 +5,13 @@
  */
 
 // Plugins
-import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
-import vuetify from './vuetify'
-import pinia from '@/stores'
-import router from '@/router'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { QuillEditor } from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { vMaska } from 'maska/vue'
+import router from '@/router'
+import pinia from '@/stores'
+import vuetify from './vuetify'
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 export function registerPlugins(app) {
 

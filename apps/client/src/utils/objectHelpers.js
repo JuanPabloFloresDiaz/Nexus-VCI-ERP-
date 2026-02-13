@@ -32,9 +32,9 @@ export function getChangedProperties(original, updated) {
  * @returns {Object} Copia del objeto
  */
 export function deepClone(obj) {
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (obj instanceof Date) return new Date(obj.getTime());
-  if (obj instanceof Array) return obj.map(item => deepClone(item));
+  if (obj === null || typeof obj !== 'object') {return obj;}
+  if (obj instanceof Date) {return new Date(obj);}
+  if (Array.isArray(obj)) {return obj.map(item => deepClone(item));}
   
   const cloned = {};
   for (const key in obj) {
@@ -51,12 +51,12 @@ export function deepClone(obj) {
  * @returns {boolean} True si tiene al menos una propiedad con valor
  */
 export function hasValidData(obj) {
-  if (!obj || typeof obj !== 'object') return false;
+  if (!obj || typeof obj !== 'object') {return false;}
   
   return Object.values(obj).some(value => {
-    if (value === null || value === undefined || value === '') return false;
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'object') return hasValidData(value);
+    if (value === null || value === undefined || value === '') {return false;}
+    if (Array.isArray(value)) {return value.length > 0;}
+    if (typeof value === 'object') {return hasValidData(value);}
     return true;
   });
 }

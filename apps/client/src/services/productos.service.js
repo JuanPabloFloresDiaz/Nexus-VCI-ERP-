@@ -1,5 +1,5 @@
-import AxiosRequest from './AxiosRequest';
 import { mapMethod } from '../utils/MapMethod';
+import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'productos';
 
@@ -7,54 +7,54 @@ const RESOURCE = 'productos';
 // PRODUCTOS
 // ==========================================
 
-export const getProductos = async (params) => {
+export async function getProductos (params) {
     return AxiosRequest(`${RESOURCE}/productos`, mapMethod('R'), {}, params);
-};
+}
 
-export const getProductoById = async (id) => {
+export async function getProductoById (id) {
     return AxiosRequest(`${RESOURCE}/productos/${id}`, mapMethod('R'));
-};
+}
 
-export const createProducto = async (payload) => {
+export async function createProducto (payload) {
     return AxiosRequest(`${RESOURCE}/productos`, mapMethod('C'), payload);
-};
+}
 
-export const bulkCreateProductos = async (payload) => {
+export async function bulkCreateProductos (payload) {
     return AxiosRequest(`${RESOURCE}/productos/bulk`, mapMethod('C'), payload);
-};
+}
 
-export const updateProducto = async (id, payload) => {
+export async function updateProducto (id, payload) {
     return AxiosRequest(`${RESOURCE}/productos/${id}`, mapMethod('U'), payload);
-};
+}
 
-export const updateProductoStock = async (id, payload) => {
+export async function updateProductoStock (id, payload) {
     return AxiosRequest(`${RESOURCE}/productos/stock/${id}`, mapMethod('P'), payload);
-};
+}
 
-export const deleteProducto = async (id) => {
+export async function deleteProducto (id) {
     return AxiosRequest(`${RESOURCE}/productos/${id}`, mapMethod('D'));
-};
+}
 
-export const restoreProducto = async (id) => {
+export async function restoreProducto (id) {
     return AxiosRequest(`${RESOURCE}/productos/${id}/restore`, mapMethod('U'));
-};
+}
 
-export const destroyProducto = async (id) => {
+export async function destroyProducto (id) {
     return AxiosRequest(`${RESOURCE}/productos/${id}/force`, mapMethod('D'));
-};
+}
 
 // ==========================================
 // DETALLES (Producto-Filtro)
 // ==========================================
 
-export const createProductoDetalle = async (payload) => {
+export async function createProductoDetalle (payload) {
     return AxiosRequest(`${RESOURCE}/producto-detalles`, mapMethod('C'), payload);
-};
+}
 
-export const deleteProductoDetalle = async (id) => {
+export async function deleteProductoDetalle (id) {
     return AxiosRequest(`${RESOURCE}/producto-detalles/${id}`, mapMethod('D'));
-};
+}
 
-export const getTrashedProductos = async (params) => {
+export async function getTrashedProductos (params) {
     return AxiosRequest(`${RESOURCE}/productos/trashed`, mapMethod('R'), {}, params);
-};
+}

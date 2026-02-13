@@ -4,7 +4,7 @@ meta:
 </route>
 
 <script setup>
-import LoginForm from '@/components/Forms/LoginForm.vue';
+  import LoginForm from '@/components/Forms/LoginForm.vue';
 </script>
 
 <template>

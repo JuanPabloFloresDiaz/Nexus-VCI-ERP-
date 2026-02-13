@@ -1,5 +1,5 @@
 <script setup>
-import ClientesView from '@/components/Views/clientes/ClientesView.vue';
+  import ClientesView from '@/components/Views/clientes/ClientesView.vue';
 </script>
 
 <route lang="yaml">
@@ -10,5 +10,5 @@ meta:
 </route>
 
 <template>
-    <ClientesView />
+  <ClientesView />
 </template>

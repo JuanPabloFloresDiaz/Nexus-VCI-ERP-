@@ -5,9 +5,9 @@ meta:
 </route>
 
 <script setup>
-import CreateCategorizacionView from '@/components/Views/categorizacion/CreateCategorizacionView.vue';
+  import CreateCategorizacionView from '@/components/Views/categorizacion/CreateCategorizacionView.vue';
 </script>
 
 <template>
-    <CreateCategorizacionView />
+  <CreateCategorizacionView />
 </template>

@@ -25,7 +25,7 @@ const COLORS = {
  * @param {string} options.message - Mensaje a mostrar en la alerta.
  * @param {string} [options.title] - Título opcional.
  */
-export const showAlert = ({ status, message, title }) => {
+export function showAlert ({ status, message, title }) {
   const type = status ? 'success' : 'error';
   Swal.fire({
     title: title || (status ? '¡Éxito!' : 'Oops...'),
@@ -40,7 +40,7 @@ export const showAlert = ({ status, message, title }) => {
     },
     buttonsStyling: true
   });
-};
+}
 
 /**
  * Muestra una notificación tipo toast con SweetAlert2.
@@ -49,7 +49,7 @@ export const showAlert = ({ status, message, title }) => {
  * @param {string} options.title - Título del toast.
  * @param {number} [options.timer=3500] - Duración del toast en milisegundos.
  */
-export const fireToast = ({ icon, title, timer = 3500 }) => {
+export function fireToast ({ icon, title, timer = 3500 }) {
   const Toast = Swal.mixin({
     toast: true,
     position: 'top-end',
@@ -69,7 +69,7 @@ export const fireToast = ({ icon, title, timer = 3500 }) => {
   });
 
   Toast.fire({ icon, title });
-};
+}
 
 // Helpers específicos para consistencia
 export const showSuccessToast = (title) => fireToast({ icon: 'success', title });
@@ -84,7 +84,7 @@ export const showInfoToast = (title) => fireToast({ icon: 'info', title });
  * @param {string} icon - Icono ('warning', 'question', etc.)
  * @returns {Promise<boolean>} - True si el usuario confirma, False si cancela
  */
-export const showConfirmDialog = async (title, text, icon = 'question') => {
+export async function showConfirmDialog (title, text, icon = 'question') {
   const result = await Swal.fire({
     title,
     text,
@@ -102,4 +102,4 @@ export const showConfirmDialog = async (title, text, icon = 'question') => {
     buttonsStyling: true
   });
   return result.isConfirmed;
-};
+}

@@ -96,7 +96,7 @@ const bulkProductoSchema = z.object({
             costo_unitario: z.number().nonnegative().default(0),
             stock_actual: z.number().int().nonnegative().default(0),
             stock_minimo: z.number().int().nonnegative().default(5),
-            imagen_url: z.union([z.string(), z.literal(''), z.null()]).optional(),
+            // imagen_url removed as per requirement
             detalles: z.array(z.object({ id_opcion_filtro: z.string().uuid() })).optional(),
             id_empresa: z.string().uuid().optional()
         })

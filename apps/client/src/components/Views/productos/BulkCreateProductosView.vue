@@ -4,7 +4,7 @@
   import { useRouter } from 'vue-router';
   import * as XLSX from 'xlsx';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
-  import { getCategoriaById, getSubcategorias } from '@/services/categorizacion.service';
+  import { getCategoriaById, getSubcategorias, getAllCategorias } from '@/services/categorizacion.service';
   import { bulkCreateProductos } from '@/services/productos.service';
 
   const router = useRouter();
@@ -21,10 +21,11 @@
         nombre_producto: 'Camisa Polo Azul',
         descripcion_producto: 'Camisa de algodón',
         precio_unitario: 150,
+        costo_unitario: 100,
         stock_actual: 50,
         stock_minimo: 5,
-        imagen_url: '',
-        nombre_subcategoria: 'Camisas', // Must match exactly
+        nombre_categoria: 'Uniformes', // Added category
+        nombre_subcategoria: 'Camisas', 
         filtro: 'Talla',
         opcion: 'M'
       },
@@ -32,9 +33,10 @@
         nombre_producto: 'Camisa Polo Azul',
         descripcion_producto: 'Camisa de algodón',
         precio_unitario: 150,
+        costo_unitario: 100,
         stock_actual: 50,
         stock_minimo: 5,
-        imagen_url: '',
+        nombre_categoria: 'Uniformes',
         nombre_subcategoria: 'Camisas',
         filtro: 'Color',
         opcion: 'Azul'
@@ -43,9 +45,10 @@
         nombre_producto: 'Cuaderno Espiral',
         descripcion_producto: '100 hojas',
         precio_unitario: 25,
+        costo_unitario: 15,
         stock_actual: 100,
         stock_minimo: 10,
-        imagen_url: '',
+        nombre_categoria: 'Útiles escolares',
         nombre_subcategoria: 'Útiles',
         filtro: '',
         opcion: ''
@@ -98,102 +101,112 @@
 
   // Helper: Resolve IDs
   async function transformAndResolveReferences (flatData) {
-    // 1. Extract Unique Subcategory Names to fetch
-    const subNames = [...new Set(flatData.map(r => r.nombre_subcategoria?.toString().trim()).filter(Boolean))];
+    // 1. Fetch all Categories to resolve Category Name -> ID
+    // We need to match category name first to ensure correct subcategory logic
+    // (e.g. "Camisas" in "Uniformes" vs "Camisas" in "Ropa Alternativa")
+    let allCats = [];
+    try {
+      const catsResponse = await getAllCategorias();
+      allCats = catsResponse.data || [];
+    } catch (e) {
+      console.error("Error fetching categories", e);
+      return [];
+    }
     
-    // 2. Fetch all subcategories (We need ID and Parent Category ID)
-    // Optimization: filtering by name in backend is better, but getSubcategorias supports generic search.
-    // However, exact match is tricky.
-    // Strategy: Fetch all subcategories (assuming reasonable count) or fetch by one by one?
-    // Let's fetch all (limit 1000).
-    const subsResponse = await getSubcategorias({ limit: 1000 });
-    const allSubs = subsResponse.data || [];
+    const catNameMap = new Map();
+    allCats.forEach(c => catNameMap.set(c.nombre_categoria.toLowerCase().trim(), c.id));
 
-    // 3. For each subcategory used, we need its FILTERS/OPTIONS.
-    // getSubcategorias index usually doesn't return filters.
-    // We need to fetch details.
-    // Group subIDs needed.
-    const subDetailsMap = new Map(); // subName -> { id, filters: [...] }
+    // 2. Identify which Categories we need to fetch details for (Subcategories + Filters)
+    const fileCatNames = [...new Set(flatData.map(r => r.nombre_categoria?.toString().trim()).filter(Boolean))];
+    
+    // Map: CategoryID -> FullCategoryDetails
+    const catDetailsMap = new Map();
 
-    for (const name of subNames) {
-      const match = allSubs.find(s => s.nombre_subcategoria.toLowerCase() === name.toLowerCase());
-      if (match && // Found Subcategory. Now need its details (filters/options).
-        // We can get details by fetching the PARENT CATEGORY! 
-        // Or if there is an endpoint for Subcategory Details. 
-        // getCategoriaById (parent) includes subcategories->filters.
-        // Let's rely on finding it.
-            
-        // To get filters, we actually need to fetch the Category of this subcategory
-        // or if we have an endpoint for subcategory.
-        // Current services: getCategoriaById.
-        match.id_categoria) {
-        // Check if we already fetched this category
-        // ... optimization omitted for simplicity, fetch per subcategory logic
+    for (const name of fileCatNames) {
+      const catId = catNameMap.get(name.toLowerCase());
+      if (catId && !catDetailsMap.has(catId)) {
         try {
-          const catResponse = await getCategoriaById(match.id_categoria);
-          const fullSub = catResponse.data.subcategorias.find(s => s.id === match.id);
-          if (fullSub) {
-            subDetailsMap.set(name.toLowerCase(), fullSub);
+          const detailsPos = await getCategoriaById(catId);
+          if (detailsPos.data) {
+            catDetailsMap.set(catId, detailsPos.data);
           }
-        } catch {
-          console.error("Failed to fetch details for category " + match.id_categoria);
+        } catch (e) {
+          console.error(`Error fetching category details for ${name}`, e);
         }
       }
     }
 
-    // 4. Group Products
+    // 3. Group and Process Products
     const productsMap = new Map();
 
     for (const row of flatData) {
       const prodName = row.nombre_producto?.toString().trim();
+      const catName = row.nombre_categoria?.toString().trim();
+      const subName = row.nombre_subcategoria?.toString().trim();
+      
       if (!prodName) continue;
 
+      // Initialize Product in Map if new
       if (!productsMap.has(prodName)) {
-        // Find Subcategory ID
-        const subName = row.nombre_subcategoria?.toString().trim();
         let subId = null;
         let subDetails = null;
 
-        if (subName) {
-          subDetails = subDetailsMap.get(subName.toLowerCase());
-          if (subDetails) subId = subDetails.id;
+        // Resolve Subcategory
+        if (catName && subName) {
+           const catId = catNameMap.get(catName.toLowerCase());
+           if (catId) {
+             const fullCat = catDetailsMap.get(catId);
+             if (fullCat && fullCat.subcategorias) {
+               // Find subcategory case-insensitive
+               subDetails = fullCat.subcategorias.find(s => s.nombre_subcategoria.toLowerCase() === subName.toLowerCase());
+               if (subDetails) {
+                 subId = subDetails.id;
+               }
+             }
+           }
         }
 
         productsMap.set(prodName, {
           nombre_producto: prodName,
           descripcion_producto: row.descripcion_producto,
           precio_unitario: Number(row.precio_unitario) || 0,
+          costo_unitario: Number(row.costo_unitario) || 0,
           stock_actual: Number(row.stock_actual) || 0,
           stock_minimo: Number(row.stock_minimo) || 5,
-          imagen_url: row.imagen_url || '',
           id_subcategoria: subId,
-          subNameRaw: subName, // For UI feedback
+          subCategoryObject: subDetails, // Store for filter resolution
+          catNameRaw: catName, // UI
+          subNameRaw: subName, // UI
           detalles: []
         });
       }
 
       const product = productsMap.get(prodName);
-        
-      // Resolve Filter/Option
-      const filtroName = row.filtro?.toString().trim();
-      const opcionValue = row.opcion?.toString().trim();
-      const subDetails = subDetailsMap.get(product.subNameRaw?.toLowerCase());
-
-      if (subDetails && filtroName && opcionValue) {
-        // Find Filter
-        const filtro = subDetails.filtros?.find(f => f.nombre_filtro.toLowerCase() === filtroName.toLowerCase());
-        if (filtro) {
-          // Find Option
-          const opcion = filtro.opciones?.find(o => o.valor_opcion.toLowerCase() === opcionValue.toLowerCase());
-          if (opcion && // Check duplicate attributes for this product
-            !product.detalles.some(d => d.id_opcion_filtro === opcion.id)) {
-            product.detalles.push({ 
-              id_opcion_filtro: opcion.id,
-              nombre_filtro: filtro.nombre_filtro,
-              valor_opcion: opcion.valor_opcion
-            });
-          }
-        }
+      
+      // Resolve Attributes (Filters/Options)
+      if (product.subCategoryObject) {
+         const filtroName = row.filtro?.toString().trim();
+         const opcionValue = row.opcion?.toString().trim();
+         
+         if (filtroName && opcionValue) {
+           // Find Filter in Subcategory matches
+           const subFilters = product.subCategoryObject.filtros || [];
+           const filtro = subFilters.find(f => f.nombre_filtro.toLowerCase() === filtroName.toLowerCase());
+           
+           if (filtro && filtro.opciones) {
+             const opcion = filtro.opciones.find(o => 
+                o.valor_opcion.toString().trim().toLowerCase() === opcionValue.toLowerCase()
+             );
+             
+             if (opcion && !product.detalles.some(d => d.id_opcion_filtro === opcion.id)) {
+               product.detalles.push({
+                 id_opcion_filtro: opcion.id,
+                 nombre_filtro: filtro.nombre_filtro,
+                 valor_opcion: opcion.valor_opcion
+               });
+             }
+           }
+         }
       }
     }
 
@@ -223,6 +236,7 @@
     }
 
     // Sanitize payload: remove UI-only fields from detalles
+    // item spread includes costo_unitario and excludes imagen_url if not in parsedData
     const payload = validItems.map(item => ({
       ...item,
       detalles: item.detalles.map(d => ({ id_opcion_filtro: d.id_opcion_filtro }))
@@ -316,9 +330,19 @@
                 >
                   {{ prod.id_subcategoria ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                 </v-icon>
-                <strong class="mr-2">{{ prod.nombre_producto }}</strong>
-                <span class="text-caption text-medium-emphasis mr-2">({{ prod.subNameRaw }})</span>
-                <v-chip size="x-small">Q{{ prod.precio_unitario }}</v-chip>
+                <div class="d-flex flex-column mr-2">
+                    <strong class="text-body-2">{{ prod.nombre_producto }}</strong>
+                    <div class="text-caption text-medium-emphasis">
+                        {{ prod.catNameRaw }} > {{ prod.subNameRaw }}
+                    </div>
+                </div>
+                <v-spacer />
+                <v-chip class="mr-1" color="primary" size="x-small" variant="flat">
+                  Precio: ${{ prod.precio_unitario }}
+                </v-chip>
+                <v-chip color="secondary" size="x-small" variant="flat">
+                  Costo: ${{ prod.costo_unitario }}
+                </v-chip>
               </div>
             </v-expansion-panel-title>
             <v-expansion-panel-text>

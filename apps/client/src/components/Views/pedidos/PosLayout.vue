@@ -21,6 +21,7 @@
   const selectedClient = ref(null);
 
   // Initialize with props if provided
+  // Initialize with props if provided
   watch(() => props.initialOrder, (val) => {
     if (val) {
       // Map initial order details to cart structure
@@ -33,31 +34,27 @@
           details = d.detalles_producto || {};
         }
 
+        const variant = d.variante;
+        const product = d.producto;
+
         return {
-          ...d.producto,
-          id: d.id_producto, // Ensure product ID is at top level for matcher
-          id_producto: d.id_producto,
-          nombre_producto: d.producto?.nombre_producto,
-          imagen_url: d.producto?.imagen_url,
-          stock_actual: d.producto?.stock_actual + d.cantidad, // Virtual logic: existing order items "hold" stock, so available = current + held? 
-          // WAIT: If I edit an order, the stock in DB is already deducted. 
-          // So "stock_actual" in DB is what's LEFT.
-          // The item in cart has "cantidad".
-          // If I want to increase quantity, I can go up to stock_actual.
-          // But wait, if I have 5 in cart, and DB says 10 left. Total available for me is 15.
-          // However, the product object from DB (via Catalogo) will show 10.
-          // The logical stock available for THIS item line is (DB Stock + Current Cart Quantity).
-          // NOTE: CatalogoProductos returns generic product info.
-          // When we load existing items, we need to be careful about validation.
-          // Let's assume for now stock_actual passed here is from the product relation loaded in Order?
-          // Actually `d.producto` might not have up-to-date `stock_actual` if not fetched recently or if `include` didn't get it.
-          // It's safer if validation happens on "add more".
-          // Let's pass what we have.
+          ...product,
+          id: product?.id, 
+          id_producto: product?.id,
+          id_variante: variant?.id, // Map Variant ID
+          sku: variant?.sku,
+          nombre_producto: product?.nombre_producto,
+          imagen_url: variant?.imagen_url || product?.imagen_url,
+          stock_actual: variant ? (variant.stock_actual + d.cantidad) : (product?.stock_actual + d.cantidad), 
+          // Note: added d.cantidad back to stock for "Available" logic in UI editing
+
           cantidad: d.cantidad,
           precio_historico: d.precio_historico,
+          precio_unitario: d.precio_historico, // normalize
           subtotal: d.subtotal,
           detalles_producto: details,
-          cartItemId: Date.now() + Math.random().toString(36).slice(2, 11) // Generate valid ID for frontend key
+          detalles_filtros: variant?.detalles_filtros || [], // Assuming backend includes this if needed for display, otherwise empty
+          cartItemId: Date.now() + Math.random().toString(36).slice(2, 11)
         };
       });
 
@@ -67,16 +64,46 @@
     }
   }, { immediate: true });
 
-  function addToCart (product) {
+  function addToCart (payload) {
+    // payload can be { producto, variant } or just producto (legacy/safeguard)
+    let product, variant;
+    
+    if (payload.producto && payload.variant) {
+        product = payload.producto;
+        variant = payload.variant;
+    } else {
+        // Fallback or direct product add (shouldn't happen with updated Catalog)
+        product = payload;
+        // Try to find default variant if exists
+        variant = product.variantes?.[0];
+    }
+    
+    // Validate Stock
+    const stockAvailable = variant ? variant.stock_actual : product.stock_actual;
+    if (stockAvailable <= 0) {
+        // Should have been disabled in UI, but double check
+        return;
+    }
+
     const cartItemId = Date.now() + Math.random().toString(36).slice(2, 11);
+    
     cart.value.push({
-      ...product,
+      ...product, // Keep parent info
+      // Override with variant specific info
       cartItemId,
       id_producto: product.id,
+      id_variante: variant?.id,
+      sku: variant?.sku,
+      stock_actual: stockAvailable,
+      precio_unitario: variant ? variant.precio_unitario : product.precio_unitario,
+      precio_historico: variant ? variant.precio_unitario : product.precio_unitario,
+      
       cantidad: 1,
-      precio_historico: product.precio_unitario,
-      subtotal: Number(product.precio_unitario),
-      detalles_producto: {} 
+      subtotal: Number(variant ? variant.precio_unitario : product.precio_unitario),
+      
+      // Pass variant attributes for display in Carrito
+      detalles_filtros: variant?.detalles_filtros || [],
+      detalles_producto: {} // Legacy field for editable options, might be unused now
     });
   }
 

@@ -83,7 +83,7 @@
                     {{ item.total_vendido }} unid.
                   </v-chip>
                   <span class="ms-2 text-caption text-medium-emphasis">
-                    {{ formatCurrency(item.producto?.precio_unitario) }} / ud.
+                    {{ getFormattedPrice(item.producto) }} / ud.
                   </span>
                 </v-list-item-subtitle>
 
@@ -203,6 +203,20 @@
       style: 'currency',
       currency: 'USD'
     }).format(val);
+  }
+
+  function getFormattedPrice(producto) {
+    if (!producto) return formatCurrency(0);
+    // If variants exist, calculate range
+    if (producto.variantes && producto.variantes.length > 0) {
+        const prices = producto.variantes.map(v => Number(v.precio_unitario));
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        if (min === max) return formatCurrency(min);
+        return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+    }
+    // Fallback if no variants but somehow price exists (legacy)
+    return formatCurrency(producto.precio_unitario || 0);
   }
 
   function getClientName (cliente) {

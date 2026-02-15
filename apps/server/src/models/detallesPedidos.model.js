@@ -6,6 +6,7 @@ class DetallesPedidos extends BaseEntity {
     static associate(models) {
         this.belongsTo(models.Pedidos, { foreignKey: 'id_pedido', as: 'pedido' });
         this.belongsTo(models.Productos, { foreignKey: 'id_producto', as: 'producto' });
+        this.belongsTo(models.ProductoVariantes, { foreignKey: 'id_variante', as: 'variante' });
     }
 
     static initModel(sequelize) {
@@ -24,6 +25,14 @@ class DetallesPedidos extends BaseEntity {
                     allowNull: false,
                     references: {
                         model: 'productos',
+                        key: 'id'
+                    }
+                },
+                id_variante: {
+                    type: DataTypes.UUID,
+                    allowNull: true, // Should be false in future, but migration set true
+                    references: {
+                        model: 'producto_variantes',
                         key: 'id'
                     }
                 },

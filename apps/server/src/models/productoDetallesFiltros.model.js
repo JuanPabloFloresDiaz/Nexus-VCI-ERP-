@@ -4,18 +4,18 @@ const BaseEntity = require('./base.entity');
 
 class ProductoDetallesFiltros extends BaseEntity {
     static associate(models) {
-        this.belongsTo(models.Productos, { foreignKey: 'id_producto', as: 'producto' });
+        this.belongsTo(models.ProductoVariantes, { foreignKey: 'id_variante', as: 'variante' });
         this.belongsTo(models.OpcionesFiltro, { foreignKey: 'id_opcion_filtro', as: 'opcion_filtro' });
     }
 
     static initModel(sequelize) {
         super.init(
             {
-                id_producto: {
+                id_variante: {
                     type: DataTypes.UUID,
                     allowNull: false,
                     references: {
-                        model: 'productos',
+                        model: 'producto_variantes',
                         key: 'id'
                     }
                 },

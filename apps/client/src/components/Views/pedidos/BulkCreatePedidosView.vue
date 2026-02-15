@@ -1,44 +1,72 @@
 <script setup>
-  import { useMutation } from '@tanstack/vue-query';
-  import { ref } from 'vue';
-  import { useRouter } from 'vue-router';
-  import * as XLSX from 'xlsx';
-  import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
-  import { bulkCreatePedidos } from '@/services/pedidos.service';
+import { useMutation, useQuery } from '@tanstack/vue-query';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import * as XLSX from 'xlsx';
+import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
+import { bulkCreatePedidos } from '@/services/pedidos.service';
+import { getProductos } from '@/services/productos.service';
 
-  const router = useRouter();
+const router = useRouter();
 
-  const file = ref(null);
-  const parsedData = ref([]);
-  const isProcessing = ref(false);
-  const showPreview = ref(false);
+const file = ref(null);
+const parsedData = ref([]);
+const isProcessing = ref(false);
+const showPreview = ref(false);
 
-  const headers = [
-    { title: 'Cliente (ID)', key: 'id_cliente' },
-    { title: 'Creador (ID)', key: 'id_usuario_creador' }, // Optional
-    { title: 'Producto (ID)', key: 'id_producto' },
-    { title: 'Cantidad', key: 'cantidad' },
-    { title: 'Precio', key: 'precio_historico' },
-    { title: 'Detalles (JSON)', key: 'detalles_producto' },
-  ];
+// --- Data Fetching ---
+const { data: productosData } = useQuery({
+    queryKey: ['productos-list-bulk-pedidos'],
+    queryFn: () => getProductos({ limit: 10000 })
+});
 
-  function downloadTemplate () {
+const productosMap = computed(() => {
+    const skuMap = {};
+    const nameMap = {};
+
+    productosData.value?.data?.forEach(p => {
+        if (p.nombre_producto) nameMap[p.nombre_producto.toLowerCase().trim()] = p;
+        if (p.variantes) {
+            p.variantes.forEach(v => {
+                if (v.sku) {
+                    skuMap[v.sku.toLowerCase().trim()] = {
+                        ...v,
+                        product_name_display: `${p.nombre_producto} (${v.sku})`,
+                        parent_product: p
+                    };
+                }
+            });
+        }
+    });
+
+    return { skuMap, nameMap };
+});
+
+function downloadTemplate () {
     const ws = XLSX.utils.json_to_sheet([
       { 
-        id_cliente: 'UUID_CLIENTE', 
-        id_usuario_creador: 'UUID_CREADOR (Opcional)', 
-        id_producto: 'UUID_PRODUCTO', 
+        id_cliente: 'UUID_CLIENTE (o ID)', 
+        id_usuario_creador: '', 
+        producto: 'SKU-001 (o Nombre)', 
         cantidad: 1, 
-        precio_historico: 100, 
-        detalles_producto: '{"talla":"M", "color":"Azul"}' 
+        precio: 100, 
+        detalles_json: '{}' 
+      },
+      { 
+        id_cliente: 'UUID_CLIENTE (o ID)', 
+        id_usuario_creador: '', 
+        producto: 'Camisa Polo', 
+        cantidad: 2, 
+        precio: 150, 
+        detalles_json: '{}' 
       }
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Plantilla Pedidos");
     XLSX.writeFile(wb, `plantilla_pedidos_${new Date().toISOString().split('T')[0]}.xlsx`);
-  }
+}
 
-  function handleFileUpload (event) {
+function handleFileUpload (event) {
     const uploadedFile = event.target.files[0];
     if (!uploadedFile) return;
 
@@ -51,54 +79,10 @@
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-        // Transform flat structure to nested structure if needed
-        // Expected Backend Structure:
-        // [ { id_cliente, id_usuario_creador, detalles: [ { id_producto, cantidad, precio_historico, details... } ] }, ... ]
-            
-        // Current flat row: { id_cliente, id_producto, cantidad, ... }
-        // Group by id_cliente (and maybe create separate orders per row or group them?)
-        // Usually bulk upload implies one row = one detail line, but we need to group them into orders.
-        // Let's assume grouping by `id_cliente` is risky if one client has multiple separate orders.
-        // Maybe we need a `group_id` or `numero_pedido` column in Excel to group items?
-        // Or just treat each row as a separate order with 1 item?
-        // Or assume the Excel represents a list of *orders* where details are flattened?
-        // Let's grouping by `id_cliente` adjacent rows? 
-            
-        // Simplest approach: Each row is a separate order OR we use a "Reference" column.
-        // Let's assume for now 1 Row = 1 Order with 1 Item (simplest) OR
-        // Better: Group by `id_reference` if provided, otherwise 1 order.
-        // Wait, standard bulk pattern usually has a grouping key.
-        // Let's add `referencia_pedido` to template.
-            
-        // For now, let's map each row to a potential order item.
-        // I will implement a simple Grouper by Customer for now, or just 1-to-1 if no grouping key.
-        // Let's stick to 1 row = 1 item, and we group by client + sequential?
-        // Actually, usually bulk uploads for orders are complex. 
-        // Let's keep it simple: List of items.
-        // The backend `bulkStore` expects `[{ id_cliente, detalles: [...] }, ...]`.
-            
-        // Let's group by `id_cliente` for now.
-        const grouped = {};
-        for (const row of jsonData) {
-          const key = row.id_cliente; 
-          if (!grouped[key]) {
-            grouped[key] = {
-              id_cliente: row.id_cliente,
-              id_usuario_creador: row.id_usuario_creador || null,
-              detalles: []
-            };
-          }
-          grouped[key].detalles.push({
-            id_producto: row.id_producto,
-            cantidad: row.cantidad,
-            precio_historico: row.precio_historico,
-            detalles_producto: row.detalles_producto ? JSON.parse(row.detalles_producto || '{}') : {}
-          });
-        }
-            
-        parsedData.value = Object.values(grouped);
+        groupAndValidate(jsonData);
+        
         showPreview.value = true;
       } catch (error) {
         showErrorToast('Error al procesar el archivo. Verifique el formato.');
@@ -108,9 +92,73 @@
       }
     });
     reader.readAsArrayBuffer(uploadedFile);
-  }
+}
 
-  const { mutate, isPending } = useMutation({
+function groupAndValidate(rows) {
+    if (rows.length === 0) {
+        parsedData.value = [];
+        return;
+    }
+
+    const grouped = {};
+    
+    rows.forEach((row, index) => {
+        if (!row.id_cliente && !row.producto) return; // Skip empty
+
+        const clientId = (row.id_cliente || '').toString().trim();
+        const key = clientId;
+
+        if (!grouped[key]) {
+            grouped[key] = {
+                id_cliente: clientId,
+                id_usuario_creador: row.id_usuario_creador || null,
+                detalles: [],
+                valid: true,
+                errors: []
+            };
+        }
+        
+        const group = grouped[key];
+        const prodId = (row.producto || '').toString().trim().toLowerCase();
+        
+        // Resolve Variant
+        let foundVariant = null;
+        
+        // 1. Try SKU
+        if (productosMap.value.skuMap[prodId]) {
+            foundVariant = productosMap.value.skuMap[prodId];
+        } 
+        // 2. Try Name
+        else if (productosMap.value.nameMap[prodId]) {
+            const p = productosMap.value.nameMap[prodId];
+            if (p.variantes?.length === 1) {
+                foundVariant = { ...p.variantes[0], product_name_display: p.nombre_producto, parent_product: p };
+            } else {
+                group.valid = false;
+                group.errors.push(`Fila ${index + 2}: Producto '${row.producto}' ambiguo (múltiples variantes). Use SKU.`);
+            }
+        } else {
+            group.valid = false;
+            group.errors.push(`Fila ${index + 2}: Producto '${row.producto}' no encontrado.`);
+        }
+
+        if (foundVariant) {
+             group.detalles.push({
+                id_producto: foundVariant.parent_product?.id,
+                id_variante: foundVariant.id, // KEY FIELD
+                cantidad: row.cantidad || 1,
+                precio_historico: row.precio || foundVariant.precio_unitario, // Use excel price or current price
+                detalles_producto: row.detalles_json ? JSON.parse(row.detalles_json || '{}') : {},
+                display_name: foundVariant.product_name_display,
+                sku: foundVariant.sku
+            });
+        }
+    });
+
+    parsedData.value = Object.values(grouped);
+}
+
+const { mutate, isPending } = useMutation({
     mutationFn: bulkCreatePedidos,
     onSuccess: (data) => {
       showSuccessToast(`${data.data?.length || 0} pedidos creados exitosamente`);
@@ -119,11 +167,29 @@
     onError: (error) => {
       showErrorToast(error.response?.data?.message || 'Error en carga masiva');
     }
-  });
+});
 
-  function uploadData () {
-    mutate(parsedData.value);
-  }
+function uploadData () {
+    const invalid = parsedData.value.filter(g => !g.valid);
+    if (invalid.length > 0) {
+        showErrorToast(`Hay ${invalid.length} pedidos con errores. Revise la vista previa.`);
+        return;
+    }
+    
+    // Payload construction
+    const payload = parsedData.value.map(g => ({
+        id_cliente: g.id_cliente,
+        id_usuario_creador: g.id_usuario_creador,
+        detalles: g.detalles.map(d => ({
+            id_variante: d.id_variante,
+            cantidad: Number(d.cantidad),
+            precio_historico: Number(d.precio_historico),
+            detalles_producto: d.detalles_producto
+        }))
+    }));
+
+    mutate(payload);
+}
 </script>
 
 <template>
@@ -139,9 +205,8 @@
           <h2 class="text-h6">Instrucciones</h2>
           <ul class="ml-4 text-body-2 text-medium-emphasis mt-2">
             <li>Descargue la plantilla de Excel.</li>
-            <li>Llene los datos requeridos (IDs deben ser UUIDs válidos).</li>
-            <li>El campo 'detalles_producto' debe ser un JSON válido stringified (opcional).</li>
-            <li>Las filas se agruparán por <strong>ID Cliente</strong> (un pedido por cliente en el archivo).</li>
+            <li>Columna 'Producto': Use SKU (recomendado) o Nombre exacto (solo para productos sin variantes).</li>
+            <li>Columna 'id_cliente': UUID del cliente.</li>
           </ul>
         </div>
         <v-btn
@@ -168,26 +233,38 @@
       <v-slide-y-transition>
         <div v-if="parsedData.length > 0" class="mt-4">
           <v-alert class="mb-4" type="info" variant="tonal">
-            Se encontraron <strong>{{ parsedData.length }}</strong> pedidos para crear (Agrupados por Cliente).
+            Se encontraron <strong>{{ parsedData.length }}</strong> pedidos potenciales.
           </v-alert>
                     
           <v-expansion-panels class="mb-4" variant="accordion">
-            <v-expansion-panel v-for="(pedido, index) in parsedData.slice(0, 5)" :key="index">
+            <v-expansion-panel 
+                v-for="(pedido, index) in parsedData.slice(0, 50)" 
+                :key="index"
+                :class="{'border-error': !pedido.valid}"
+            >
               <v-expansion-panel-title>
-                Pedido {{ index + 1 }} - Cliente: {{ pedido.id_cliente }} ({{ pedido.detalles.length }} items)
+                <div class="d-flex align-center w-100">
+                    <v-icon :color="pedido.valid ? 'success' : 'error'" class="mr-2">
+                        {{ pedido.valid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                    </v-icon>
+                    Pedido {{ index + 1 }} - Cliente: {{ pedido.id_cliente }}
+                </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
+                <div v-if="!pedido.valid" class="text-error bg-error-lighten-5 pa-2 mb-2 rounded">
+                    <div v-for="(err, k) in pedido.errors" :key="k">{{ err }}</div>
+                </div>
                 <v-table density="compact">
                   <thead>
                     <tr>
-                      <th>Producto</th>
+                      <th>Producto / SKU</th>
                       <th>Cant.</th>
                       <th>Precio</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(d, i) in pedido.detalles" :key="i">
-                      <td>{{ d.id_producto }}</td>
+                      <td>{{ d.display_name }}</td>
                       <td>{{ d.cantidad }}</td>
                       <td>{{ d.precio_historico }}</td>
                     </tr>
@@ -196,9 +273,6 @@
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
-          <div v-if="parsedData.length > 5" class="text-center text-caption mb-4">
-            ... y {{ parsedData.length - 5 }} más
-          </div>
 
           <div class="d-flex justify-end gap-2">
             <v-btn variant="text" @click="router.back()">Cancelar</v-btn>
@@ -207,6 +281,7 @@
               :loading="isPending"
               prepend-icon="mdi-cloud-upload"
               @click="uploadData"
+              :disabled="parsedData.some(p => !p.valid)"
             >
               Procesar Pedidos
             </v-btn>
@@ -216,3 +291,9 @@
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.border-error {
+    border: 1px solid rgb(var(--v-theme-error)) !important;
+}
+</style>

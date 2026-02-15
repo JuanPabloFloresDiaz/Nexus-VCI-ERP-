@@ -1,0 +1,360 @@
+<script setup>
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useMutation, useQuery } from '@tanstack/vue-query';
+import * as XLSX from 'xlsx';
+import Swal from 'sweetalert2';
+import { createBulkCompras } from '@/services/compras.service';
+import { getProductos } from '@/services/productos.service';
+import { getProveedores } from '@/services/proveedores.service';
+
+const router = useRouter();
+
+// --- State ---
+const file = ref(null);
+const parsedData = ref([]);
+const loading = ref(false);
+const processing = ref(false);
+
+// --- Data Fetching for Validation/Mapping ---
+const { data: productosData } = useQuery({
+    queryKey: ['productos-list-bulk'],
+    queryFn: () => getProductos({ limit: 10000 })
+});
+
+const { data: proveedoresData } = useQuery({
+    queryKey: ['proveedores-list-bulk'],
+    queryFn: () => getProveedores('limit=1000')
+});
+
+const productosMap = computed(() => {
+    // Map SKU -> Variant Obj
+    // Map Name -> Product Obj
+    const skuMap = {};
+    const nameMap = {};
+
+    productosData.value?.data?.forEach(p => {
+        if (p.nombre_producto) nameMap[p.nombre_producto.toLowerCase().trim()] = p;
+        
+        if (p.variantes && p.variantes.length > 0) {
+            p.variantes.forEach(v => {
+                if (v.sku) {
+                    skuMap[v.sku.toLowerCase().trim()] = {
+                        ...v,
+                         // enriched info
+                        product_name_display: `${p.nombre_producto} (${v.sku})`,
+                        parent_product: p
+                    };
+                }
+            });
+        }
+    });
+
+    return { skuMap, nameMap };
+});
+
+const proveedoresMap = computed(() => {
+    const map = {};
+    proveedoresData.value?.data?.forEach(p => {
+        if (p.nombre_proveedor) map[p.nombre_proveedor.toLowerCase().trim()] = p.id;
+    });
+    return map;
+});
+
+// --- Methods ---
+
+function downloadTemplate() {
+    const data = [
+        {
+            nombre_proveedor: 'Distribuidora Ejemplo',
+            producto: 'SKU-001', // SKU Priority
+            cantidad: 10,
+            precio_costo: 15.50,
+            fecha_entrega: '2024-03-20',
+            estado: 'Recibido'
+        },
+        {
+            nombre_proveedor: 'Distribuidora Ejemplo',
+            producto: 'Camisa Polo', // Name (only if single variant)
+            cantidad: 5,
+            precio_costo: 50.00,
+            fecha_entrega: '2024-03-20',
+            estado: 'Recibido'
+        }
+    ];
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plantilla Compras");
+    XLSX.writeFile(wb, "plantilla_compras_variantes.xlsx");
+}
+
+function processFile() {
+    if (!file.value) return;
+    
+    processing.value = true;
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+            
+            groupAndValidate(json);
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudo leer el archivo', 'error');
+        } finally {
+            processing.value = false;
+        }
+    };
+    
+    reader.readAsArrayBuffer(file.value);
+}
+
+function groupAndValidate(rows) {
+    if (rows.length === 0) {
+        parsedData.value = [];
+        return;
+    }
+
+    const groups = {};
+
+    rows.forEach((row, index) => {
+        // Skip empty rows
+        if (!row.nombre_proveedor && !row.producto) return;
+
+        const provName = (row.nombre_proveedor || '').toString().trim();
+        const date = row.fecha_entrega; 
+        const key = `${provName}|${date}`;
+
+        if (!groups[key]) {
+            groups[key] = {
+                valid: true,
+                errors: [],
+                id_proveedor: proveedoresMap.value[provName.toLowerCase()] || null,
+                nuevo_proveedor: !proveedoresMap.value[provName.toLowerCase()] ? { nombre_proveedor: provName } : null,
+                nombre_proveedor: provName,
+                fecha_entrega_estimada: date,
+                estado_compra: row.estado || 'Recibido',
+                detalles: []
+            };
+        }
+
+        const group = groups[key];
+        
+        // Product Logic
+        const prodIdentifier = (row.producto || '').toString().trim().toLowerCase();
+        let foundVariant = null;
+        let foundProduct = null;
+
+        // 1. Try SKU
+        if (productosMap.value.skuMap[prodIdentifier]) {
+            foundVariant = productosMap.value.skuMap[prodIdentifier];
+        } 
+        // 2. Try Name
+        else if (productosMap.value.nameMap[prodIdentifier]) {
+            foundProduct = productosMap.value.nameMap[prodIdentifier];
+            // Check Variants logic
+            if (foundProduct.variantes && foundProduct.variantes.length === 1) {
+                foundVariant = {
+                    ...foundProduct.variantes[0],
+                    product_name_display: foundProduct.nombre_producto,
+                    parent_product: foundProduct
+                };
+            } else if (foundProduct.variantes && foundProduct.variantes.length > 1) {
+                // Ambiguous
+                group.valid = false;
+                group.errors.push(`Fila ${index + 2}: Producto '${row.producto}' tiene múltiples variantes. Use el SKU específico.`);
+                return; // Skip adding detail
+            } else {
+                 // No variants?
+                 group.valid = false;
+                 group.errors.push(`Fila ${index + 2}: Producto '${row.producto}' no tiene variantes configuradas.`);
+                 return;
+            }
+        } 
+        else {
+            group.valid = false;
+            group.errors.push(`Fila ${index + 2}: Producto/SKU '${row.producto}' no encontrado.`);
+            return;
+        }
+
+        if (!row.cantidad || row.cantidad <= 0) {
+             group.valid = false;
+            group.errors.push(`Fila ${index + 2}: Cantidad inválida.`);
+        }
+
+        // Add
+        if (foundVariant) {
+            group.detalles.push({
+                id_variante: foundVariant.id,
+                id_producto: foundVariant.parent_product?.id,
+                cantidad: row.cantidad,
+                precio_costo_historico: row.precio_costo || 0,
+                product_name: foundVariant.product_name_display || row.producto
+            });
+        }
+    });
+
+    parsedData.value = Object.values(groups);
+}
+
+const { mutate } = useMutation({
+    mutationFn: createBulkCompras,
+    onSuccess: (data) => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Carga Completada',
+            text: `Se crearon ${data.data.length} órdenes de compra exitosamente`
+        });
+        router.push('/main/compras');
+    },
+    onError: (error) => {
+        Swal.fire('Error', error.response?.data?.message || 'Falló la carga masiva', 'error');
+    },
+    onSettled: () => {
+        loading.value = false;
+    }
+});
+
+function submit() {
+    const invalidGroups = parsedData.value.filter(g => !g.valid);
+    if (invalidGroups.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Errores detectados',
+            html: `Hay ${invalidGroups.length} grupos con errores.<br>Corrige el archivo y vuelve a subirlo.<br><br>
+            <div class="text-left" style="max-height: 200px; overflow-y: auto;">
+            ${invalidGroups.flatMap(g => g.errors).map(e => `<small>- ${e}</small>`).join('<br>')}
+            </div>`
+        });
+        return;
+    }
+
+    if (parsedData.value.length === 0) return;
+
+    loading.value = true;
+    
+    // Prepare payload
+    const payload = parsedData.value.map(g => ({
+        id_proveedor: g.id_proveedor,
+        nuevo_proveedor: g.nuevo_proveedor,
+        fecha_entrega_estimada: g.fecha_entrega_estimada,
+        estado_compra: g.estado_compra,
+        detalles: g.detalles.map(d => ({
+            id_variante: d.id_variante, // Crucial Change
+            cantidad: Number(d.cantidad),
+            precio_costo_historico: Number(d.precio_costo_historico)
+        }))
+    }));
+
+    mutate(payload);
+}
+</script>
+
+<template>
+    <v-container class="pa-6" fluid>
+        <div class="mb-6 d-flex flex-wrap align-center justify-space-between">
+            <div>
+                 <h1 class="text-h4 font-weight-bold text-primary">Carga Masiva de Compras</h1>
+                <p class="text-body-1 text-medium-emphasis">Importar compras desde Excel</p>
+            </div>
+             <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.back()">
+                Volver
+            </v-btn>
+        </div>
+
+        <v-card class="rounded-lg pa-6 border" elevation="0">
+            <v-row align="center">
+                <v-col cols="12" md="6">
+                    <v-file-input
+                        v-model="file"
+                        accept=".xlsx, .xls"
+                        label="Seleccionar Archivo Excel"
+                        prepend-icon="mdi-microsoft-excel"
+                        variant="outlined"
+                        show-size
+                        @update:model-value="processFile"
+                        :loading="processing"
+                    />
+                </v-col>
+                <v-col cols="12" md="6" class="d-flex justify-end gap-2">
+                    <v-btn color="info" prepend-icon="mdi-download" variant="tonal" @click="downloadTemplate">
+                        Descargar Plantilla
+                    </v-btn>
+                    <v-btn 
+                        color="primary" 
+                        prepend-icon="mdi-upload" 
+                        :disabled="!parsedData.length || loading" 
+                        :loading="loading"
+                        @click="submit"
+                    >
+                        Procesar Carga
+                    </v-btn>
+                </v-col>
+            </v-row>
+
+            <v-expand-transition>
+                <div v-if="parsedData.length > 0" class="mt-6">
+                    <div class="text-h6 mb-2">Previsualización (Agrupado por Proveedor/Fecha)</div>
+                    
+                    <v-expansion-panels variant="accordion">
+                        <v-expansion-panel
+                            v-for="(group, i) in parsedData"
+                            :key="i"
+                            :class="{'border-error': !group.valid}"
+                        >
+                            <v-expansion-panel-title>
+                                <div class="d-flex align-center gap-4 w-100">
+                                    <v-icon :color="group.valid ? 'success' : 'error'">
+                                        {{ group.valid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                                    </v-icon>
+                                    <div class="font-weight-bold">{{ group.nombre_proveedor }}</div>
+                                    <div class="text-caption">{{ group.detalles.length }} productos</div>
+                                    <v-spacer />
+                                    <div class="text-caption text-medium-emphasis mr-4">
+                                        {{ group.fecha_entrega_estimada || 'Sin Fecha' }}
+                                    </div>
+                                    <v-chip size="small" :color="group.valid ? 'success' : 'error'" variant="tonal">
+                                        {{ group.valid ? 'Válido' : 'Errores' }}
+                                    </v-chip>
+                                </div>
+                            </v-expansion-panel-title>
+                            <v-expansion-panel-text>
+                                <div v-if="!group.valid" class="text-error bg-error-lighten-5 pa-2 rounded mb-2">
+                                    <ul>
+                                        <li v-for="(err, k) in group.errors" :key="k">{{ err }}</li>
+                                    </ul>
+                                </div>
+                                <v-table density="compact">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto / SKU</th>
+                                            <th>Cant.</th>
+                                            <th>Costo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(d, k) in group.detalles" :key="k">
+                                            <td>{{ d.product_name }}</td>
+                                            <td>{{ d.cantidad }}</td>
+                                            <td>${{ d.precio_costo_historico }}</td>
+                                        </tr>
+                                    </tbody>
+                                </v-table>
+                            </v-expansion-panel-text>
+                        </v-expansion-panel>
+                    </v-expansion-panels>
+                </div>
+            </v-expand-transition>
+        </v-card>
+    </v-container>
+</template>
+
+<style scoped>
+.border-error {
+    border: 1px solid rgb(var(--v-theme-error)) !important;
+}
+</style>

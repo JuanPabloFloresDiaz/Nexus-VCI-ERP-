@@ -5,10 +5,19 @@ meta:
   title: Gestión de Compras
 </route>
 
+<script setup>
+import { useAuthStore } from '@/stores/auth';
+import { computed } from 'vue';
+import ComprasView from '@/components/Views/compras/ComprasView.vue';
+import ComprasEmpresaView from '@/components/Views/compras/ComprasEmpresaView.vue';
+
+const authStore = useAuthStore();
+const userRole = computed(() => authStore.user?.rol);
+
+const isVendor = computed(() => userRole.value === 'Vendedor');
+</script>
+
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon class="mb-4" color="primary" size="64">mdi-cart-arrow-down</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Compras</h2>
-    <p class="text-body-1 text-medium-emphasis">Registro de ingresos y órdenes de compra</p>
-  </div>
+    <ComprasEmpresaView v-if="isVendor" />
+    <ComprasView v-else />
 </template>

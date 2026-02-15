@@ -1,4 +1,4 @@
-const { Compras, DetallesCompras, Proveedores, Productos, sequelize } = require('../models');
+const { Compras, DetallesCompras, Proveedores, Productos, ProductoVariantes, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const catchErrors = require('../utils/tryCatch');
 const ApiResponse = require('../utils/apiResponse');
@@ -14,20 +14,36 @@ class ComprasController {
 
         const where = { ...query, id_empresa };
 
+        // 1. Generic Search (Total only)
         if (search) {
-            // Search by total or nothing specific for now as main fields are IDs or Dates
-            if (!isNaN(parseFloat(search))) {
-                where.total_compra = search;
+            const searchConditions = [];
+            // Check if search is numeric (for total_compra)
+            if (!isNaN(parseFloat(search)) && isFinite(search)) {
+                searchConditions.push({ total_compra: search });
+            }
+
+            if (searchConditions.length > 0) {
+                where[Op.or] = searchConditions;
             }
         }
 
-        if (id_proveedor) where.id_proveedor = id_proveedor;
-        if (estado_compra) where.estado_compra = estado_compra;
+        // 2. Specific Filters
+        if (id_proveedor) {
+            where.id_proveedor = id_proveedor;
+        }
+
+        if (estado_compra) {
+            where.estado_compra = estado_compra;
+        }
 
         if (fecha_desde || fecha_hasta) {
             const dateFilter = {};
-            if (fecha_desde) dateFilter[Op.gte] = new Date(fecha_desde + 'T00:00:00');
-            if (fecha_hasta) dateFilter[Op.lte] = new Date(fecha_hasta + 'T23:59:59');
+            if (fecha_desde) {
+                dateFilter[Op.gte] = new Date(fecha_desde + 'T00:00:00');
+            }
+            if (fecha_hasta) {
+                dateFilter[Op.lte] = new Date(fecha_hasta + 'T23:59:59');
+            }
             where.created_at = dateFilter;
         }
 
@@ -36,6 +52,7 @@ class ComprasController {
             limit,
             offset,
             order,
+            distinct: true,
             include: [{
                 model: Proveedores,
                 as: 'proveedor',
@@ -62,16 +79,23 @@ class ComprasController {
                 {
                     model: Proveedores,
                     as: 'proveedor',
-                    attributes: ['id', 'nombre_proveedor', 'contacto_nombre', 'telefono_proveedor']
+                    attributes: ['id', 'nombre_proveedor', 'contacto_nombre', 'telefono_proveedor', 'correo_proveedor']
                 },
                 {
                     model: DetallesCompras,
                     as: 'detalles',
-                    include: [{
-                        model: Productos,
-                        as: 'producto',
-                        attributes: ['id', 'nombre_producto', 'stock_actual']
-                    }]
+                    include: [
+                        {
+                            model: Productos,
+                            as: 'producto',
+                            attributes: ['id', 'nombre_producto', 'imagen_url']
+                        },
+                        {
+                            model: ProductoVariantes,
+                            as: 'variante',
+                            attributes: ['id', 'sku', 'stock_actual']
+                        }
+                    ]
                 }
             ]
         });
@@ -127,25 +151,27 @@ class ComprasController {
             const detallesToCreate = [];
 
             for (const item of detalles) {
-                const producto = await Productos.findOne({ where: { id: item.id_producto, id_empresa }, transaction: t });
-                if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado`);
+                // Fetch Variant
+                const variant = await ProductoVariantes.findOne({
+                    where: { id: item.id_variante },
+                    include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                    transaction: t
+                });
+                if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
 
                 const subtotal = Number(item.cantidad) * Number(item.precio_costo_historico);
                 totalCompra += subtotal;
 
                 // Update Stock (Increase) if purchase is 'Recibido' (default)
                 if (estado_compra === 'Recibido') {
-                    await producto.increment('stock_actual', { by: item.cantidad, transaction: t });
-
-                    // Optional: Update producto costo_unitario with new cost? 
-                    // Strategy: Weighted Average or Last Price? 
-                    // For now, let's just update to the latest cost as a simple strategy or keep average.
-                    // User didn't specify, but updating cost is common.
-                    await producto.update({ costo_unitario: item.precio_costo_historico }, { transaction: t });
+                    await variant.increment('stock_actual', { by: item.cantidad, transaction: t });
+                    // Update cost to latest
+                    await variant.update({ costo_unitario: item.precio_costo_historico }, { transaction: t });
                 }
 
                 detallesToCreate.push({
-                    id_producto: item.id_producto,
+                    id_producto: variant.id_producto,
+                    id_variante: variant.id,
                     cantidad: item.cantidad,
                     precio_costo_historico: item.precio_costo_historico,
                     subtotal
@@ -178,7 +204,7 @@ class ComprasController {
     });
 
     static bulkStore = catchErrors(async (req, res) => {
-        const compras = req.body; // Array of compra objects
+        const compras = req.body;
         const { id_empresa, id: id_usuario_comprador } = req.user;
 
         const result = await sequelize.transaction(async (t) => {
@@ -188,7 +214,6 @@ class ComprasController {
                 const { id_proveedor, nuevo_proveedor, fecha_entrega_estimada, estado_compra, detalles } = c;
                 let finalIdProveedor = id_proveedor;
 
-                // 1. Handle Provider
                 if (nuevo_proveedor) {
                     const existingProv = await Proveedores.findOne({
                         where: { nombre_proveedor: nuevo_proveedor.nombre_proveedor, id_empresa },
@@ -205,28 +230,32 @@ class ComprasController {
                         finalIdProveedor = createdProv.id;
                     }
                 } else if (!finalIdProveedor) {
-                    // Should have been caught by validation, but verify
                     throw new Error('Proveedor no especificado en uno de los elementos');
                 }
 
-                // 2. Details
                 let totalCompra = 0;
                 const detallesToCreate = [];
 
                 for (const item of detalles) {
-                    const producto = await Productos.findOne({ where: { id: item.id_producto, id_empresa }, transaction: t });
-                    if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado`);
+                    const variant = await ProductoVariantes.findOne({
+                        where: { id: item.id_variante },
+                        include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                        transaction: t
+                    });
+                    if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
 
                     const subtotal = Number(item.cantidad) * Number(item.precio_costo_historico);
                     totalCompra += subtotal;
 
+                    // If 'Recibido', update stock
                     if (!c.estado_compra || c.estado_compra === 'Recibido') {
-                        await producto.increment('stock_actual', { by: item.cantidad, transaction: t });
-                        await producto.update({ costo_unitario: item.precio_costo_historico }, { transaction: t });
+                        await variant.increment('stock_actual', { by: item.cantidad, transaction: t });
+                        await variant.update({ costo_unitario: item.precio_costo_historico }, { transaction: t });
                     }
 
                     detallesToCreate.push({
-                        id_producto: item.id_producto,
+                        id_producto: variant.id_producto,
+                        id_variante: variant.id,
                         cantidad: item.cantidad,
                         precio_costo_historico: item.precio_costo_historico,
                         subtotal
@@ -258,58 +287,120 @@ class ComprasController {
     });
 
     static update = catchErrors(async (req, res) => {
-        // Only basic updates allowed (status, date). modifying details/totals is complex (stock reversion etc).
-        // For now, simplify to just status/date.
         const { id } = req.params;
-        const { estado_compra, fecha_entrega_estimada } = req.body;
+        const { estado_compra, fecha_entrega_estimada, detalles } = req.body;
         const { id_empresa } = req.user;
 
-        const compra = await Compras.findOne({ where: { id, id_empresa } });
-        if (!compra) {
-            return ApiResponse.error(res, {
-                error: 'Compra no encontrada',
-                status: 404,
-                route: `${this.routes}/${id}`
-            });
-        }
-
-        // TODO: Handle stock reversion if status changes from Recibido to Cancelado? 
-        // Logic can be complex. For MVP/Task scope, we'll update fields. 
-        // If strict inventory management is needed:
-        // if (compra.estado_compra === 'Recibido' && estado_compra === 'Cancelado') -> Decrement stock
-        // if (compra.estado_compra !== 'Recibido' && estado_compra === 'Recibido') -> Increment stock
-
-        // Implementing basic safely logic:
-        if (estado_compra && estado_compra !== compra.estado_compra) {
-            // Re-fetch details to handle stock
-            const fullCompra = await Compras.findByPk(id, {
-                include: [{ model: DetallesCompras, as: 'detalles' }]
+        const result = await sequelize.transaction(async (t) => {
+            // 1. Fetch original purchase
+            const compra = await Compras.findOne({
+                where: { id, id_empresa },
+                include: [{ model: DetallesCompras, as: 'detalles' }],
+                transaction: t
             });
 
-            if (estado_compra === 'Cancelado' && compra.estado_compra === 'Recibido') {
-                // Revert stock
-                for (const d of fullCompra.detalles) {
-                    await Productos.decrement('stock_actual', {
-                        by: d.cantidad,
-                        where: { id: d.id_producto }
-                    });
-                }
-            } else if (estado_compra === 'Recibido' && compra.estado_compra !== 'Recibido') {
-                // Apply stock
-                for (const d of fullCompra.detalles) {
-                    await Productos.increment('stock_actual', {
-                        by: d.cantidad,
-                        where: { id: d.id_producto }
-                    });
-                    // Note: We don't re-update cost here as it might be old price
+            if (!compra) throw new Error('Compra no encontrada');
+
+            // 2. Revert Stock from OLD details
+            // Logic: If the purchase WAS 'Recibido', we added stock. We must remove it before applying any new state.
+            if (compra.estado_compra === 'Recibido') {
+                for (const d of compra.detalles) {
+                    if (d.id_variante) {
+                        await ProductoVariantes.decrement('stock_actual', {
+                            by: d.cantidad,
+                            where: { id: d.id_variante },
+                            transaction: t
+                        });
+                    } else {
+                        console.warn(`Legacy detail without id_variante in purchase ${id}`);
+                    }
                 }
             }
-        }
 
-        await compra.update({ estado_compra, fecha_entrega_estimada });
+            // 3. Delete Old Details (only if details are being updated)
+            if (detalles) {
+                await DetallesCompras.destroy({
+                    where: { id_compra: id },
+                    transaction: t
+                });
+            } else {
+                // Keeping old details, logic follows below
+            }
+
+            // 4. Update Header
+            const newStatus = estado_compra || compra.estado_compra;
+            await compra.update({
+                estado_compra: newStatus,
+                fecha_entrega_estimada: fecha_entrega_estimada || compra.fecha_entrega_estimada,
+                // Update total if details changed
+                total_compra: detalles ? 0 : compra.total_compra // Will recount below if details
+            }, { transaction: t });
+
+            // 5. Apply New Stock and (Re)Create Details
+            let totalCompra = 0;
+            const detallesToCreate = [];
+
+            if (detalles) {
+                // CASE A: New Details Provided
+                for (const item of detalles) {
+                    const variant = await ProductoVariantes.findOne({
+                        where: { id: item.id_variante },
+                        include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                        transaction: t
+                    });
+                    if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
+
+                    const subtotal = Number(item.cantidad) * Number(item.precio_costo_historico);
+                    totalCompra += subtotal;
+
+                    // Apply Stock if New Status is 'Recibido'
+                    if (newStatus === 'Recibido') {
+                        await variant.increment('stock_actual', { by: item.cantidad, transaction: t });
+                        await variant.update({ costo_unitario: item.precio_costo_historico }, { transaction: t });
+                    }
+
+                    detallesToCreate.push({
+                        id_compra: id,
+                        id_producto: variant.id_producto,
+                        id_variante: variant.id,
+                        cantidad: item.cantidad,
+                        precio_costo_historico: item.precio_costo_historico,
+                        subtotal
+                    });
+                }
+
+                // Bulk Create
+                await DetallesCompras.bulkCreate(detallesToCreate, { transaction: t });
+                // Update Total
+                await compra.update({ total_compra: totalCompra }, { transaction: t });
+
+            } else {
+                // CASE B: Only Status/Date Change (No Details in Body)
+                // We already reverted stock above if it was 'Recibido'.
+                // Now if new status is 'Recibido', we must apply stock again (using existing details).
+
+                if (newStatus === 'Recibido') {
+                    for (const d of compra.detalles) {
+                        if (d.id_variante) {
+                            await ProductoVariantes.increment('stock_actual', {
+                                by: d.cantidad,
+                                where: { id: d.id_variante },
+                                transaction: t
+                            });
+                            await ProductoVariantes.update(
+                                { costo_unitario: d.precio_costo_historico },
+                                { where: { id: d.id_variante }, transaction: t }
+                            );
+                        }
+                    }
+                }
+            }
+
+            return compra;
+        });
 
         return ApiResponse.success(res, {
-            data: compra,
+            data: result,
             message: 'Compra actualizada correctamente',
             status: 200,
             route: `${this.routes}/${id}`
@@ -367,6 +458,7 @@ class ComprasController {
 
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
+        const { search, id_proveedor, estado_compra } = req.query;
         const { id_empresa } = req.user;
 
         const where = {
@@ -375,13 +467,22 @@ class ComprasController {
             deleted_at: { [Op.not]: null }
         };
 
+        if (search) {
+            if (!isNaN(parseFloat(search)) && isFinite(search)) {
+                where.total_compra = search;
+            }
+        }
+
+        if (id_proveedor) where.id_proveedor = id_proveedor;
+        if (estado_compra) where.estado_compra = estado_compra;
+
         const data = await Compras.findAndCountAll({
             where,
             limit,
             offset,
             order,
             paranoid: false,
-            include: [{ model: Proveedores, as: 'proveedor', attributes: ['nombre_proveedor'] }]
+            include: [{ model: Proveedores, as: 'proveedor', attributes: ['id', 'nombre_proveedor'] }]
         });
 
         return ApiResponse.success(res, {

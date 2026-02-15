@@ -31,8 +31,8 @@ class DashboardController {
     static getTopProductos = catchErrors(async (req, res) => {
         const { id_empresa } = req.user;
 
-        // Ranking de productos con más items vendidos
-        const topProductos = await DetallesPedidos.findAll({
+        // 1. Get Top Product IDs and Total Sold
+        const topStats = await DetallesPedidos.findAll({
             attributes: [
                 'id_producto',
                 [sequelize.fn('SUM', sequelize.col('cantidad')), 'total_vendido']
@@ -40,16 +40,54 @@ class DashboardController {
             include: [{
                 model: Productos,
                 as: 'producto',
-                attributes: ['nombre_producto', 'imagen_url', 'precio_unitario'],
-                where: { id_empresa } // Filter products by company
+                attributes: [], // We only need the ID for grouping/filtering
+                where: { id_empresa }
             }],
-            group: ['DetallesPedidos.id_producto', 'producto.id', 'producto.nombre_producto', 'producto.imagen_url', 'producto.precio_unitario'],
+            group: ['DetallesPedidos.id_producto', 'producto.id'], // Minimal grouping
             order: [[sequelize.literal('total_vendido'), 'DESC']],
             limit: 5
         });
 
+        if (topStats.length === 0) {
+            return ApiResponse.success(res, {
+                data: [],
+                message: 'No hay datos suficientes',
+                status: 200,
+                route: `${this.routes}/top-productos`
+            });
+        }
+
+        // 2. Fetch Full Product Details (including Variants for price)
+        const productIds = topStats.map(item => item.id_producto);
+
+        const productsDetails = await Productos.findAll({
+            where: { id: productIds },
+            attributes: ['id', 'nombre_producto', 'imagen_url'],
+            include: [{
+                model: require('../models').ProductoVariantes,
+                as: 'variantes',
+                attributes: ['precio_unitario']
+            }]
+        });
+
+        // 3. Merge Data
+        const mergedData = topStats.map(stat => {
+            const product = productsDetails.find(p => p.id === stat.id_producto);
+            // Convert Sequelize instance to plain object to attach extra property if needed, 
+            // or just structure the response as expected by frontend
+            return {
+                id_producto: stat.id_producto,
+                total_vendido: stat.get('total_vendido'),
+                producto: product ? {
+                    nombre_producto: product.nombre_producto,
+                    imagen_url: product.imagen_url,
+                    variantes: product.variantes // Pass variants to frontend
+                } : null
+            };
+        });
+
         return ApiResponse.success(res, {
-            data: topProductos,
+            data: mergedData,
             message: 'Ranking de productos obtenido correctamente',
             status: 200,
             route: `${this.routes}/top-productos`

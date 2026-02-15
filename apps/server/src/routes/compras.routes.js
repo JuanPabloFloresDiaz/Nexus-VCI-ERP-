@@ -2,7 +2,7 @@ const router = require('express').Router();
 const ComprasController = require('../controllers/compras.controller');
 const validateRequest = require('../utils/validateRequest');
 const { createCompraSchema, updateCompraSchema, bulkCompraSchema } = require('../validations/compras.schema');
-const { verifyToken } = require('../auth');
+const { checkAuthAny } = require('../middlewares/checkAuth');
 
 /**
  * @swagger
@@ -177,20 +177,21 @@ const { verifyToken } = require('../auth');
  *         description: Purchases created
  */
 
-// Apply auth middleware
-router.use(verifyToken);
+// Apply auth middleware with roles
+// Read access: Admin, SuperAdmin, Vendor
+router.get('/compras', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), ComprasController.index);
+router.get('/compras/trashed', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), ComprasController.trashed);
+router.get('/compras/:id', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), ComprasController.getById);
 
-router.get('/', ComprasController.index);
-router.get('/trashed', ComprasController.trashed);
-router.get('/:id', ComprasController.getById);
+// Write access: Admin, SuperAdmin (Vendors usually don't manage stock/purchases)
+router.post('/compras', checkAuthAny(['SuperAdmin', 'Administrador']), validateRequest(createCompraSchema), ComprasController.store);
+router.post('/compras/bulk', checkAuthAny(['SuperAdmin', 'Administrador']), validateRequest(bulkCompraSchema), ComprasController.bulkStore);
 
-router.post('/', validateRequest(createCompraSchema), ComprasController.store);
-router.post('/bulk', validateRequest(bulkCompraSchema), ComprasController.bulkStore);
+// Update/Delete: Admin, SuperAdmin
+router.put('/compras/:id', checkAuthAny(['SuperAdmin', 'Administrador']), validateRequest(updateCompraSchema), ComprasController.update);
+router.put('/compras/:id/restore', checkAuthAny(['SuperAdmin', 'Administrador']), ComprasController.restore);
 
-router.put('/:id', validateRequest(updateCompraSchema), ComprasController.update);
-router.put('/:id/restore', ComprasController.restore);
-
-router.delete('/:id', ComprasController.destroy);
-router.delete('/:id/force', ComprasController.forceDestroy);
+router.delete('/compras/:id', checkAuthAny(['SuperAdmin', 'Administrador']), ComprasController.destroy);
+router.delete('/compras/:id/force', checkAuthAny(['SuperAdmin', 'Administrador']), ComprasController.forceDestroy);
 
 module.exports = router;

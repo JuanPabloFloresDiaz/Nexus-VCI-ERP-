@@ -18,38 +18,41 @@
   function downloadTemplate () {
     const data = [
       {
-        nombre_producto: 'Camisa Polo Azul',
-        descripcion_producto: 'Camisa de algodón',
+        nombre_producto: 'Camisa Polo',
+        descripcion_producto: 'Camisa de algodón piqué',
+        nombre_categoria: 'Uniformes',
+        nombre_subcategoria: 'Camisas', 
+        sku: 'CPL-001',
         precio_unitario: 150,
         costo_unitario: 100,
         stock_actual: 50,
         stock_minimo: 5,
-        nombre_categoria: 'Uniformes', // Added category
-        nombre_subcategoria: 'Camisas', 
         filtro: 'Talla',
         opcion: 'M'
       },
       {
-        nombre_producto: 'Camisa Polo Azul',
-        descripcion_producto: 'Camisa de algodón',
-        precio_unitario: 150,
-        costo_unitario: 100,
-        stock_actual: 50,
-        stock_minimo: 5,
+        nombre_producto: 'Camisa Polo',
+        descripcion_producto: 'Camisa de algodón piqué',
         nombre_categoria: 'Uniformes',
         nombre_subcategoria: 'Camisas',
-        filtro: 'Color',
-        opcion: 'Azul'
+        sku: 'CPL-002',
+        precio_unitario: 150,
+        costo_unitario: 100,
+        stock_actual: 30,
+        stock_minimo: 5,
+        filtro: 'Talla',
+        opcion: 'S'
       },
       {
         nombre_producto: 'Cuaderno Espiral',
         descripcion_producto: '100 hojas',
+        nombre_categoria: 'Útiles',
+        nombre_subcategoria: 'Cuadernos',
+        sku: 'CUA-001',
         precio_unitario: 25,
         costo_unitario: 15,
         stock_actual: 100,
         stock_minimo: 10,
-        nombre_categoria: 'Útiles escolares',
-        nombre_subcategoria: 'Útiles',
         filtro: '',
         opcion: ''
       }
@@ -59,11 +62,10 @@
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Productos");
     
-    // Auto-width
     const wscols = Object.keys(data[0]).map(k => ({ wch: 20 }));
     ws['!cols'] = wscols;
 
-    XLSX.writeFile(wb, `Plantilla_Productos_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `Plantilla_Productos_Variantes_${new Date().toISOString().slice(0,10)}.xlsx`);
   }
 
   function handleFileUpload (event) {
@@ -101,9 +103,7 @@
 
   // Helper: Resolve IDs
   async function transformAndResolveReferences (flatData) {
-    // 1. Fetch all Categories to resolve Category Name -> ID
-    // We need to match category name first to ensure correct subcategory logic
-    // (e.g. "Camisas" in "Uniformes" vs "Camisas" in "Ropa Alternativa")
+    // 1. Fetch Categories
     let allCats = [];
     try {
       const catsResponse = await getAllCategorias();
@@ -116,81 +116,56 @@
     const catNameMap = new Map();
     allCats.forEach(c => catNameMap.set(c.nombre_categoria.toLowerCase().trim(), c.id));
 
-    // 2. Identify which Categories we need to fetch details for (Subcategories + Filters)
     const fileCatNames = [...new Set(flatData.map(r => r.nombre_categoria?.toString().trim()).filter(Boolean))];
-    
-    // Map: CategoryID -> FullCategoryDetails
     const catDetailsMap = new Map();
 
     for (const name of fileCatNames) {
       const catId = catNameMap.get(name.toLowerCase());
       if (catId && !catDetailsMap.has(catId)) {
         try {
-          const detailsPos = await getCategoriaById(catId);
-          if (detailsPos.data) {
-            catDetailsMap.set(catId, detailsPos.data);
-          }
-        } catch (e) {
-          console.error(`Error fetching category details for ${name}`, e);
-        }
+          const details = await getCategoriaById(catId);
+          if (details.data) catDetailsMap.set(catId, details.data);
+        } catch (e) { console.error(e); }
       }
     }
 
-    // 3. Group and Process Products
-    const productsMap = new Map();
+    // 2. Process Rows -> Variants
+    // We treat each row as a VARIANT of a Product.
+    // The Backend now groups them by 'nombre_producto'.
+    // Here we resolve Subcategory and Attributes per row.
+
+    const processedRows = [];
 
     for (const row of flatData) {
       const prodName = row.nombre_producto?.toString().trim();
+      if (!prodName) continue;
+
       const catName = row.nombre_categoria?.toString().trim();
       const subName = row.nombre_subcategoria?.toString().trim();
       
-      if (!prodName) continue;
+      let subId = null;
+      let subDetails = null;
 
-      // Initialize Product in Map if new
-      if (!productsMap.has(prodName)) {
-        let subId = null;
-        let subDetails = null;
-
-        // Resolve Subcategory
-        if (catName && subName) {
+      if (catName && subName) {
            const catId = catNameMap.get(catName.toLowerCase());
            if (catId) {
              const fullCat = catDetailsMap.get(catId);
              if (fullCat && fullCat.subcategorias) {
-               // Find subcategory case-insensitive
                subDetails = fullCat.subcategorias.find(s => s.nombre_subcategoria.toLowerCase() === subName.toLowerCase());
-               if (subDetails) {
-                 subId = subDetails.id;
-               }
+               if (subDetails) subId = subDetails.id;
              }
            }
-        }
-
-        productsMap.set(prodName, {
-          nombre_producto: prodName,
-          descripcion_producto: row.descripcion_producto,
-          precio_unitario: Number(row.precio_unitario) || 0,
-          costo_unitario: Number(row.costo_unitario) || 0,
-          stock_actual: Number(row.stock_actual) || 0,
-          stock_minimo: Number(row.stock_minimo) || 5,
-          id_subcategoria: subId,
-          subCategoryObject: subDetails, // Store for filter resolution
-          catNameRaw: catName, // UI
-          subNameRaw: subName, // UI
-          detalles: []
-        });
       }
 
-      const product = productsMap.get(prodName);
-      
-      // Resolve Attributes (Filters/Options)
-      if (product.subCategoryObject) {
+      // Resolve Attribute
+      const detalles = [];
+      if (subDetails) {
          const filtroName = row.filtro?.toString().trim();
          const opcionValue = row.opcion?.toString().trim();
          
          if (filtroName && opcionValue) {
-           // Find Filter in Subcategory matches
-           const subFilters = product.subCategoryObject.filtros || [];
+           // Find Filter
+           const subFilters = subDetails.filtros || [];
            const filtro = subFilters.find(f => f.nombre_filtro.toLowerCase() === filtroName.toLowerCase());
            
            if (filtro && filtro.opciones) {
@@ -198,8 +173,8 @@
                 o.valor_opcion.toString().trim().toLowerCase() === opcionValue.toLowerCase()
              );
              
-             if (opcion && !product.detalles.some(d => d.id_opcion_filtro === opcion.id)) {
-               product.detalles.push({
+             if (opcion) {
+               detalles.push({
                  id_opcion_filtro: opcion.id,
                  nombre_filtro: filtro.nombre_filtro,
                  valor_opcion: opcion.valor_opcion
@@ -208,9 +183,26 @@
            }
          }
       }
+
+      processedRows.push({
+          nombre_producto: prodName,
+          descripcion_producto: row.descripcion_producto,
+          // Common info might be repeated, backend takes first one or groups them
+          id_subcategoria: subId,
+          sku: row.sku?.toString(),
+          precio_unitario: Number(row.precio_unitario) || 0,
+          costo_unitario: Number(row.costo_unitario) || 0,
+          stock_actual: Number(row.stock_actual) || 0,
+          stock_minimo: Number(row.stock_minimo) || 5,
+          detalles: detalles,
+          // UI Helpers
+          catNameRaw: catName,
+          subNameRaw: subName,
+          isValid: !!subId
+      });
     }
 
-    return Array.from(productsMap.values());
+    return processedRows;
   }
 
   const { mutate } = useMutation({
@@ -227,18 +219,23 @@
   });
 
   function handleUpload () {
-    // Filter out invalid items (missing subcategory)
-    const validItems = parsedData.value.filter(p => p.id_subcategoria);
+    const validItems = parsedData.value.filter(p => p.isValid);
     
     if (validItems.length === 0) {
-      showErrorToast('No hay productos válidos (con subcategoría reconocida) para cargar');
+      showErrorToast('No hay productos válidos para cargar');
       return;
     }
 
-    // Sanitize payload: remove UI-only fields from detalles
-    // item spread includes costo_unitario and excludes imagen_url if not in parsedData
+    // Backend expects flattened array, it will group them.
     const payload = validItems.map(item => ({
-      ...item,
+      nombre_producto: item.nombre_producto,
+      descripcion_producto: item.descripcion_producto,
+      id_subcategoria: item.id_subcategoria,
+      sku: item.sku,
+      precio_unitario: item.precio_unitario,
+      costo_unitario: item.costo_unitario,
+      stock_actual: item.stock_actual,
+      stock_minimo: item.stock_minimo,
       detalles: item.detalles.map(d => ({ id_opcion_filtro: d.id_opcion_filtro }))
     }));
 
@@ -257,7 +254,7 @@
       <div>
         <h1 class="text-h6 font-weight-bold">Carga Masiva de Productos</h1>
         <div class="text-caption text-medium-emphasis">
-          Sube un archivo Excel con el inventario
+          Sube un archivo Excel con variantes de productos
         </div>
       </div>
       <v-spacer />
@@ -304,9 +301,9 @@
             type="success"
             variant="tonal"
           >
-            Se han detectado <strong>{{ parsedData.length }}</strong> productos. 
-            <span v-if="parsedData.some(p => !p.id_subcategoria)" class="text-error font-weight-bold">
-              Advertencia: Algunos productos tienen subcategorías no reconocidas y se omitirán.
+            Se han detectado <strong>{{ parsedData.length }}</strong> registros (variantes). 
+            <span v-if="parsedData.some(p => !p.isValid)" class="text-error font-weight-bold">
+              Advertencia: Algunos registros tienen errores de categoría/subcategoría.
             </span>
           </v-alert>
         </v-card-text>
@@ -319,37 +316,35 @@
           <v-expansion-panel
             v-for="(prod, i) in parsedData"
             :key="i"
-            :disabled="!prod.id_subcategoria"
+            :disabled="!prod.isValid"
           >
             <v-expansion-panel-title>
-              <div class="d-flex align-center">
+              <div class="d-flex align-center w-100">
                 <v-icon 
                   class="mr-2" 
-                  :color="prod.id_subcategoria ? 'success' : 'error'" 
+                  :color="prod.isValid ? 'success' : 'error'" 
                   size="small"
                 >
-                  {{ prod.id_subcategoria ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                  {{ prod.isValid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                 </v-icon>
                 <div class="d-flex flex-column mr-2">
                     <strong class="text-body-2">{{ prod.nombre_producto }}</strong>
-                    <div class="text-caption text-medium-emphasis">
-                        {{ prod.catNameRaw }} > {{ prod.subNameRaw }}
-                    </div>
+                    <div class="text-caption text-medium-emphasis">SKU: {{ prod.sku || 'N/A' }}</div>
                 </div>
                 <v-spacer />
+                <div class="text-caption mr-2">
+                     {{ prod.catNameRaw }} > {{ prod.subNameRaw }}
+                </div>
                 <v-chip class="mr-1" color="primary" size="x-small" variant="flat">
-                  Precio: ${{ prod.precio_unitario }}
-                </v-chip>
-                <v-chip color="secondary" size="x-small" variant="flat">
-                  Costo: ${{ prod.costo_unitario }}
+                  ${{ prod.precio_unitario }}
                 </v-chip>
               </div>
             </v-expansion-panel-title>
             <v-expansion-panel-text>
               <div><strong>Descripción:</strong> {{ prod.descripcion_producto }}</div>
-              <div><strong>Stock:</strong> {{ prod.stock_actual }} (Min: {{ prod.stock_minimo }})</div>
+              <div><strong>Inventario:</strong> Stock: {{ prod.stock_actual }} (Min: {{ prod.stock_minimo }}) Costo: ${{ prod.costo_unitario }}</div>
               <div class="mt-2">
-                <strong>Atributos Detectados:</strong>
+                <strong>Especificaciones:</strong>
                 <div v-if="prod.detalles.length > 0" class="d-flex flex-wrap gap-1 mt-1">
                   <v-chip 
                     v-for="(det, k) in prod.detalles" 
@@ -360,7 +355,7 @@
                     {{ det.nombre_filtro }}: {{ det.valor_opcion }}
                   </v-chip>
                 </div>
-                <div v-else class="text-caption font-italic">Sin atributos o no identificados</div>
+                <div v-else class="text-caption font-italic">Sin especificaciones</div>
               </div>
             </v-expansion-panel-text>
           </v-expansion-panel>

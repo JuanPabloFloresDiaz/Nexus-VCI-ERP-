@@ -7,9 +7,7 @@ class Productos extends BaseEntity {
         this.belongsTo(models.Empresas, { foreignKey: 'id_empresa', as: 'empresa' });
         this.belongsTo(models.Subcategorias, { foreignKey: 'id_subcategoria', as: 'subcategoria' });
         this.belongsTo(models.Usuarios, { foreignKey: 'id_usuario_gestor', as: 'usuario_gestor' });
-        this.hasMany(models.DetallesCompras, { foreignKey: 'id_producto', as: 'detalles_compras' });
-        this.hasMany(models.DetallesPedidos, { foreignKey: 'id_producto', as: 'detalles_pedidos' });
-        this.hasMany(models.ProductoDetallesFiltros, { foreignKey: 'id_producto', as: 'detalles_filtros' });
+        this.hasMany(models.ProductoVariantes, { foreignKey: 'id_producto', as: 'variantes' });
     }
 
     static initModel(sequelize) {
@@ -46,34 +44,6 @@ class Productos extends BaseEntity {
                 descripcion_producto: {
                     type: DataTypes.TEXT,
                     allowNull: false
-                },
-                precio_unitario: {
-                    type: DataTypes.DECIMAL(10, 2),
-                    allowNull: false,
-                    unsigned: true
-                },
-                costo_unitario: {
-                    type: DataTypes.DECIMAL(10, 2),
-                    allowNull: false,
-                    defaultValue: 0.00,
-                    unsigned: true
-                },
-                stock_inicial: {
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                stock_actual: {
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0,
-                    unsigned: true
-                },
-                stock_minimo: {
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 5,
-                    unsigned: true
                 },
                 imagen_url: {
                     type: DataTypes.STRING(255),

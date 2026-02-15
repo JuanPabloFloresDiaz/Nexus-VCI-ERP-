@@ -69,14 +69,21 @@ class ReportesController {
         }
 
         const productos = await Productos.findAll({
-            include: [{
-                model: Subcategorias,
-                as: 'subcategoria',
-                where: id_categoria ? whereSub : undefined,
-                include: [{ model: Categorias, as: 'categoria', attributes: ['nombre_categoria'] }]
-            }],
+            include: [
+                {
+                    model: Subcategorias,
+                    as: 'subcategoria',
+                    where: id_categoria ? whereSub : undefined,
+                    include: [{ model: Categorias, as: 'categoria', attributes: ['nombre_categoria'] }]
+                },
+                {
+                    model: require('../models').ProductoVariantes,
+                    as: 'variantes',
+                    attributes: ['precio_unitario', 'stock_actual']
+                }
+            ],
             order: [
-                [sequelize.literal('`subcategoria.categoria.nombre_categoria`'), 'ASC'], // Only works if direct include, might need nesting check
+                [sequelize.literal('`subcategoria.categoria.nombre_categoria`'), 'ASC'],
                 ['nombre_producto', 'ASC']
             ]
         });
@@ -86,12 +93,19 @@ class ReportesController {
         ];
 
         productos.forEach(p => {
+            const prices = p.variantes?.map(v => Number(v.precio_unitario)) || [];
+            const minPrice = prices.length ? Math.min(...prices) : 0;
+            const maxPrice = prices.length ? Math.max(...prices) : 0;
+            const priceDisplay = (minPrice === maxPrice) ? `$${minPrice}` : `$${minPrice} - $${maxPrice}`;
+
+            const totalStock = p.variantes?.reduce((acc, v) => acc + (v.stock_actual || 0), 0) || 0;
+
             bodyData.push([
                 p.nombre_producto,
                 p.subcategoria?.categoria?.nombre_categoria || 'N/A',
                 p.subcategoria?.nombre_subcategoria || 'N/A',
-                `$${p.precio_unitario}`,
-                p.stock_actual.toString()
+                priceDisplay,
+                totalStock.toString()
             ]);
         });
 

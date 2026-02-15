@@ -71,7 +71,7 @@ const inlineProveedorSchema = z.object({
 });
 
 const detalleCompraSchema = z.object({
-    id_producto: z.string().uuid('ID de producto inválido'),
+    id_variante: z.string().uuid('ID de variante inválido'),
     cantidad: z.number().int().positive('La cantidad debe ser mayor a 0'),
     precio_costo_historico: z.number().positive('El costo debe ser positivo')
 });
@@ -97,7 +97,15 @@ const updateCompraSchema = z.object({
     body: z.object({
         estado_compra: z.enum(['Pendiente', 'Recibido', 'Cancelado']).optional(),
         fecha_entrega_estimada: z.string().optional().nullable(),
-        id_empresa: z.string().uuid().optional()
+        id_empresa: z.string().uuid().optional(),
+        // Add support for updating details
+        detalles: z.array(
+            z.object({
+                id_variante: z.string().uuid('ID de variante inválido'),
+                cantidad: z.number().int().positive('La cantidad debe ser mayor a 0'),
+                precio_costo_historico: z.number().positive('El costo debe ser positivo')
+            })
+        ).optional()
     })
 });
 

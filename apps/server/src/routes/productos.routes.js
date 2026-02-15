@@ -187,7 +187,7 @@ router.put('/productos/:id', validateRequest(updateProductoSchema), ProductosCon
  *       200:
  *         description: Stock actualizado correctamente
  */
-router.patch('/productos/stock/:id', validateRequest(updateStockSchema), ProductosController.updateStock);
+router.patch('/productos/stock/:id', validateRequest(updateStockSchema), ProductosController.updateStockVariant);
 
 /**
  * @swagger

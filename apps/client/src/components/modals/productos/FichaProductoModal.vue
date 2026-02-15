@@ -1,5 +1,4 @@
 <script setup>
-  // Since we need to fetch details, let's add logic to fetch on open.
   import { useQuery } from '@tanstack/vue-query';
   import { computed, ref, watch } from 'vue';
 
@@ -26,62 +25,117 @@
   });
 
   function formatCurrency (value) {
-    if (!value) return '';
+    if (!value && value !== 0) return '';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
 
-  // Computed Attributes List
-  const attributes = computed(() => {
-    if (!props.producto?.detalles_filtros) return [];
-    
-    // Group by Filter Name? usually they are distinct.
-    // detail: { id, opcion_filtro: { valor_opcion, filtro: { nombre_filtro } } }
-    // Note: getProductoById from controller includes details->opcion->filtro.
-    // Can we trust props.producto has this structure?
-    // If props.producto comes from the TABLE list, it typically DOES NOT have deep nested details.
-    // So usually we fetch details when opening the modal OR assume the list view included them.
-    // BUT list view is optimized.
-    // Strategy: Fetch full details if needed?
-    // Or assume the parent component fetches it?
-    // Let's check `ProductosEmpresaView`. It calls `getProductos` (index).
-    // `ProductosController.index` DOES NOT include `detalles_filtros`.
-    // So `props.producto` passed here will be incomplete (missing attributes).
-    
-    // We MUST fetch full details here.
-    return []; 
-  });
-
+  // Fetch Full Details including Variants
   const { data: fullProductData, isLoading } = useQuery({
     queryKey: ['producto-detail', props.producto?.id],
     queryFn: () => getProductoById(props.producto?.id),
-    enabled: computed(() => !!isOpen.value && !!props.producto?.id) // only fetch when open
+    enabled: computed(() => !!isOpen.value && !!props.producto?.id) 
   });
 
   const fullProduct = computed(() => fullProductData.value?.data || props.producto);
 
-  const detailsList = computed(() => {
-    if (!fullProduct.value?.detalles_filtros) return [];
-    
-    return fullProduct.value.detalles_filtros.map(d => ({
-      filtro: d.opcion_filtro?.filtro?.nombre_filtro || 'Especificación',
-      opcion: d.opcion_filtro?.valor_opcion || '?'
-    }));
+  // Computed Aggregates
+  const aggregates = computed(() => {
+      if (!fullProduct.value) return {};
+      const vars = fullProduct.value.variantes || [];
+      if (vars.length === 0) return {
+          priceMin: 0, priceMax: 0, stockTotal: 0, costTotal: 0
+      };
+
+      const prices = vars.map(v => Number(v.precio_unitario));
+      const totalStock = vars.reduce((acc, v) => acc + Number(v.stock_actual), 0);
+      
+      return {
+          priceMin: Math.min(...prices),
+          priceMax: Math.max(...prices),
+          stockTotal: totalStock
+      };
   });
 
-  const stockFinancials = computed(() => {
-    if (!fullProduct.value) return {};
-    return calculateFinancials(
-      fullProduct.value.precio_unitario,
-      fullProduct.value.costo_unitario,
-      fullProduct.value.stock_actual,
-      fullProduct.value.stock_inicial // Pass Initial Stock
-    );
+  const priceDisplay = computed(() => {
+      const { priceMin, priceMax } = aggregates.value;
+      if (priceMin === priceMax) return formatCurrency(priceMin);
+      return `${formatCurrency(priceMin)} - ${formatCurrency(priceMax)}`;
   });
+
+  // Financials across ALL variants
+  const stockFinancials = computed(() => {
+    if (!fullProduct.value || !fullProduct.value.variantes) return {};
+    
+    // Aggregate financials
+    let inversionTotal = 0;
+    let ingresoTotalPotencial = 0;
+    
+    fullProduct.value.variantes.forEach(v => {
+        const cost = Number(v.costo_unitario) || 0;
+        const price = Number(v.precio_unitario) || 0;
+        const stock = Number(v.stock_actual) || 0;
+
+        inversionTotal += cost * stock;
+        ingresoTotalPotencial += price * stock;
+    });
+
+    const utilidadTotalPotencial = ingresoTotalPotencial - inversionTotal;
+    const margenGeneral = ingresoTotalPotencial > 0 ? (utilidadTotalPotencial / ingresoTotalPotencial) * 100 : 0;
+
+    return {
+        inversionTotal,
+        ingresoTotalPotencial,
+        utilidadTotalPotencial,
+        margenGeneral
+    };
+  });
+
+  function getVariantName(variant) {
+      if (!variant.detalles_filtros || variant.detalles_filtros.length === 0) return 'Estándar';
+      return variant.detalles_filtros.map(d => {
+           return `${d.opcion_filtro?.filtro?.nombre_filtro}: ${d.opcion_filtro?.valor_opcion}`;
+      }).join(', ');
+  }
+
+  const financialConclusion = computed(() => {
+    const margin = stockFinancials.value.margenGeneral || 0;
+    const utility = stockFinancials.value.utilidadTotalPotencial || 0;
+    
+    if (margin >= 50) {
+      return {
+        text: 'Este producto ofrece un excelente margen de rentabilidad (>50%). Se recomienda mantener niveles óptimos de stock para maximizar la utilidad.',
+        color: 'success'
+      };
+    } else if (margin >= 25) {
+       return {
+        text: 'El producto tiene un margen saludable. Vigilar la rotación de inventario para asegurar que se cumplan las metas de utilidad.',
+        color: 'info'
+      };
+    } else if (margin > 0) {
+       return {
+        text: 'El margen es bajo (<25%). Se sugiere evaluar estrategias para reducir costos o aumentar volumen de ventas para justificar la inversión.',
+        color: 'warning'
+      };
+    } else {
+        return {
+        text: 'Alerta: El producto no parece ser rentable actualmente. Revisar costos y precios inmediatamente.',
+        color: 'error'
+      };
+    }
+  });
+
+  const glossaryTerms = [
+    { title: 'Inversión Total', definition: 'Costo total acumulado del inventario actual.' },
+    { title: 'Ingreso Potencial', definition: 'Ingresos estimados si se vende todo el stock actual al precio de lista.' },
+    { title: 'Utilidad Potencial', definition: 'Ganancia neta esperada (Ingreso Potencial - Inversión Total).' },
+    { title: 'Margen General', definition: 'Porcentaje de ganancia sobre el ingreso total proyectado.' },
+    { title: 'Punto de Equilibrio', definition: 'Cantidad de unidades que se deben vender para recuperar la inversión inicial.' }
+  ];
 
 </script>
 
 <template>
-  <v-dialog v-model="isOpen" max-width="800px" scrollable>
+  <v-dialog v-model="isOpen" max-width="900px" scrollable>
     <v-card>
       <v-card-title class="d-flex justify-space-between align-center">
         <span>Ficha de Producto</span>
@@ -90,7 +144,7 @@
             
       <v-divider />
 
-      <v-card-text class="pa-0" style="max-height: 70vh; overflow-y: auto;">
+      <v-card-text class="pa-0" style="max-height: 80vh; overflow-y: auto;">
         <div v-if="isLoading" class="d-flex justify-center py-8">
           <v-progress-circular color="primary" indeterminate />
         </div>
@@ -98,18 +152,18 @@
         <v-container v-else-if="fullProduct" fluid>
           <v-row>
             <!-- Image Column -->
-            <v-col class="d-flex justify-center" cols="12" md="5">
+            <v-col class="d-flex justify-center" cols="12" md="4">
               <AsyncAvatar
                 class="elevation-2"
                 :name="fullProduct.nombre_producto"
                 rounded="lg"
-                size="250"
+                size="200"
                 :src="fullProduct.imagen_url"
               />
             </v-col>
                         
             <!-- Info Column -->
-            <v-col cols="12" md="7">
+            <v-col cols="12" md="8">
               <div class="text-h5 font-weight-bold text-primary mb-1">
                 {{ fullProduct.nombre_producto }}
               </div>
@@ -125,74 +179,151 @@
 
               <v-row class="mb-4" dense>
                 <v-col cols="6">
-                  <div class="text-caption text-medium-emphasis">Precio</div>
+                  <div class="text-caption text-medium-emphasis">Rango de Precios</div>
                   <div class="text-h6 font-weight-bold">
-                    {{ formatCurrency(fullProduct.precio_unitario) }}
+                    {{ priceDisplay }}
                   </div>
                 </v-col>
                 <v-col cols="6">
-                  <div class="text-caption text-medium-emphasis">Costo</div>
-                  <div class="text-h6 font-weight-bold text-medium-emphasis">
-                    {{ formatCurrency(fullProduct.costo_unitario || 0) }}
+                  <div class="text-caption text-medium-emphasis">Stock Total</div>
+                  <div class="text-h6 font-weight-bold text-success">
+                    {{ aggregates.stockTotal }} Unidades
                   </div>
                 </v-col>
                 <v-col class="mt-2" cols="6">
-                  <div class="text-caption text-medium-emphasis">Stock Disponible</div>
-                  <div :class="['text-h6 font-weight-bold', fullProduct.stock_actual <= fullProduct.stock_minimo ? 'text-error' : 'text-success']">
-                    {{ fullProduct.stock_actual }} Unidades
-                  </div>
-                </v-col>
-                <v-col class="mt-2" cols="6">
-                  <div class="text-caption text-medium-emphasis">Inversión en Stock</div>
+                  <div class="text-caption text-medium-emphasis">Inversión Total en Stock</div>
                   <div class="text-h6 font-weight-bold">
                     {{ formatCurrency(stockFinancials.inversionTotal) }}
                   </div>
                 </v-col>
               </v-row>
 
-              <!-- Financial Analysis -->
-              <v-card class="mb-4 pa-3" color="info" variant="tonal">
-                <div class="text-subtitle-2 font-weight-bold mb-2">Análisis de Rentabilidad (Lote Completo)</div>
-                <v-row dense>
-                  <v-col cols="6" md="4">
-                    <div class="text-caption font-weight-bold">Margen Unitario</div>
-                    <div>{{ formatCurrency(stockFinancials.margenUnitario) }} ({{ stockFinancials.margenPorcentaje.toFixed(1) }}%)</div>
-                  </v-col>
-                  <v-col cols="6" md="4">
-                    <div class="text-caption font-weight-bold">Ingreso Potencial (Total)</div>
-                    <div>{{ formatCurrency(stockFinancials.ingresoTotalPotencial) }}</div>
-                  </v-col>
-                  <v-col cols="6" md="4">
-                    <div class="text-caption font-weight-bold">Utilidad Potencial</div>
-                    <div class="text-success font-weight-bold">{{ formatCurrency(stockFinancials.utilidadTotalPotencial) }}</div>
-                  </v-col>
-                  <v-col class="mt-2" cols="12">
-                    <div class="text-caption font-weight-bold">Punto de Equilibrio (Stock Inicial: {{ stockFinancials.qInicial }})</div>
-                    <div class="text-caption">
-                      Para recuperar la inversión inicial de <strong>{{ formatCurrency(stockFinancials.inversionTotal) }}</strong>, debes vender:
-                      <strong class="text-primary">{{ Math.ceil(stockFinancials.puntoEquilibrioUnidades) }} unidades</strong>
-                      (aprox. {{ ((stockFinancials.puntoEquilibrioUnidades / stockFinancials.qInicial) * 100).toFixed(1) }}% del lote)
+              <!-- Financial Analysis Accordion -->
+              <v-expansion-panels class="mb-4">
+                <v-expansion-panel elevation="1" bg-color="white">
+                  <v-expansion-panel-title color="info" class="text-white">
+                    <div class="d-flex align-center">
+                      <v-icon color="white" class="mr-2">mdi-chart-line</v-icon>
+                      <span class="font-weight-bold text-subtitle-2">Análisis de Rentabilidad</span>
                     </div>
-                  </v-col>
-                </v-row>
-              </v-card>
-                            
-              <!-- Attributes Section -->
-              <div v-if="detailsList.length > 0">
-                <div class="text-subtitle-2 font-weight-bold mb-2">Especificaciones</div>
-                <v-table class="border rounded" density="compact">
-                  <tbody>
-                    <tr v-for="(item, i) in detailsList" :key="i">
-                      <td class="text-medium-emphasis font-weight-medium" style="width: 40%">{{ item.filtro }}</td>
-                      <td>{{ item.opcion }}</td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </div>
-              <div v-else class="text-caption font-italic text-medium-emphasis mt-2">
-                No se encontraron especificaciones adicionales.
-              </div>
+                  </v-expansion-panel-title>
+                  <v-expansion-panel-text class="pt-4">
+                    
+                    <!-- Global Analysis -->
+                    <div class="mb-4">
+                      <div class="text-overline text-medium-emphasis mb-2">Consolidado Global</div>
+                      <v-row dense>
+                        <v-col cols="6" md="3">
+                          <div class="text-caption font-weight-bold">Inversión Total</div>
+                          <div class="text-body-2">{{ formatCurrency(stockFinancials.inversionTotal) }}</div>
+                        </v-col>
+                        <v-col cols="6" md="3">
+                          <div class="text-caption font-weight-bold">Ingreso Potencial</div>
+                          <div class="text-body-2">{{ formatCurrency(stockFinancials.ingresoTotalPotencial) }}</div>
+                        </v-col>
+                         <v-col cols="6" md="3">
+                          <div class="text-caption font-weight-bold">Utilidad Potencial</div>
+                          <div class="text-body-2 text-success font-weight-bold">{{ formatCurrency(stockFinancials.utilidadTotalPotencial) }}</div>
+                        </v-col>
+                        <v-col cols="6" md="3">
+                          <div class="text-caption font-weight-bold">Margen General</div>
+                          <div class="text-body-2">{{ stockFinancials.margenGeneral.toFixed(1) }}%</div>
+                        </v-col>
+                      </v-row>
+                    </div>
+
+                    <v-divider class="mb-4"></v-divider>
+
+                    <!-- Per Variant Analysis -->
+                    <div class="mb-4">
+                      <div class="text-overline text-medium-emphasis mb-2">Detalle por Variante</div>
+                      <v-table density="compact" class="text-caption">
+                        <thead>
+                          <tr>
+                            <th>Variante</th>
+                            <th class="text-right">Margen Unit.</th>
+                            <th class="text-right">Inversión</th>
+                            <th class="text-right">Utilidad</th>
+                            <th class="text-right">Pto. Equilibrio</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="variant in fullProduct.variantes" :key="variant.id">
+                            <td class="font-weight-medium">{{ getVariantName(variant) }}</td>
+                            <td class="text-right">
+                              {{ formatCurrency(Number(variant.precio_unitario) - Number(variant.costo_unitario)) }}
+                              <span class="text-medium-emphasis">({{ ((Number(variant.precio_unitario) - Number(variant.costo_unitario)) / Number(variant.precio_unitario) * 100).toFixed(0) }}%)</span>
+                            </td>
+                            <td class="text-right">{{ formatCurrency(Number(variant.costo_unitario) * Number(variant.stock_actual)) }}</td>
+                            <td class="text-right text-success">{{ formatCurrency((Number(variant.precio_unitario) * Number(variant.stock_actual)) - (Number(variant.costo_unitario) * Number(variant.stock_actual))) }}</td>
+                            <td class="text-right">
+                               {{ Number(variant.precio_unitario) > 0 ? Math.ceil((Number(variant.costo_unitario) * Number(variant.stock_actual)) / Number(variant.precio_unitario)) : 0 }} u.
+                            </td>
+                          </tr>
+                        </tbody>
+                      </v-table>
+                    </div>
+
+                    <!-- Analysis Conclusion -->
+                    <v-alert
+                      :color="financialConclusion.color"
+                      variant="tonal"
+                      class="mb-4 text-caption"
+                      border="start"
+                    >
+                      <div class="font-weight-bold mb-1">Conclusión del Análisis</div>
+                      {{ financialConclusion.text }}
+                    </v-alert>
+
+                    <!-- Glossary Carousel -->
+                    <div class="bg-grey-lighten-4 rounded pa-2">
+                       <div class="text-caption font-weight-bold text-center text-medium-emphasis mb-1">Glosario de Términos (Desliza para ver más)</div>
+                       <v-carousel cycle height="80" hide-delimiters show-arrows="hover" :show-arrows="false">
+                          <v-carousel-item v-for="(term, i) in glossaryTerms" :key="i">
+                              <div class="d-flex flex-column align-center justify-center h-100 text-center px-4">
+                                  <div class="text-subtitle-2 text-primary font-weight-bold">{{ term.title }}</div>
+                                  <div class="text-caption">{{ term.definition }}</div>
+                              </div>
+                          </v-carousel-item>
+                       </v-carousel>
+                    </div>
+
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-col>
+            
+            <!-- Variants Table Section -->
+            <v-col cols="12">
+                 <div class="text-h6 font-weight-bold mb-2 px-2">Variantes y Existencias</div>
+                 <v-table class="border rounded" density="compact" hover>
+                     <thead>
+                         <tr>
+                             <th class="text-left">Variante</th>
+                             <th class="text-left">SKU</th>
+                             <th class="text-right">Costo</th>
+                             <th class="text-right">Precio</th>
+                             <th class="text-right">Stock</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         <tr v-for="variant in fullProduct.variantes" :key="variant.id">
+                             <td>
+                                 <div class="font-weight-medium">{{ getVariantName(variant) }}</div>
+                             </td>
+                             <td class="text-medium-emphasis">{{ variant.sku || '-' }}</td>
+                             <td class="text-right">{{ formatCurrency(variant.costo_unitario) }}</td>
+                             <td class="text-right">{{ formatCurrency(variant.precio_unitario) }}</td>
+                             <td class="text-right">
+                                 <v-chip :color="variant.stock_actual <= (variant.stock_minimo || 5) ? 'error' : 'success'" size="x-small" variant="flat">
+                                     {{ variant.stock_actual }}
+                                 </v-chip>
+                             </td>
+                         </tr>
+                     </tbody>
+                 </v-table>
+            </v-col>
+
           </v-row>
         </v-container>
       </v-card-text>

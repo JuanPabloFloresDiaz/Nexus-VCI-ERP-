@@ -1,4 +1,4 @@
-const { Pedidos, DetallesPedidos, Productos, Clientes, Usuarios, sequelize } = require('../models');
+const { Pedidos, DetallesPedidos, Productos, ProductoVariantes, Clientes, Usuarios, ProductoDetallesFiltros, OpcionesFiltro, Filtros, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const catchErrors = require('../utils/tryCatch');
 const ApiResponse = require('../utils/apiResponse');
@@ -72,11 +72,18 @@ class PedidosController {
                 {
                     model: DetallesPedidos,
                     as: 'detalles',
-                    include: [{
-                        model: Productos,
-                        as: 'producto',
-                        attributes: ['id', 'nombre_producto', 'imagen_url']
-                    }]
+                    include: [
+                        {
+                            model: Productos,
+                            as: 'producto',
+                            attributes: ['id', 'nombre_producto', 'imagen_url']
+                        },
+                        {
+                            model: ProductoVariantes,
+                            as: 'variante',
+                            attributes: ['id', 'sku', 'imagen_url']
+                        }
+                    ]
                 }
             ]
         });
@@ -168,9 +175,6 @@ class PedidosController {
                 searchConditions.push({ total_pedido: search });
             }
             if (searchConditions.length > 0) {
-                // Combine with existing deleted_at check using Op.and if necessary, 
-                // but usually where[Op.or] overrides. We need to be careful.
-                // Sequelize handles top level Op.or combined with other fields as AND.
                 where[Op.or] = searchConditions;
             }
         }
@@ -245,11 +249,33 @@ class PedidosController {
                 {
                     model: DetallesPedidos,
                     as: 'detalles',
-                    include: [{
-                        model: Productos,
-                        as: 'producto',
-                        attributes: ['id', 'nombre_producto', 'imagen_url']
-                    }]
+                    include: [
+                        {
+                            model: Productos,
+                            as: 'producto',
+                            attributes: ['id', 'nombre_producto', 'imagen_url', 'stock_actual']
+                        },
+                        {
+                            model: ProductoVariantes,
+                            as: 'variante',
+                            attributes: ['id', 'sku', 'imagen_url', 'stock_actual'],
+                            include: [
+                                {
+                                    model: ProductoDetallesFiltros,
+                                    as: 'detalles_filtros',
+                                    include: [
+                                        {
+                                            model: OpcionesFiltro,
+                                            as: 'opcion_filtro',
+                                            include: [
+                                                { model: Filtros, as: 'filtro' }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         });
@@ -287,18 +313,20 @@ class PedidosController {
             const emailDetalles = [];
 
             for (const item of detalles) {
-                const producto = await Productos.findOne({
-                    where: { id: item.id_producto, id_empresa },
+                // item must now include id_variante
+                const variant = await ProductoVariantes.findOne({
+                    where: { id: item.id_variante },
+                    include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
                     transaction: t
                 });
 
-                if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado`);
+                if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
 
-                if (producto.stock_actual < item.cantidad) {
-                    throw new Error(`Stock insuficiente para: ${producto.nombre_producto}`);
+                if (variant.stock_actual < item.cantidad) {
+                    throw new Error(`Stock insuficiente para: ${variant.producto.nombre_producto} (SKU: ${variant.sku})`);
                 }
 
-                await producto.decrement('stock_actual', {
+                await variant.decrement('stock_actual', {
                     by: item.cantidad,
                     transaction: t
                 });
@@ -307,7 +335,8 @@ class PedidosController {
                 totalPedido += subtotal;
 
                 detallesToCreate.push({
-                    id_producto: item.id_producto,
+                    id_producto: variant.id_producto,
+                    id_variante: variant.id,
                     cantidad: item.cantidad,
                     precio_historico: item.precio_historico,
                     subtotal,
@@ -315,7 +344,7 @@ class PedidosController {
                 });
 
                 emailDetalles.push({
-                    nombre_producto: producto.nombre_producto,
+                    nombre_producto: variant.producto.nombre_producto + (variant.sku ? ` (${variant.sku})` : ''),
                     cantidad: item.cantidad,
                     subtotal
                 });
@@ -342,16 +371,17 @@ class PedidosController {
         try {
             const { generateInvoicePdfBuffer } = require('../utils/invoiceGenerator');
 
-            // Re-fetch full pedido with details for invoice generation (since we only have partial objects in transaction result)
-            // Or construct it from available data if sufficient. 
-            // Better to fetch to ensure consistency with ReportesController logic which expects loaded relations.
+            // Re-fetch full pedido with details for invoice generation
             const fullPedidoForInvoice = await Pedidos.findByPk(result.pedido.id, {
                 include: [
                     { model: Clientes, as: 'cliente' },
                     {
                         model: DetallesPedidos,
                         as: 'detalles',
-                        include: [{ model: Productos, as: 'producto' }]
+                        include: [
+                            { model: Productos, as: 'producto' },
+                            { model: ProductoVariantes, as: 'variante' }
+                        ]
                     }
                 ]
             });
@@ -386,9 +416,8 @@ class PedidosController {
 
     static bulkStore = catchErrors(async (req, res) => {
         const pedidos = req.body;
-        const { id_empresa, id: id_usuario_actual } = req.user; // Destructure id_empresa and current user's id
+        const { id_empresa, id: id_usuario_actual } = req.user;
 
-        // Iterating transaction approach for correctness of stock logic
         const result = await sequelize.transaction(async (t) => {
             const created = [];
             for (const p of pedidos) {
@@ -398,38 +427,39 @@ class PedidosController {
                 const detallesToCreate = [];
 
                 for (const item of detalles) {
-                    const producto = await Productos.findOne({
-                        where: { id: item.id_producto, id_empresa }, // Use destructured id_empresa
+                    const variant = await ProductoVariantes.findOne({
+                        where: { id: item.id_variante },
+                        include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
                         transaction: t
                     });
-                    if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado en carga masiva`);
 
-                    if (producto.stock_actual < item.cantidad) {
-                        throw new Error(`Stock insuficiente para ${producto.nombre_producto} en carga masiva`);
+                    if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada en carga masiva`);
+
+                    if (variant.stock_actual < item.cantidad) {
+                        throw new Error(`Stock insuficiente para ${variant.producto.nombre_producto} (SKU: ${variant.sku})`);
                     }
 
-                    await producto.decrement('stock_actual', { by: item.cantidad, transaction: t });
+                    await variant.decrement('stock_actual', { by: item.cantidad, transaction: t });
 
                     const subtotal = Number(item.cantidad) * Number(item.precio_historico);
                     totalPedido += subtotal;
 
                     detallesToCreate.push({
-                        id_producto: item.id_producto,
+                        id_producto: variant.id_producto,
+                        id_variante: variant.id,
                         cantidad: item.cantidad,
                         precio_historico: item.precio_historico,
                         subtotal,
-                        detalles_producto: item.detalles_producto // Ensure this is included if it exists in the schema
+                        detalles_producto: item.detalles_producto
                     });
                 }
 
                 const newPedido = await Pedidos.create({
-                    id_empresa, // Use destructured id_empresa
-                    id_cliente, // Should ideally check if client belongs to empresa too, but constraints/logic might suffice for now
-                    id_usuario_creador: id_usuario_creador || id_usuario_actual, // Use id_usuario_actual if not provided in bulk data
+                    id_empresa,
+                    id_cliente,
+                    id_usuario_creador: id_usuario_creador || id_usuario_actual,
                     total_pedido: totalPedido,
-                    estado_pedido: 'Completado' // Bulk load usually implies historical data? Or 'Pendiente'? Let's default 'Pendiente' or per requirement. User said "registros previos" so maybe 'Completado' makes sense or passed in body. But schema doesn't have status in create. Let's stick to default or logic. Assuming 'Pendiente' for consistency unless specified. User mentioned "registro de pedidos previos", implies history.
-                    // Let's assume 'Pendiente' if not specified, or allow status in body for bulk?
-                    // Schema didn't specify status field in create. Let's use 'Pendiente' as standard flow.
+                    estado_pedido: 'Pendiente'
                 }, { transaction: t });
 
                 const detallesWithId = detallesToCreate.map(d => ({ ...d, id_pedido: newPedido.id }));
@@ -463,21 +493,22 @@ class PedidosController {
             if (!pedido) throw new Error('Pedido no encontrado');
 
             if (pedido.estado_pedido === 'Completado' || pedido.estado_pedido === 'Cancelado') {
-                // User rule: "recuerda que solo se pueden editar los pedidos que no esten completados"
-                // If status is changed to 'Completado' in this Request, it's fine.
-                // But if it WAS 'Completado', maybe we shouldn't allow changing details?
-                // Let's assume strict rule: If current status is final, block.
-                // Unless we are "re-opening"? Let's stick to restriction for now.
                 if (pedido.estado_pedido === 'Completado') console.warn('Editing a completed order - stock logic handling required');
             }
 
-            // 2. Restore Stock for ALL old items
+            // 2. Restore Stock to VARIANTS for old items
             for (const detalle of pedido.detalles) {
-                await Productos.increment('stock_actual', {
-                    by: detalle.cantidad,
-                    where: { id: detalle.id_producto },
-                    transaction: t
-                });
+                if (detalle.id_variante) {
+                    await ProductoVariantes.increment('stock_actual', {
+                        by: detalle.cantidad,
+                        where: { id: detalle.id_variante },
+                        transaction: t
+                    });
+                } else {
+                    // Fallback if data was old (shouldn't happen with fresh DB, but for safety)
+                    // If no variant ID, maybe restore to product? No, we removed stock column.
+                    console.warn(`Legacy detail without id_variante found in order ${id}`);
+                }
             }
 
             // 3. Delete old details
@@ -492,19 +523,20 @@ class PedidosController {
             const emailDetalles = [];
 
             for (const item of detalles) {
-                const producto = await Productos.findOne({
-                    where: { id: item.id_producto, id_empresa },
+                // Fetch Variant
+                const variant = await ProductoVariantes.findOne({
+                    where: { id: item.id_variante },
+                    include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
                     transaction: t
                 });
 
-                if (!producto) throw new Error(`Producto ${item.id_producto} no encontrado`);
+                if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
 
-                // Check stock availability (considering we just restored the old stock)
-                if (producto.stock_actual < item.cantidad) {
-                    throw new Error(`Stock insuficiente para: ${producto.nombre_producto} (Solicitado: ${item.cantidad}, Disponible: ${producto.stock_actual})`);
+                if (variant.stock_actual < item.cantidad) {
+                    throw new Error(`Stock insuficiente para: ${variant.producto.nombre_producto} (SKU: ${variant.sku})`);
                 }
 
-                await producto.decrement('stock_actual', {
+                await variant.decrement('stock_actual', {
                     by: item.cantidad,
                     transaction: t
                 });
@@ -514,7 +546,8 @@ class PedidosController {
 
                 detallesToCreate.push({
                     id_pedido: id,
-                    id_producto: item.id_producto,
+                    id_producto: variant.id_producto,
+                    id_variante: variant.id,
                     cantidad: item.cantidad,
                     precio_historico: item.precio_historico,
                     subtotal,
@@ -522,7 +555,7 @@ class PedidosController {
                 });
 
                 emailDetalles.push({
-                    nombre_producto: producto.nombre_producto,
+                    nombre_producto: variant.producto.nombre_producto,
                     cantidad: item.cantidad,
                     subtotal
                 });
@@ -554,7 +587,10 @@ class PedidosController {
                     {
                         model: DetallesPedidos,
                         as: 'detalles',
-                        include: [{ model: Productos, as: 'producto' }]
+                        include: [
+                            { model: Productos, as: 'producto' },
+                            { model: ProductoVariantes, as: 'variante' }
+                        ]
                     }
                 ]
             });

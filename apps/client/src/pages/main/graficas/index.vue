@@ -1,14 +1,15 @@
 <route lang="yaml">
-path: /main/graficas
 meta:
   layout: MainLayout
-  title: Gráficas y Métricas
+  requiresAuth: true
+  roles: ['Administrador', 'SuperAdministrador'] 
+  title: 'Gráficas'
 </route>
 
+<script setup>
+import GraficasView from '@/components/Views/graficas/GraficasView.vue';
+</script>
+
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon class="mb-4" color="primary" size="64">mdi-chart-bar</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Gráficas</h2>
-    <p class="text-body-1 text-medium-emphasis">Análisis visual de rendimiento</p>
-  </div>
+  <GraficasView />
 </template>

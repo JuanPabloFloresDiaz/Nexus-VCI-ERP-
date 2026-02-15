@@ -1,155 +1,161 @@
 const express = require('express');
 const router = express.Router();
 const ChartsController = require('../controllers/charts.controller');
+const { checkAuthAny } = require('../middlewares/checkAuth');
+
+// All routes require authentication
+router.use(checkAuthAny());
 
 /**
  * @swagger
- * tags:
- *   name: Charts
- *   description: Endpoints para alimentar gráficas del sistema
- */
-
-/**
- * @swagger
- * /charts/order-status:
+ * /api/charts/stats:
  *   get:
- *     summary: Distribución de estados de pedidos
- *     tags: [Charts]
+ *     summary: Obtener estadísticas del dashboard
+ *     tags: [Gráficas]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de inicio (YYYY-MM-DD)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de fin (YYYY-MM-DD)
  *     responses:
  *       200:
- *         description: Datos obtenidos correctamente
+ *         description: Estadísticas generales obtenidas exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     total_sales:
+ *                       type: number
+ *                     total_orders:
+ *                       type: integer
+ *                     total_customers:
+ *                       type: integer
  */
-router.get('/order-status', ChartsController.getOrderStatusDistribution);
+router.get('/stats', ChartsController.getDashboardStats);
 
 /**
  * @swagger
- * /charts/top-categories:
+ * /api/charts/sales-history:
  *   get:
- *     summary: Top categorías con más ventas (unidades)
- *     tags: [Charts]
+ *     summary: Obtener historial de ventas
+ *     tags: [Gráficas]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de inicio (YYYY-MM-DD)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de fin (YYYY-MM-DD)
  *     responses:
  *       200:
- *         description: Datos obtenidos correctamente
- */
-router.get('/top-categories', ChartsController.getTopSellingCategories);
-
-/**
- * @swagger
- * /charts/sales-history:
- *   get:
- *     summary: Historial de ventas por fecha
- *     tags: [Charts]
- *     parameters:
- *       - in: query
- *         name: startDate
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: endDate
- *         schema:
- *           type: string
- *           format: date
- *     responses:
- *       200:
- *         description: Datos obtenidos correctamente
+ *         description: Historial de ventas obtenido exitosamente
  */
 router.get('/sales-history', ChartsController.getSalesHistory);
 
 /**
  * @swagger
- * /charts/orders-history:
+ * /api/charts/top-products:
  *   get:
- *     summary: Historial de pedidos por fecha
- *     tags: [Charts]
+ *     summary: Obtener productos más vendidos
+ *     tags: [Gráficas]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de inicio (YYYY-MM-DD)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de fin (YYYY-MM-DD)
  *     responses:
  *       200:
- *         description: Datos obtenidos correctamente
+ *         description: Top productos obtenidos exitosamente
  */
-router.get('/orders-history', ChartsController.getOrdersHistory);
+router.get('/top-products', ChartsController.getTopProducts);
 
 /**
  * @swagger
- * /charts/new-clients-history:
+ * /api/charts/order-status:
  *   get:
- *     summary: Historial de nuevos clientes por fecha
- *     tags: [Charts]
+ *     summary: Obtener distribución de estado de pedidos
+ *     tags: [Gráficas]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de inicio (YYYY-MM-DD) (Opcional)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de fin (YYYY-MM-DD) (Opcional)
  *     responses:
  *       200:
- *         description: Datos obtenidos correctamente
+ *         description: Distribución de estados obtenida exitosamente
  */
-router.get('/new-clients-history', ChartsController.getNewClientsHistory);
+router.get('/order-status', ChartsController.getOrderStatus);
 
 /**
  * @swagger
- * /charts/sales-by-subcategory:
+ * /api/charts/top-categories:
  *   get:
- *     summary: Ventas por subcategoría (dado un id de categoría padre)
- *     tags: [Charts]
+ *     summary: Obtener categorías más vendidas
+ *     tags: [Gráficas]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - in: query
- *         name: id_categoria
- *         required: true
- *         schema:
- *           type: string
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de inicio (YYYY-MM-DD)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
+ *         description: Fecha de fin (YYYY-MM-DD)
  *     responses:
  *       200:
- *         description: Datos obtenidos correctamente
+ *         description: Top categorías obtenidas exitosamente
  */
-router.get('/sales-by-subcategory', ChartsController.getSalesBySubcategory);
+router.get('/top-categories', ChartsController.getTopCategories);
 
 module.exports = router;

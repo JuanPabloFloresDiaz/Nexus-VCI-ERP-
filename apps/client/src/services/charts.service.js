@@ -3,22 +3,22 @@ import AxiosRequest from './AxiosRequest';
 
 const RESOURCE = 'charts';
 
-export async function getSalesByMonth () {
-    return AxiosRequest(`${RESOURCE}/sales-by-month`, mapMethod('R'));
+export async function getDashboardStats(params = {}) {
+    return AxiosRequest(`${RESOURCE}/stats`, mapMethod('R'), {}, params);
 }
 
-export async function getTopSellingProducts () {
-    return AxiosRequest(`${RESOURCE}/top-selling-products`, mapMethod('R'));
+export async function getSalesHistory(params = {}) {
+    return AxiosRequest(`${RESOURCE}/sales-history`, mapMethod('R'), {}, params);
 }
 
-export async function getClientsByState () {
-    return AxiosRequest(`${RESOURCE}/sales-by-month`, mapMethod('R'));
+export async function getTopProducts(params = {}) {
+    return AxiosRequest(`${RESOURCE}/top-products`, mapMethod('R'), {}, params);
 }
 
-export async function getOrdersByStatus () {
-    return AxiosRequest(`${RESOURCE}/orders-by-status`, mapMethod('R'));
+export async function getOrderStatus(params = {}) {
+    return AxiosRequest(`${RESOURCE}/order-status`, mapMethod('R'), {}, params);
 }
 
-export async function getCategoryDistribution () {
-    return AxiosRequest(`${RESOURCE}/category-distribution`, mapMethod('R'));
+export async function getTopCategories(params = {}) {
+    return AxiosRequest(`${RESOURCE}/top-categories`, mapMethod('R'), {}, params);
 }

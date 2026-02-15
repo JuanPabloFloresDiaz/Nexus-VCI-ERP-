@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ReportesController = require('../controllers/reportes.controller');
+const { checkAuthAny } = require('../middlewares/checkAuth');
 
 /**
  * @swagger
@@ -8,6 +9,9 @@ const ReportesController = require('../controllers/reportes.controller');
  *   name: Reportes
  *   description: Generación de reportes en PDF y Excel
  */
+
+// Todas las rutas de reportes requieren autenticación
+router.use(checkAuthAny());
 
 // ==========================================
 // PDF REPORTS

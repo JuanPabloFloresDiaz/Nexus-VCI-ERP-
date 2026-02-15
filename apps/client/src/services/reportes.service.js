@@ -1,47 +1,91 @@
-import { mapMethod } from '../utils/MapMethod';
-import AxiosRequest from './AxiosRequest';
 
-const RESOURCE = 'reportes';
+import axios from 'axios';
 
-// Helper to trigger download
-async function downloadReport (url) {
-    // Para la descarga de archivos usualmente necesitamos responseType: 'blob'
-    // AxiosRequest podría necesitar ajustes o usar una llamada dedicada si AxiosRequest envuelve JSON genérico.
-    // Asumiendo que AxiosRequest maneja JSON estándar. Para blobs, podríamos necesitar omitirlo o agregar una opción.
-    // Asumamos por ahora que usamos AxiosRequest pero un manejo específico podría ser necesario en el componente frontend.
-    // SIN EMBARGO, el servicio típico solo devuelve la promesa.
-    // Para manejar la descarga de blobs adecuadamente en AxiosRequest, necesitamos pasar la configuración.
-    // Si AxiosRequest no admite la sobrescritura de configuración, podríamos necesitar importar axios directamente o modificar AxiosRequest.
-    // Sigamos con la construcción de URL simple o un get básico por ahora, el usuario puede manejar el blob en el componente o actualizar AxiosRequest.
-    // En realidad, los reportes usualmente devuelven un flujo/blob.
-    // Implementemos métodos estándar.
-    return AxiosRequest(url, mapMethod('R'), {}, {}, { responseType: 'blob' });
-}
+const API_URL = (import.meta.env.VITE_SERVER_URL || '').replace(/\/$/, '') + '/reportes';
 
-export async function getCategorizationReport () {
-    return AxiosRequest(`${RESOURCE}/categorizacion`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-}
+// Helper to get auth headers
+const getAuthHeaders = () => ({
+    Authorization: localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+});
 
-export async function getProductsReport () {
-    return AxiosRequest(`${RESOURCE}/productos`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-}
+// Helper to handle file download
+const downloadFile = (response, defaultFilename) => {
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
 
-export async function getProductsByCategoryReport (id_categoria) {
-    return AxiosRequest(`${RESOURCE}/productos-categoria/${id_categoria}`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-}
+    // Try to get filename from headers
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = defaultFilename;
+    if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch.length === 2)
+            filename = filenameMatch[1];
+    }
 
-export async function getClientesReport () {
-    return AxiosRequest(`${RESOURCE}/clientes`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-}
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
-export async function getBitacoraPedidosReport (params) { // fecha_inicio, fecha_fin
-    return AxiosRequest(`${RESOURCE}/bitacora-pedidos`, mapMethod('R'), {}, params, { responseType: 'blob' });
-}
+export const getCategorizacionReport = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await axios.get(`${API_URL}/categorizacion?${query}`, {
+        headers: getAuthHeaders(),
+        responseType: 'blob'
+    });
+    downloadFile(response, 'reporte-categorizacion.pdf');
+};
 
-export async function getFacturaPedidoReport (id_pedido) {
-    return AxiosRequest(`${RESOURCE}/factura-pedido/${id_pedido}`, mapMethod('R'), {}, {}, { responseType: 'blob' });
-}
+export const getProductosReport = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await axios.get(`${API_URL}/productos?${query}`, {
+        headers: getAuthHeaders(),
+        responseType: 'blob'
+    });
+    downloadFile(response, 'reporte-productos.pdf');
+};
 
-export async function getMasivoPedidosExcel (params) { // fecha_inicio, fecha_fin
-    return AxiosRequest(`${RESOURCE}/masivo-pedidos-excel`, mapMethod('R'), {}, params, { responseType: 'blob' }); // Excel download
-}
+export const getClientesReport = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await axios.get(`${API_URL}/clientes?${query}`, {
+        headers: getAuthHeaders(),
+        responseType: 'blob'
+    });
+    downloadFile(response, 'reporte-clientes.pdf');
+};
+
+export const getPedidosLogReport = async (startDate, endDate, params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    if (startDate) queryParams.append('startDate', startDate);
+    if (endDate) queryParams.append('endDate', endDate);
+
+    const response = await axios.get(`${API_URL}/pedidos-log?${queryParams.toString()}`, {
+        headers: getAuthHeaders(),
+        responseType: 'blob'
+    });
+    downloadFile(response, 'bitacora-pedidos.pdf');
+};
+
+export const getFacturaPedido = async (id, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await axios.get(`${API_URL}/factura/${id}?${query}`, {
+        headers: getAuthHeaders(),
+        responseType: 'blob'
+    });
+    // Filename will overlap with header but good fallback
+    downloadFile(response, `factura-${id}.pdf`);
+};
+
+export const getPedidosExcelReport = async (startDate, endDate, params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    if (startDate) queryParams.append('startDate', startDate);
+    if (endDate) queryParams.append('endDate', endDate);
+
+    const response = await axios.get(`${API_URL}/pedidos-excel?${queryParams.toString()}`, {
+        headers: getAuthHeaders(),
+        responseType: 'blob'
+    });
+    downloadFile(response, 'reporte-pedidos.xlsx');
+};

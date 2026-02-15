@@ -5,6 +5,8 @@ const ApiResponse = require('../utils/apiResponse');
 const getPaginatedQuery = require('../utils/getPaginatedQuery');
 const { sendMail } = require('../utils/mail');
 
+const { fetchCompanyData } = require('../utils/company.helper');
+
 class PedidosController {
     static routes = '/pedidos';
 
@@ -371,6 +373,9 @@ class PedidosController {
         try {
             const { generateInvoicePdfBuffer } = require('../utils/invoiceGenerator');
 
+            // Fetch company data for branding (FIXED)
+            const companyData = await fetchCompanyData(id_empresa);
+
             // Re-fetch full pedido with details for invoice generation
             const fullPedidoForInvoice = await Pedidos.findByPk(result.pedido.id, {
                 include: [
@@ -386,7 +391,7 @@ class PedidosController {
                 ]
             });
 
-            const pdfBuffer = await generateInvoicePdfBuffer(fullPedidoForInvoice);
+            const pdfBuffer = await generateInvoicePdfBuffer(fullPedidoForInvoice, companyData); // Pass companyData
 
             await sendMail({
                 from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
@@ -480,7 +485,7 @@ class PedidosController {
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
         const { id_cliente, detalles, estado_pedido } = req.body;
-        const { id_empresa, id: id_usuario_actual } = req.user;
+        const { id_empresa } = req.user;
 
         const result = await sequelize.transaction(async (t) => {
             // 1. Fetch original order
@@ -506,7 +511,6 @@ class PedidosController {
                     });
                 } else {
                     // Fallback if data was old (shouldn't happen with fresh DB, but for safety)
-                    // If no variant ID, maybe restore to product? No, we removed stock column.
                     console.warn(`Legacy detail without id_variante found in order ${id}`);
                 }
             }
@@ -581,6 +585,9 @@ class PedidosController {
         try {
             const { generateInvoicePdfBuffer } = require('../utils/invoiceGenerator');
 
+            // Fetch company data for branding (FIXED)
+            const companyData = await fetchCompanyData(id_empresa);
+
             const fullPedidoForInvoice = await Pedidos.findByPk(id, {
                 include: [
                     { model: Clientes, as: 'cliente' },
@@ -595,7 +602,7 @@ class PedidosController {
                 ]
             });
 
-            const pdfBuffer = await generateInvoicePdfBuffer(fullPedidoForInvoice);
+            const pdfBuffer = await generateInvoicePdfBuffer(fullPedidoForInvoice, companyData); // Pass companyData
 
             await sendMail({
                 from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,

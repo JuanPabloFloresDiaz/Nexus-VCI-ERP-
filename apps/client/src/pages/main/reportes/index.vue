@@ -5,10 +5,10 @@ meta:
   title: Reportes
 </route>
 
+<script setup>
+import ReportesView from '@/components/Views/reportes/ReportesView.vue';
+</script>
+
 <template>
-  <div class="d-flex flex-column fill-height justify-center align-center text-center">
-    <v-icon class="mb-4" color="primary" size="64">mdi-file-document-multiple-outline</v-icon>
-    <h2 class="text-h4 text-primary font-weight-bold">Reportes</h2>
-    <p class="text-body-1 text-medium-emphasis">Generación de documentación administrativa</p>
-  </div>
+  <ReportesView />
 </template>

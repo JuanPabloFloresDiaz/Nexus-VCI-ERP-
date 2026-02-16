@@ -10,6 +10,18 @@
   import UpdateProveedorModal from '@/components/modals/proveedores/UpdateProveedorModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getProveedores } from '@/services/proveedores.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Proveedores',
+    meta: [
+      { name: 'description', content: 'Administración de proveedores y contactos.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const { isSuperAdmin } = useAuth();
   const search = ref('');

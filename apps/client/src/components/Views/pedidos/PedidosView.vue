@@ -10,6 +10,19 @@
   import { getPedidos } from '@/services/pedidos.service';
   // import UpdatePedidoModal from ... (Maybe later for quick status update)
 
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Pedidos',
+    meta: [
+      { name: 'description', content: 'Gestión de ventas y despachos.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
+
   const router = useRouter();
   const { isVendor } = useAuth();
 

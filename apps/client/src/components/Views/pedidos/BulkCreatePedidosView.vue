@@ -6,6 +6,18 @@
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { bulkCreatePedidos } from '@/services/pedidos.service';
   import { getProductos } from '@/services/productos.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Carga Masiva de Pedidos',
+    meta: [
+      { name: 'description', content: 'Importación masiva de pedidos históricos o nuevos desde Excel.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
 

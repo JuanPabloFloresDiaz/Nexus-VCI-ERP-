@@ -5,6 +5,18 @@
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getCategoriaById, getCategorias } from '@/services/categorizacion.service';
   import { createProducto } from '@/services/productos.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Nuevo Producto',
+    meta: [
+      { name: 'description', content: 'Registro de nuevo producto y configuración de variantes.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   // Image Upload Logic
   import { uploadFile } from '@/services/storage.service';

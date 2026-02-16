@@ -6,6 +6,18 @@
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getAllCategorias, getCategoriaById, getSubcategorias } from '@/services/categorizacion.service';
   import { bulkCreateProductos } from '@/services/productos.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Carga Masiva de Productos',
+    meta: [
+      { name: 'description', content: 'Importación masiva de productos y variantes desde Excel.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
   const queryClient = useQueryClient();

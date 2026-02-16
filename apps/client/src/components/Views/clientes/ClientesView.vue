@@ -9,6 +9,18 @@
   import UpdateClienteModal from '@/components/modals/clientes/UpdateClienteModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getClientes } from '@/services/clientes.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Clientes',
+    meta: [
+      { name: 'description', content: 'Administración de cartera de clientes y contactos.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const { isSuperAdmin, isVendor } = useAuth();
   const search = ref('');

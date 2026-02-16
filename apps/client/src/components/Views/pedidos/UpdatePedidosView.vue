@@ -4,6 +4,18 @@
   import { useRoute, useRouter } from 'vue-router';
   import { getPedidoById } from '@/services/pedidos.service';
   import PosLayout from './PosLayout.vue';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Editar Pedido',
+    meta: [
+      { name: 'description', content: 'Edición de detalles de pedidos existentes.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const route = useRoute();
   const router = useRouter();

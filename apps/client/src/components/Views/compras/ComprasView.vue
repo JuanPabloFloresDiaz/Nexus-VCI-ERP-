@@ -6,6 +6,18 @@
   import DetalleComprasModal from '@/components/modals/compras/DetalleComprasModal.vue';
   import { getCompras } from '@/services/compras.service';
   import { getProveedores } from '@/services/proveedores.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Compras',
+    meta: [
+      { name: 'description', content: 'Administración de compras y abastecimiento de inventario.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
 

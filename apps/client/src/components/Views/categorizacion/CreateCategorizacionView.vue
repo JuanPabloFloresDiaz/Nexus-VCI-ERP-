@@ -4,6 +4,18 @@
   import { useRouter } from 'vue-router';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { createCategoria } from '@/services/categorizacion.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Nueva Categoría',
+    meta: [
+      { name: 'description', content: 'Creación de estructura de categorías, subcategorías y filtros.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
   const queryClient = useQueryClient();

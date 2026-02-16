@@ -2,7 +2,7 @@
   <v-container class="pa-6" fluid>
     <!-- Header -->
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Dashboard</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary">Dashboard</h1>
       <p class="text-body-1 text-medium-emphasis">Resumen general de la empresa</p>
     </div>
 

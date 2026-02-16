@@ -6,6 +6,18 @@
   import { createCompra } from '@/services/compras.service';
   import { getProductos } from '@/services/productos.service';
   import { getProveedores } from '@/services/proveedores.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Nueva Compra',
+    meta: [
+      { name: 'description', content: 'Registro de nueva compra de inventario.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
 

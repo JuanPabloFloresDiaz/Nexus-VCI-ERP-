@@ -146,6 +146,18 @@
   import UpdateEmpresaModal from '@/components/modals/empresas/UpdateEmpresaModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getEmpresas } from '@/services/empresas.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Empresas',
+    meta: [
+      { name: 'description', content: 'Administración de empresas registradas en el sistema.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   // Auth State
   const { user } = useAuth();

@@ -74,6 +74,18 @@
 <script setup>
   import { ref } from 'vue';
   import { useAuth } from '@/hooks/useAuth';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Papelera de Reciclaje',
+    meta: [
+      { name: 'description', content: 'Recuperación de elementos eliminados.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   import categorizacionWindowTab from './window-tab/categorizacionWindowTab.vue';
   import clientesWindowTab from './window-tab/clientesWindowTab.vue';

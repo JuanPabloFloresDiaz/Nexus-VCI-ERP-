@@ -168,6 +168,18 @@
     getTopProducts 
   } from '@/services/charts.service';
   import { baseOptions, colors } from '@/utils/chart';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Panel de Control',
+    meta: [
+      { name: 'description', content: 'Visualización de métricas clave y rendimiento del negocio.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   // --- State ---
   const rangeOptions = [

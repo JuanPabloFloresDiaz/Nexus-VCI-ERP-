@@ -7,6 +7,18 @@
   import { useRouter } from 'vue-router';
 
   import { getCompraById, updateCompra } from '@/services/compras.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Editar Compra',
+    meta: [
+      { name: 'description', content: 'Edición de detalles y estado de compra.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const props = defineProps({
     id: {

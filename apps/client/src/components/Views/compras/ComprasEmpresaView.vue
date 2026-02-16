@@ -4,6 +4,18 @@
   import DetalleComprasModal from '@/components/modals/compras/DetalleComprasModal.vue';
   import { getCompras } from '@/services/compras.service';
   import { getProveedores } from '@/services/proveedores.service';
+import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Compras',
+    meta: [
+      { name: 'description', content: 'Visualiza las compras realizadas por tu empresa.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const search = ref('');
   const page = ref(1);

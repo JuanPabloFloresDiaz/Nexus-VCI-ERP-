@@ -149,6 +149,18 @@
   import { getEmpresaProfile, updateEmpresaProfile } from '@/services/empresas.service';
   import { uploadFile } from '@/services/storage.service';
   import { getImage } from '@/utils/getImage';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Perfil de Empresa',
+    meta: [
+      { name: 'description', content: 'Configuración y detalles del perfil de la empresa.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const queryClient = useQueryClient();
   const fileInput = ref(null);

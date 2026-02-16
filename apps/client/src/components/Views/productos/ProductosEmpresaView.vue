@@ -5,6 +5,18 @@
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import FichaProductoModal from '@/components/modals/productos/FichaProductoModal.vue';
   import { getProductos } from '@/services/productos.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Catálogo de Productos',
+    meta: [
+      { name: 'description', content: 'Visualiza el catálogo de productos disponibles en tu empresa.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   // State
   const search = ref('');

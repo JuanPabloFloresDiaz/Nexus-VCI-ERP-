@@ -7,6 +7,18 @@
   import { createBulkCompras } from '@/services/compras.service';
   import { getProductos } from '@/services/productos.service';
   import { getProveedores } from '@/services/proveedores.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Nuevas Compras masivas',
+    meta: [
+      { name: 'description', content: 'Registro de nuevas compras masivas de inventario.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
 

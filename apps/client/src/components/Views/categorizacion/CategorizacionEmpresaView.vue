@@ -3,6 +3,18 @@
   import { computed, ref } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import { getCategorias } from '@/services/categorizacion.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Directorio de Categorías',
+    meta: [
+      { name: 'description', content: 'Exploración de categorías y filtros disponibles.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const search = ref('');
   const page = ref(1);

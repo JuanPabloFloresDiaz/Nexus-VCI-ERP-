@@ -7,6 +7,18 @@
   import DeleteProductoModal from '@/components/modals/productos/DeleteProductoModal.vue';
   import FichaProductoModal from '@/components/modals/productos/FichaProductoModal.vue';
   import { getProductos } from '@/services/productos.service'; // Need to implement this service
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Productos',
+    meta: [
+      { name: 'description', content: 'Administración del catálogo de productos, inventario y variantes.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
 

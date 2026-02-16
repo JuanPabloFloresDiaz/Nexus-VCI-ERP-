@@ -5,7 +5,19 @@
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getCategoriaById, getCategorias } from '@/services/categorizacion.service';
   import { getProductoById, updateProducto } from '@/services/productos.service';
+  import { useHead } from '@unhead/vue';
 
+  // --- SEO ---
+  useHead({
+    title: 'Editar Producto',
+    meta: [
+      { name: 'description', content: 'Edición de detalles de producto y gestión de variantes.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
+  
   import { uploadFile } from '@/services/storage.service';
   import { getImage } from '@/utils/getImage';
 

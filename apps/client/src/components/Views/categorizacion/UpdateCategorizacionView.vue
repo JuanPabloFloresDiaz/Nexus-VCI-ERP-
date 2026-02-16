@@ -5,6 +5,18 @@
   import { useRoute, useRouter } from 'vue-router';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getCategoriaById, updateCategoria } from '@/services/categorizacion.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Editar Categoría',
+    meta: [
+      { name: 'description', content: 'Edición de estructura de categorías y filtros.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const route = useRoute();
   const router = useRouter();

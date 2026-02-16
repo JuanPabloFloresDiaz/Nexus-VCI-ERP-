@@ -3,6 +3,18 @@
   import { computed, ref } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import { getProveedores } from '@/services/proveedores.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Directorio de Proveedores',
+    meta: [
+      { name: 'description', content: 'Consulta la lista de proveedores autorizados de la empresa.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const search = ref('');
   const page = ref(1);

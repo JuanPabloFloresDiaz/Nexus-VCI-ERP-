@@ -12,6 +12,18 @@
     getProductosReport 
   } from '@/services/reportes.service';
 
+  // --- SEO ---
+  import { useHead } from '@unhead/vue';
+  useHead({
+    title: 'Reportes',
+    meta: [
+      { name: 'description', content: 'Generación de reportes y exportables del sistema.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
+
   // --- Data Fetching for Parameters ---
   const { data: categoriasData } = useQuery({
     queryKey: ['categorias-report-filter'],

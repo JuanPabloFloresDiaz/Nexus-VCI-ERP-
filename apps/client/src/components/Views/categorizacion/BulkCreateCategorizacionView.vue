@@ -5,6 +5,18 @@
   import * as XLSX from 'xlsx';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { bulkCreateCategorias } from '@/services/categorizacion.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Carga Masiva Categorías',
+    meta: [
+      { name: 'description', content: 'Importación masiva de estructura de categorías desde Excel.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
   const queryClient = useQueryClient();

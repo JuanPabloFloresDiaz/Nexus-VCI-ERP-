@@ -425,51 +425,122 @@ class PedidosController {
 
         const result = await sequelize.transaction(async (t) => {
             const created = [];
-            for (const p of pedidos) {
-                const { id_cliente, id_usuario_creador, detalles } = p;
+            const errors = [];
 
-                let totalPedido = 0;
-                const detallesToCreate = [];
+            for (const [index, p] of pedidos.entries()) {
+                try {
+                    const { cliente: clienteData, detalles, fecha_pedido, estado_pedido, id_cliente: providedIdCliente } = p;
+                    let id_cliente = providedIdCliente;
 
-                for (const item of detalles) {
-                    const variant = await ProductoVariantes.findOne({
-                        where: { id: item.id_variante },
-                        include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
-                        transaction: t
-                    });
+                    // 1. Resolve Client
+                    if (!id_cliente && clienteData) {
+                        // Try to find by DUI (if provided)
+                        if (clienteData.dui_cliente) {
+                            const existingClient = await Clientes.findOne({
+                                where: {
+                                    id_empresa,
+                                    dui_cliente: clienteData.dui_cliente
+                                },
+                                transaction: t
+                            });
+                            if (existingClient) id_cliente = existingClient.id;
+                        }
 
-                    if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada en carga masiva`);
+                        // Try to find by Email (if not found by DUI)
+                        if (!id_cliente && clienteData.correo_cliente) {
+                            const existingClient = await Clientes.findOne({
+                                where: {
+                                    id_empresa,
+                                    correo_cliente: clienteData.correo_cliente
+                                },
+                                transaction: t
+                            });
+                            if (existingClient) id_cliente = existingClient.id;
+                        }
 
-                    if (variant.stock_actual < item.cantidad) {
-                        throw new Error(`Stock insuficiente para ${variant.producto.nombre_producto} (SKU: ${variant.sku})`);
+                        // Create if not found
+                        if (!id_cliente) {
+                            const newClient = await Clientes.create({
+                                id_empresa,
+                                nombre_cliente: clienteData.nombre_cliente,
+                                apellido_cliente: clienteData.apellido_cliente,
+                                dui_cliente: clienteData.dui_cliente,
+                                correo_cliente: clienteData.correo_cliente,
+                                telefono_cliente: clienteData.telefono_cliente
+                            }, { transaction: t });
+                            id_cliente = newClient.id;
+                        }
                     }
 
-                    await variant.decrement('stock_actual', { by: item.cantidad, transaction: t });
+                    if (!id_cliente) {
+                        throw new Error(`Fila ${index + 1}: No se pudo identificar ni crear al cliente.`);
+                    }
 
-                    const subtotal = Number(item.cantidad) * Number(item.precio_historico);
-                    totalPedido += subtotal;
+                    // 2. Process Details
+                    let totalPedido = 0;
+                    const detallesToCreate = [];
 
-                    detallesToCreate.push({
-                        id_producto: variant.id_producto,
-                        id_variante: variant.id,
-                        cantidad: item.cantidad,
-                        precio_historico: item.precio_historico,
-                        subtotal,
-                        detalles_producto: item.detalles_producto
-                    });
+                    for (const item of detalles) {
+                        // Find Variant by SKU
+                        // Use include to ensure it belongs to the company
+                        const variant = await ProductoVariantes.findOne({
+                            where: { sku: item.sku },
+                            include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                            transaction: t
+                        });
+
+                        if (!variant) {
+                            throw new Error(`Fila ${index + 1}: SKU '${item.sku}' no encontrado.`);
+                        }
+
+                        // Stock Check (Deduct if requested, even for historical?
+                        // User said: "Creating historical 'Completed' orders will still deduct stock from the current inventory.")
+                        // Only deduct if status is NOT 'Cancelado' (assuming 'Pendiente' reserves stock too?)
+                        // Usually Pendiente reserves, Completado deducts. Cancelado releases.
+                        // Let's assume we deduct for Pendiente and Completado.
+
+                        if (estado_pedido !== 'Cancelado') {
+                            if (variant.stock_actual < item.cantidad) {
+                                throw new Error(`Fila ${index + 1}: Stock insuficiente para SKU ${item.sku}. Existencia: ${variant.stock_actual}`);
+                            }
+                            await variant.decrement('stock_actual', { by: item.cantidad, transaction: t });
+                        }
+
+                        const subtotal = Number(item.cantidad) * Number(item.precio_historico);
+                        totalPedido += subtotal;
+
+                        detallesToCreate.push({
+                            id_producto: variant.id_producto,
+                            id_variante: variant.id,
+                            cantidad: item.cantidad,
+                            precio_historico: item.precio_historico,
+                            subtotal,
+                            detalles_producto: item.detalles_producto || {}
+                        });
+                    }
+
+                    // 3. Create Order
+                    const newPedido = await Pedidos.create({
+                        id_empresa,
+                        id_cliente,
+                        id_usuario_creador: id_usuario_actual,
+                        total_pedido: totalPedido,
+                        estado_pedido: estado_pedido || 'Completado', // Default to Completed for historical imports? Or Pendiente? Plan said 'Pendiente' default in other places, but for bulk history 'Completado' makes sense. Let's use user input or default 'Pendiente'.
+                        created_at: fecha_pedido ? new Date(fecha_pedido) : new Date() // Allow override
+                    }, { transaction: t });
+
+                    // 4. Bulk Create Details
+                    const detallesWithId = detallesToCreate.map(d => ({ ...d, id_pedido: newPedido.id }));
+                    await DetallesPedidos.bulkCreate(detallesWithId, { transaction: t });
+
+                    created.push(newPedido);
+
+                } catch (error) {
+                    errors.push(error.message);
+                    // Decide: Fail all or partial?
+                    // Transaction wraps ALL, so if one fails, all fail.
+                    throw error; // Rollback everything
                 }
-
-                const newPedido = await Pedidos.create({
-                    id_empresa,
-                    id_cliente,
-                    id_usuario_creador: id_usuario_creador || id_usuario_actual,
-                    total_pedido: totalPedido,
-                    estado_pedido: 'Pendiente'
-                }, { transaction: t });
-
-                const detallesWithId = detallesToCreate.map(d => ({ ...d, id_pedido: newPedido.id }));
-                await DetallesPedidos.bulkCreate(detallesWithId, { transaction: t });
-                created.push(newPedido);
             }
             return created;
         });

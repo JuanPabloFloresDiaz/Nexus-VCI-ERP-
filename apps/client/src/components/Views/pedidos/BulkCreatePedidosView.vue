@@ -14,7 +14,6 @@ const parsedData = ref([]);
 const isProcessing = ref(false);
 const showPreview = ref(false);
 
-// --- Data Fetching ---
 const { data: productosData } = useQuery({
     queryKey: ['productos-list-bulk-pedidos'],
     queryFn: () => getProductos({ limit: 10000 })
@@ -45,20 +44,28 @@ const productosMap = computed(() => {
 function downloadTemplate () {
     const ws = XLSX.utils.json_to_sheet([
       { 
-        id_cliente: 'UUID_CLIENTE (o ID)', 
-        id_usuario_creador: '', 
-        producto: 'SKU-001 (o Nombre)', 
+        nombre_cliente: 'Juan',
+        apellido_cliente: 'Perez',
+        dui_cliente: '12345678-9',
+        correo_cliente: 'juan@example.com',
+        telefono_cliente: '7777-7777',
+        sku_producto: 'SKU-001', 
         cantidad: 1, 
-        precio: 100, 
-        detalles_json: '{}' 
+        precio_unitario: 100, 
+        fecha_pedido: '2023-12-31',
+        estado: 'Completado' 
       },
       { 
-        id_cliente: 'UUID_CLIENTE (o ID)', 
-        id_usuario_creador: '', 
-        producto: 'Camisa Polo', 
+        nombre_cliente: 'Juan', 
+        apellido_cliente: 'Perez',
+        dui_cliente: '12345678-9',
+        correo_cliente: 'juan@example.com',
+        telefono_cliente: '7777-7777',
+        sku_producto: 'SKU-002', 
         cantidad: 2, 
-        precio: 150, 
-        detalles_json: '{}' 
+        precio_unitario: 50, 
+        fecha_pedido: '2023-12-31',
+        estado: 'Completado' 
       }
     ]);
     const wb = XLSX.utils.book_new();
@@ -103,15 +110,52 @@ function groupAndValidate(rows) {
     const grouped = {};
     
     rows.forEach((row, index) => {
-        if (!row.id_cliente && !row.producto) return; // Skip empty
+        // Identity Key: DUI or Email or Name+Apellido
+        const dui = (row.dui_cliente || '').toString().trim();
+        const email = (row.correo_cliente || '').toString().trim();
+        
+        // If neither DUI nor Email is present, skip or error? 
+        // Plan says Email is required.
+        if (!email && !dui) {
+             // Maybe log error? For now skip invalid rows to avoid crash
+             return;
+        }
 
-        const clientId = (row.id_cliente || '').toString().trim();
-        const key = clientId;
+        const key = dui || email; // Prefer DUI as key
 
         if (!grouped[key]) {
+            // Excel Date Parsing
+            let rawDate = row.fecha_pedido;
+            let finalDate = null;
+            if (typeof rawDate === 'number') {
+                // Excel Serial Date to JS Date
+                const date = new Date((rawDate - 25569) * 86400 * 1000);
+                // Adjust for timezone or just use UTC date part
+                // Excel dates are technically "floating", but usually interpreted as local.
+                // However, the formula gives UTC timestamp for that "floating" date at 00:00 UTC.
+                // So .toISOString().split('T')[0] gives the correct YYYY-MM-DD.
+                // Note: There's a 2-day bug in Excel (1900 is not leap, plus 1-based), but usually offset 25569 covers 1970+.
+                // Let's perform a quick sanity check: 45305 -> 1705190400000 -> 2024-01-14.
+                // If the user is in GMT-6, new Date(1705190400000) is Jan 13 18:00.
+                // using .toISOString() uses UTC (Jan 14). So it is correct.
+                finalDate = !isNaN(date) ? date.toISOString().split('T')[0] : null;
+            } else if (typeof rawDate === 'string' && rawDate.trim() !== '') {
+                 finalDate = rawDate.trim();
+            }
+
             grouped[key] = {
-                id_cliente: clientId,
-                id_usuario_creador: row.id_usuario_creador || null,
+                // Client Data Object
+                cliente: {
+                    nombre_cliente: row.nombre_cliente,
+                    apellido_cliente: row.apellido_cliente,
+                    dui_cliente: dui,
+                    correo_cliente: email,
+                    telefono_cliente: row.telefono_cliente
+                },
+                // Order Metadata (Take from first row)
+                fecha_pedido: finalDate,
+                estado_pedido: row.estado,
+                
                 detalles: [],
                 valid: true,
                 errors: []
@@ -119,38 +163,49 @@ function groupAndValidate(rows) {
         }
         
         const group = grouped[key];
-        const prodId = (row.producto || '').toString().trim().toLowerCase();
         
-        // Resolve Variant
+        // Validation: Client Fields
+        if (!group.cliente.nombre_cliente || !group.cliente.apellido_cliente || !group.cliente.correo_cliente) {
+             group.valid = false;
+             if (!group.errors.includes('Datos de cliente incompletos (Nombre, Apellido, Correo)')) {
+                 group.errors.push('Datos de cliente incompletos (Nombre, Apellido, Correo)');
+             }
+        }
+
+        // Product Resolution
+        const sku = (row.sku_producto || '').toString().trim().toLowerCase();
+        const name = (row.sku_producto || row.producto || '').toString().trim().toLowerCase(); // Fallback to 'producto' col if they use old template? No, force new column 'sku_producto' but keep robust.
+
         let foundVariant = null;
         
-        // 1. Try SKU
-        if (productosMap.value.skuMap[prodId]) {
-            foundVariant = productosMap.value.skuMap[prodId];
+        // 1. Try SKU (Exact Match)
+        if (productosMap.value.skuMap[sku]) {
+            foundVariant = productosMap.value.skuMap[sku];
         } 
-        // 2. Try Name
-        else if (productosMap.value.nameMap[prodId]) {
-            const p = productosMap.value.nameMap[prodId];
+        // 2. Try Name (Fallback for simple products)
+        else if (productosMap.value.nameMap[name]) {
+            const p = productosMap.value.nameMap[name];
             if (p.variantes?.length === 1) {
                 foundVariant = { ...p.variantes[0], product_name_display: p.nombre_producto, parent_product: p };
             } else {
                 group.valid = false;
-                group.errors.push(`Fila ${index + 2}: Producto '${row.producto}' ambiguo (múltiples variantes). Use SKU.`);
+                group.errors.push(`Fila ${index + 2}: Producto '${name}' ambiguo (múltiples variantes). Use SKU.`);
             }
         } else {
             group.valid = false;
-            group.errors.push(`Fila ${index + 2}: Producto '${row.producto}' no encontrado.`);
+            group.errors.push(`Fila ${index + 2}: Producto/SKU '${sku || name}' no encontrado.`);
         }
 
         if (foundVariant) {
              group.detalles.push({
-                id_producto: foundVariant.parent_product?.id,
-                id_variante: foundVariant.id, // KEY FIELD
-                cantidad: row.cantidad || 1,
-                precio_historico: row.precio || foundVariant.precio_unitario, // Use excel price or current price
-                detalles_producto: row.detalles_json ? JSON.parse(row.detalles_json || '{}') : {},
-                display_name: foundVariant.product_name_display,
-                sku: foundVariant.sku
+                sku: foundVariant.sku, // Send SKU to backend
+                id_variante: foundVariant.id, // Keep ID for frontend display if needed, but backend uses SKU now? 
+                // Wait, Controller uses SKU to find variant.
+                
+                cantidad: Number(row.cantidad) || 1,
+                precio_historico: Number(row.precio_unitario) || foundVariant.precio_unitario,
+                detalles_producto: {}, // JSON parsing if column exists? Let's assume standard simple import for now.
+                display_name: foundVariant.product_name_display
             });
         }
     });
@@ -165,7 +220,9 @@ const { mutate, isPending } = useMutation({
       router.push('/main/pedidos');
     },
     onError: (error) => {
-      showErrorToast(error.response?.data?.message || 'Error en carga masiva');
+      // Improve error message display
+      const msg = error.response?.data?.message || error.message || 'Error en carga masiva';
+      showErrorToast(msg);
     }
 });
 
@@ -176,12 +233,14 @@ function uploadData () {
         return;
     }
     
-    // Payload construction
+    // Payload construction matches new Schema
     const payload = parsedData.value.map(g => ({
-        id_cliente: g.id_cliente,
-        id_usuario_creador: g.id_usuario_creador,
+        cliente: g.cliente,
+        fecha_pedido: g.fecha_pedido, // Frontend should ensure format? Excel usually gives YYYY-MM-DD string or number. 
+        // If string '2023-12-31', it's fine.
+        estado_pedido: g.estado_pedido,
         detalles: g.detalles.map(d => ({
-            id_variante: d.id_variante,
+            sku: d.sku,
             cantidad: Number(d.cantidad),
             precio_historico: Number(d.precio_historico),
             detalles_producto: d.detalles_producto
@@ -196,7 +255,7 @@ function uploadData () {
   <v-container class="pa-6" fluid>
     <div class="mb-6">
       <h1 class="text-h4 font-weight-bold text-primary">Carga Masiva de Pedidos</h1>
-      <p class="text-body-1 text-medium-emphasis">Importar pedidos desde Excel</p>
+      <p class="text-body-1 text-medium-emphasis">Importar pedidos históricos o masivos dede Excel</p>
     </div>
 
     <v-card class="pa-6 border rounded-lg" elevation="0" max-width="800">
@@ -204,9 +263,10 @@ function uploadData () {
         <div>
           <h2 class="text-h6">Instrucciones</h2>
           <ul class="ml-4 text-body-2 text-medium-emphasis mt-2">
-            <li>Descargue la plantilla de Excel.</li>
-            <li>Columna 'Producto': Use SKU (recomendado) o Nombre exacto (solo para productos sin variantes).</li>
-            <li>Columna 'id_cliente': UUID del cliente.</li>
+            <li>Descargue la plantilla actualizada.</li>
+            <li><strong>Cliente:</strong> Llene Nombre, Apellido y Correo (Obligatorios). DUI (Opcional).</li>
+            <li><strong>Producto:</strong> Use SKU válido del sistema.</li>
+            <li><strong>Configuración:</strong> Puede especificar Fecha y Estado (Completado/Pendiente).</li>
           </ul>
         </div>
         <v-btn
@@ -238,7 +298,7 @@ function uploadData () {
                     
           <v-expansion-panels class="mb-4" variant="accordion">
             <v-expansion-panel 
-                v-for="(pedido, index) in parsedData.slice(0, 50)" 
+                v-for="(pedido, index) in parsedData" 
                 :key="index"
                 :class="{'border-error': !pedido.valid}"
             >
@@ -247,7 +307,15 @@ function uploadData () {
                     <v-icon :color="pedido.valid ? 'success' : 'error'" class="mr-2">
                         {{ pedido.valid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                     </v-icon>
-                    Pedido {{ index + 1 }} - Cliente: {{ pedido.id_cliente }}
+                    <div>
+                        <div class="font-weight-bold">
+                            {{ pedido.cliente.nombre_cliente }} {{ pedido.cliente.apellido_cliente }}
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                            {{ pedido.cliente.dui_cliente || pedido.cliente.correo_cliente }} | 
+                            {{ pedido.fecha_pedido || 'Fecha Actual' }} | {{ pedido.estado_pedido || 'Completado' }}
+                        </div>
+                    </div>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>

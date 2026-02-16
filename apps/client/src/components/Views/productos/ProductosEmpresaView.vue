@@ -127,16 +127,19 @@
       </template>
 
       <template #item.precio_unitario="{ item }">
-        <div class="font-weight-medium">{{ formatCurrency(item.precio_unitario) }}</div>
+        <div class="font-weight-medium">
+          <span v-if="item.precio_min === item.precio_max">{{ formatCurrency(item.precio_min) }}</span>
+          <span v-else>{{ formatCurrency(item.precio_min) }} - {{ formatCurrency(item.precio_max) }}</span>
+        </div>
       </template>
 
       <template #item.stock_actual="{ item }">
         <v-chip
-          :color="item.stock_actual <= item.stock_minimo ? 'error' : 'success'"
+          :color="item.stock_total <= 5 ? 'error' : 'success'"
           size="small"
           variant="tonal"
         >
-          {{ item.stock_actual }}
+          {{ item.stock_total }}
         </v-chip>
       </template>
 

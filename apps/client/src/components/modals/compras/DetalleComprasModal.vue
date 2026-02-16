@@ -98,7 +98,7 @@
             <tr v-for="item in detalles" v-else :key="item.id">
               <td>
                 <div class="font-weight-medium">{{ item.producto?.nombre_producto }}</div>
-                <div class="text-caption text-medium-emphasis">SKU: {{ item.producto?.sku }}</div>
+                <div class="text-caption text-medium-emphasis">SKU: {{ item.variante?.sku }}</div>
               </td>
               <td class="text-center">{{ item.cantidad }}</td>
               <td class="text-right">{{ formatCurrency(item.precio_costo_historico) }}</td>

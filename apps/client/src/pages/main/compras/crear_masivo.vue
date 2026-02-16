@@ -1,5 +1,4 @@
 <route lang="yaml">
-path: /main/compras/crear-masivo
 meta:
   layout: MainLayout
   title: Carga Masiva de Compras

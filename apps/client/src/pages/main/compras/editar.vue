@@ -1,5 +1,5 @@
 <route lang="yaml">
-path: /main/compras/editar/[id]
+path: /main/compras/editar/:id
 meta:
   layout: MainLayout
   title: Editar Compra

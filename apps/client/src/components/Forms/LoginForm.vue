@@ -2,6 +2,18 @@
   import { reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuth } from '@/hooks/useAuth';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Iniciar Sesión | Nexus VCI',
+    meta: [
+      { name: 'description', content: 'Accede a tu ERP inteligente. Gestión de compras, inventario y ventas en un solo lugar.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
   const { login } = useAuth();

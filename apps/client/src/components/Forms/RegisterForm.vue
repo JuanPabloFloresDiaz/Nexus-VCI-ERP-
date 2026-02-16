@@ -3,6 +3,18 @@
   import { useRouter } from 'vue-router';
   import { useAuth } from '@/hooks/useAuth';
   import { uploadFile } from '@/services/storage.service';
+  import { useHead } from '@unhead/vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Registro de Cuenta | Nexus VCI',
+    meta: [
+      { name: 'description', content: 'Crea tu cuenta en Nexus VCI y empieza a optimizar tu operación comercial hoy mismo.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   const router = useRouter();
   const { register } = useAuth();

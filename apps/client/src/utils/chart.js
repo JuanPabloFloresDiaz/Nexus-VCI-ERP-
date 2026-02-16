@@ -1,15 +1,15 @@
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
     ArcElement,
-    Title,
-    Tooltip,
+    BarElement,
+    CategoryScale,
+    Chart as ChartJS,
+    Filler,
     Legend,
-    Filler
+    LinearScale,
+    LineElement,
+    PointElement,
+    Title,
+    Tooltip
 } from 'chart.js';
 
 ChartJS.register(
@@ -50,12 +50,12 @@ ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
 ChartJS.defaults.plugins.legend.labels.usePointStyle = true;
 
 // --- Helper to create gradients ---
-export const createGradient = (ctx, colorStart, colorEnd) => {
+export function createGradient (ctx, colorStart, colorEnd) {
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, colorStart);
     gradient.addColorStop(1, colorEnd);
     return gradient;
-};
+}
 
 // --- Common Options ---
 export const baseOptions = {

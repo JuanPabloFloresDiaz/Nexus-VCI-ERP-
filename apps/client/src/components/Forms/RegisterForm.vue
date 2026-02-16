@@ -197,9 +197,9 @@
           <v-file-input
             v-model="form.logo"
             accept="image/*"
+            class="mb-2"
             color="primary"
             label="Logo de la Empresa"
-            class="mb-2"
             prepend-icon=""
             prepend-inner-icon="mdi-camera"
             show-size
@@ -246,10 +246,10 @@
           <v-text-field
             v-model="form.clave_acceso"
             :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            class="mb-4"
             color="primary"
             label="Contraseña *"
             placeholder="Mínimo 8 caracteres"
-            class="mb-4"
             prepend-inner-icon="mdi-lock"
             :rules="[rules.required, rules.min]"
             :type="showPassword ? 'text' : 'password'"

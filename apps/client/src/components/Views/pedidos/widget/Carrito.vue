@@ -66,19 +66,19 @@
   }
 
   function removeItem (index) {
-     const newCart = [...props.modelValue];
-     newCart.splice(index, 1);
-     emit('update:modelValue', newCart);
+    const newCart = [...props.modelValue];
+    newCart.splice(index, 1);
+    emit('update:modelValue', newCart);
   }
   
   // Helper to display variant attributes
   function getVariantAttributes(item) {
-      if (!item.detalles_filtros || item.detalles_filtros.length === 0) return [];
+    if (!item.detalles_filtros || item.detalles_filtros.length === 0) return [];
       
-      return item.detalles_filtros.map(df => ({
-          label: df.opcion_filtro?.filtro?.nombre_filtro || 'Opción',
-          value: df.opcion_filtro?.valor_opcion || df.valor_opcion // Handle both nested and flat if needed
-      }));
+    return item.detalles_filtros.map(df => ({
+      label: df.opcion_filtro?.filtro?.nombre_filtro || 'Opción',
+      value: df.opcion_filtro?.valor_opcion || df.valor_opcion // Handle both nested and flat if needed
+    }));
   }
 
   // Checkout
@@ -199,24 +199,24 @@
           </v-list-item-title>
           
           <v-list-item-subtitle>
-             <div class="d-flex align-center mt-1">
-                 <span class="mr-2">{{ formatCurrency(item.precio_historico || item.precio_unitario) }}</span>
-                 <v-chip v-if="item.sku" size="x-small" variant="outlined" class="mr-1">{{ item.sku }}</v-chip>
-             </div>
+            <div class="d-flex align-center mt-1">
+              <span class="mr-2">{{ formatCurrency(item.precio_historico || item.precio_unitario) }}</span>
+              <v-chip v-if="item.sku" class="mr-1" size="x-small" variant="outlined">{{ item.sku }}</v-chip>
+            </div>
           </v-list-item-subtitle>
           
           <!-- Variant Attributes Display -->
           <div v-if="getVariantAttributes(item).length > 0" class="mt-2 text-caption">
-             <v-chip 
-                v-for="(attr, i) in getVariantAttributes(item)" 
-                :key="i"
-                class="mr-1 mb-1"
-                size="x-small"
-                variant="tonal"
-                color="secondary"
-             >
-                {{ attr.label }}: {{ attr.value }}
-             </v-chip>
+            <v-chip 
+              v-for="(attr, i) in getVariantAttributes(item)" 
+              :key="i"
+              class="mr-1 mb-1"
+              color="secondary"
+              size="x-small"
+              variant="tonal"
+            >
+              {{ attr.label }}: {{ attr.value }}
+            </v-chip>
           </div>
 
           <template #append>
@@ -225,10 +225,32 @@
                 {{ formatCurrency((item.precio_historico || item.precio_unitario) * item.cantidad) }}
               </div>
               <div class="d-flex align-center">
-                <v-btn  density="comfortable" :disabled="item.cantidad <= 1" icon="mdi-minus" size="x-small" variant="tonal" @click="updateQuantity(index, -1)"/>
+                <v-btn
+                  density="comfortable"
+                  :disabled="item.cantidad <= 1"
+                  icon="mdi-minus"
+                  size="x-small"
+                  variant="tonal"
+                  @click="updateQuantity(index, -1)"
+                />
                 <span class="mx-2 font-weight-bold text-body-2">{{ item.cantidad }}</span>
-                <v-btn color="primary" density="comfortable" :disabled="item.cantidad >= item.stock_actual" icon="mdi-plus" size="x-small" variant="tonal" @click="updateQuantity(index, 1)"/>
-                <v-btn class="ml-2" color="error" icon="mdi-delete" size="x-small" variant="text" @click="removeItem(index)"/>
+                <v-btn
+                  color="primary"
+                  density="comfortable"
+                  :disabled="item.cantidad >= item.stock_actual"
+                  icon="mdi-plus"
+                  size="x-small"
+                  variant="tonal"
+                  @click="updateQuantity(index, 1)"
+                />
+                <v-btn
+                  class="ml-2"
+                  color="error"
+                  icon="mdi-delete"
+                  size="x-small"
+                  variant="text"
+                  @click="removeItem(index)"
+                />
               </div>
             </div>
           </template>
@@ -248,9 +270,25 @@
         <v-col class="text-right"><div class="text-h5 font-weight-black text-primary">{{ formatCurrency(total) }}</div></v-col>
       </v-row>
 
-      <v-select v-model="estadoPedido" class="mb-3" density="compact" hide-details :items="['Pendiente', 'Completado', 'Cancelado']" label="Estado del Pedido" variant="outlined" />
+      <v-select
+        v-model="estadoPedido"
+        class="mb-3"
+        density="compact"
+        hide-details
+        :items="['Pendiente', 'Completado', 'Cancelado']"
+        label="Estado del Pedido"
+        variant="outlined"
+      />
 
-      <v-btn block color="primary" :disabled="modelValue.length === 0 || !cliente" elevation="2" :loading="isPending" size="large" @click="checkout">
+      <v-btn
+        block
+        color="primary"
+        :disabled="modelValue.length === 0 || !cliente"
+        elevation="2"
+        :loading="isPending"
+        size="large"
+        @click="checkout"
+      >
         <v-icon start>mdi-check-circle</v-icon>
         {{ isEdit ? 'Actualizar Pedido' : 'Confirmar Pedido' }}
       </v-btn>

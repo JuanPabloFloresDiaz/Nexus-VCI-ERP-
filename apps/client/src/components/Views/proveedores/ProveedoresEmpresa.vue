@@ -43,9 +43,9 @@
     <div class="mb-6">
       <v-text-field
         v-model="search"
+        class="mx-auto"
         elevation="2"
         hide-details
-        class="mx-auto"
         placeholder="Buscar proveedor..."
         prepend-inner-icon="mdi-magnify"
         rounded="lg"

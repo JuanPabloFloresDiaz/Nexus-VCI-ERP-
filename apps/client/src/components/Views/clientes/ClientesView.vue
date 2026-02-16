@@ -114,8 +114,8 @@
       <v-toolbar class="px-4 border-b" color="transparent" density="comfortable">
         <v-text-field
           v-model="search"
-          density="compact"
           class="mr-2"
+          density="compact"
           hide-details
           placeholder="Buscar cliente (Nombre, Correo, DUI...)"
           prepend-inner-icon="mdi-magnify"

@@ -152,8 +152,8 @@
 
       <template #item.precio_unitario="{ item }">
         <div class="font-weight-medium">
-            <span v-if="item.precio_min === item.precio_max">{{ formatCurrency(item.precio_min) }}</span>
-            <span v-else>{{ formatCurrency(item.precio_min) }} - {{ formatCurrency(item.precio_max) }}</span>
+          <span v-if="item.precio_min === item.precio_max">{{ formatCurrency(item.precio_min) }}</span>
+          <span v-else>{{ formatCurrency(item.precio_min) }} - {{ formatCurrency(item.precio_max) }}</span>
         </div>
       </template>
 

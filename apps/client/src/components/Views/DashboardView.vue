@@ -2,14 +2,14 @@
   <v-container class="pa-6" fluid>
     <!-- Header -->
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Dashboard</h1>
+      <h1 class="text-h4 font-weight-bold text-slate-700">Dashboard</h1>
       <p class="text-body-1 text-medium-emphasis">Resumen general de la empresa</p>
     </div>
 
     <!-- Key Metrics Cards -->
     <v-row class="mb-6">
       <v-col cols="12" md="6">
-        <v-card class="border rounded-lg h-100" elevation="0">
+        <v-card class="border rounded-lg h-100 bg-surface" elevation="1">
           <v-skeleton-loader v-if="isLoadingMetrics" class="bg-transparent" type="list-item-two-line" />
           <v-card-text v-else>
             <div class="d-flex align-start justify-space-between mb-4">
@@ -28,7 +28,7 @@
       </v-col>
 
       <v-col cols="12" md="6">
-        <v-card class="border rounded-lg h-100" elevation="0">
+        <v-card class="border rounded-lg h-100 bg-surface" elevation="1">
           <v-skeleton-loader v-if="isLoadingMetrics" class="bg-transparent" type="list-item-two-line" />
           <v-card-text v-else>
             <div class="d-flex align-center justify-space-between mb-4">
@@ -51,9 +51,9 @@
     <v-row>
       <!-- Top Products -->
       <v-col cols="12" md="6">
-        <v-card class="border rounded-lg h-100" elevation="0">
+        <v-card class="border rounded-lg h-100 bg-surface" elevation="1">
           <v-card-title class="d-flex align-center py-4 px-4 border-b">
-            <span class="text-h6 font-weight-bold">Top Productos</span>
+            <span class="text-h6 font-weight-bold text-slate-700">Top Productos</span>
             <v-spacer />
             <v-icon color="amber" icon="mdi-trophy-outline" size="small" />
           </v-card-title>
@@ -65,24 +65,29 @@
               <v-list-item
                 v-for="(item, i) in topProducts"
                 :key="item.id_producto"
-                class="py-3 border-b"
-                :prepend-avatar="item.producto?.imagen_url || undefined"
+                class="py-3 border-b hover:bg-slate-50 transition-colors"
               >
-                <template v-if="!item.producto?.imagen_url" #prepend>
-                  <v-avatar color="surface-variant" variant="flat">
-                    <v-icon icon="mdi-image-off-outline" />
-                  </v-avatar>
+                <template #prepend>
+                  <AsyncAvatar
+                    :alt="item.producto?.nombre_producto"
+                    class="mr-4"
+                    color="surface-variant"
+                    rounded="lg"
+                    size="48"
+                    :src="item.producto?.imagen_url"
+                    variant="flat"
+                  />
                 </template>
                 
-                <v-list-item-title class="font-weight-bold text-body-2">
+                <v-list-item-title class="font-weight-bold text-body-2 text-slate-700">
                   {{ item.producto?.nombre_producto || 'Producto Desconocido' }}
                 </v-list-item-title>
                 
                 <v-list-item-subtitle class="mt-1">
-                  <v-chip class="font-weight-bold" color="primary" size="x-small" variant="flat">
+                  <v-chip class="font-weight-bold mr-2" color="primary" size="x-small" variant="flat">
                     {{ item.total_vendido }} unid.
                   </v-chip>
-                  <span class="ms-2 text-caption text-medium-emphasis">
+                  <span class="text-caption text-medium-emphasis">
                     {{ getFormattedPrice(item.producto) }} / ud.
                   </span>
                 </v-list-item-subtitle>
@@ -104,9 +109,9 @@
 
       <!-- Top Clients -->
       <v-col cols="12" md="6">
-        <v-card class="border rounded-lg h-100" elevation="0">
+        <v-card class="border rounded-lg h-100 bg-surface" elevation="1">
           <v-card-title class="d-flex align-center py-4 px-4 border-b">
-            <span class="text-h6 font-weight-bold">Mejores Clientes</span>
+            <span class="text-h6 font-weight-bold text-slate-700">Mejores Clientes</span>
             <v-spacer />
             <v-icon color="info" icon="mdi-account-star-outline" size="small" />
           </v-card-title>
@@ -118,15 +123,21 @@
               <v-list-item
                 v-for="(client, i) in topClients"
                 :key="client.id_cliente"
-                class="py-3 border-b"
+                class="py-3 border-b hover:bg-slate-50 transition-colors"
               >
                 <template #prepend>
-                  <v-avatar color="primary" variant="tonal">
-                    <span class="text-h6 font-weight-bold">{{ getInitials(client.cliente) }}</span>
-                  </v-avatar>
+                  <AsyncAvatar
+                    :alt="getClientName(client.cliente)"
+                    class="mr-4"
+                    color="primary"
+                    :name="getClientName(client.cliente)"
+                    size="48"
+                    :src="client.cliente?.avatar_url" 
+                    variant="tonal"
+                  />
                 </template>
 
-                <v-list-item-title class="font-weight-bold text-body-2">
+                <v-list-item-title class="font-weight-bold text-body-2 text-slate-700">
                   {{ getClientName(client.cliente) }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text-caption mt-1">
@@ -156,8 +167,23 @@
 
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed } from 'vue';
+  import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import { getGeneralMetrics, getTopClients, getTopProducts } from '@/services/dashboard.service';
+
+  // --- SEO ---
+  useHead({
+    title: 'Dashboard',
+    meta: [
+      { name: 'description', content: 'Resumen general de ventas, productos populares y mejores clientes de la empresa.' },
+      { property: 'og:title', content: 'Dashboard | Nexus VCI' },
+      { property: 'og:description', content: 'Resumen general de ventas y métricas clave.' },
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
   // --- Queries ---
 
@@ -209,11 +235,11 @@
     if (!producto) return formatCurrency(0);
     // If variants exist, calculate range
     if (producto.variantes && producto.variantes.length > 0) {
-        const prices = producto.variantes.map(v => Number(v.precio_unitario));
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
-        if (min === max) return formatCurrency(min);
-        return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+      const prices = producto.variantes.map(v => Number(v.precio_unitario));
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      if (min === max) return formatCurrency(min);
+      return `${formatCurrency(min)} - ${formatCurrency(max)}`;
     }
     // Fallback if no variants but somehow price exists (legacy)
     return formatCurrency(producto.precio_unitario || 0);
@@ -223,17 +249,13 @@
     if (!cliente) return 'Cliente Desconocido';
     return `${cliente.nombre_cliente} ${cliente.apellido_cliente}`;
   }
-
-  function getInitials (cliente) {
-    if (!cliente) return '??';
-    const name = cliente.nombre_cliente?.charAt(0) || '';
-    const last = cliente.apellido_cliente?.charAt(0) || '';
-    return (name + last).toUpperCase();
-  }
 </script>
 
 <style scoped>
 .v-card {
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.hover\:bg-slate-50:hover {
+    background-color: #f8fafc; /* Slate 50 */
 }
 </style>

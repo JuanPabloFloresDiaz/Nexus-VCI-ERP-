@@ -124,8 +124,8 @@
               <v-autocomplete
                 v-model="formData.id_empresa"
                 density="compact"
-                item-title="nombre_empresa"
                 hint="Reasignar empresa (Cuidado: esto moverá al cliente)"
+                item-title="nombre_empresa"
                 item-value="id"
                 :items="empresas"
                 label="Empresa *"

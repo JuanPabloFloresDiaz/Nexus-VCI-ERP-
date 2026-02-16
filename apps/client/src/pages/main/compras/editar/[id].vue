@@ -6,10 +6,10 @@ meta:
 </route>
 
 <script setup>
-import UpdateComprasView from '@/components/Views/compras/UpdateComprasView.vue';
-import { useRoute } from 'vue-router';
+  import { useRoute } from 'vue-router';
+  import UpdateComprasView from '@/components/Views/compras/UpdateComprasView.vue';
 
-const route = useRoute();
+  const route = useRoute();
 </script>
 
 <template>

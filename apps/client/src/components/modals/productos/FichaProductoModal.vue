@@ -40,26 +40,26 @@
 
   // Computed Aggregates
   const aggregates = computed(() => {
-      if (!fullProduct.value) return {};
-      const vars = fullProduct.value.variantes || [];
-      if (vars.length === 0) return {
-          priceMin: 0, priceMax: 0, stockTotal: 0, costTotal: 0
-      };
+    if (!fullProduct.value) return {};
+    const vars = fullProduct.value.variantes || [];
+    if (vars.length === 0) return {
+      priceMin: 0, priceMax: 0, stockTotal: 0, costTotal: 0
+    };
 
-      const prices = vars.map(v => Number(v.precio_unitario));
-      const totalStock = vars.reduce((acc, v) => acc + Number(v.stock_actual), 0);
+    const prices = vars.map(v => Number(v.precio_unitario));
+    const totalStock = vars.reduce((acc, v) => acc + Number(v.stock_actual), 0);
       
-      return {
-          priceMin: Math.min(...prices),
-          priceMax: Math.max(...prices),
-          stockTotal: totalStock
-      };
+    return {
+      priceMin: Math.min(...prices),
+      priceMax: Math.max(...prices),
+      stockTotal: totalStock
+    };
   });
 
   const priceDisplay = computed(() => {
-      const { priceMin, priceMax } = aggregates.value;
-      if (priceMin === priceMax) return formatCurrency(priceMin);
-      return `${formatCurrency(priceMin)} - ${formatCurrency(priceMax)}`;
+    const { priceMin, priceMax } = aggregates.value;
+    if (priceMin === priceMax) return formatCurrency(priceMin);
+    return `${formatCurrency(priceMin)} - ${formatCurrency(priceMax)}`;
   });
 
   // Financials across ALL variants
@@ -70,31 +70,31 @@
     let inversionTotal = 0;
     let ingresoTotalPotencial = 0;
     
-    fullProduct.value.variantes.forEach(v => {
-        const cost = Number(v.costo_unitario) || 0;
-        const price = Number(v.precio_unitario) || 0;
-        const stock = Number(v.stock_actual) || 0;
+    for (const v of fullProduct.value.variantes) {
+      const cost = Number(v.costo_unitario) || 0;
+      const price = Number(v.precio_unitario) || 0;
+      const stock = Number(v.stock_actual) || 0;
 
-        inversionTotal += cost * stock;
-        ingresoTotalPotencial += price * stock;
-    });
+      inversionTotal += cost * stock;
+      ingresoTotalPotencial += price * stock;
+    }
 
     const utilidadTotalPotencial = ingresoTotalPotencial - inversionTotal;
     const margenGeneral = ingresoTotalPotencial > 0 ? (utilidadTotalPotencial / ingresoTotalPotencial) * 100 : 0;
 
     return {
-        inversionTotal,
-        ingresoTotalPotencial,
-        utilidadTotalPotencial,
-        margenGeneral
+      inversionTotal,
+      ingresoTotalPotencial,
+      utilidadTotalPotencial,
+      margenGeneral
     };
   });
 
   function getVariantName(variant) {
-      if (!variant.detalles_filtros || variant.detalles_filtros.length === 0) return 'Estándar';
-      return variant.detalles_filtros.map(d => {
-           return `${d.opcion_filtro?.filtro?.nombre_filtro}: ${d.opcion_filtro?.valor_opcion}`;
-      }).join(', ');
+    if (!variant.detalles_filtros || variant.detalles_filtros.length === 0) return 'Estándar';
+    return variant.detalles_filtros.map(d => {
+      return `${d.opcion_filtro?.filtro?.nombre_filtro}: ${d.opcion_filtro?.valor_opcion}`;
+    }).join(', ');
   }
 
   const financialConclusion = computed(() => {
@@ -107,17 +107,17 @@
         color: 'success'
       };
     } else if (margin >= 25) {
-       return {
+      return {
         text: 'El producto tiene un margen saludable. Vigilar la rotación de inventario para asegurar que se cumplan las metas de utilidad.',
         color: 'info'
       };
     } else if (margin > 0) {
-       return {
+      return {
         text: 'El margen es bajo (<25%). Se sugiere evaluar estrategias para reducir costos o aumentar volumen de ventas para justificar la inversión.',
         color: 'warning'
       };
     } else {
-        return {
+      return {
         text: 'Alerta: El producto no parece ser rentable actualmente. Revisar costos y precios inmediatamente.',
         color: 'error'
       };
@@ -200,10 +200,10 @@
 
               <!-- Financial Analysis Accordion -->
               <v-expansion-panels class="mb-4">
-                <v-expansion-panel elevation="1" bg-color="white">
-                  <v-expansion-panel-title color="info" class="text-white">
+                <v-expansion-panel bg-color="white" elevation="1">
+                  <v-expansion-panel-title class="text-white" color="info">
                     <div class="d-flex align-center">
-                      <v-icon color="white" class="mr-2">mdi-chart-line</v-icon>
+                      <v-icon class="mr-2" color="white">mdi-chart-line</v-icon>
                       <span class="font-weight-bold text-subtitle-2">Análisis de Rentabilidad</span>
                     </div>
                   </v-expansion-panel-title>
@@ -221,7 +221,7 @@
                           <div class="text-caption font-weight-bold">Ingreso Potencial</div>
                           <div class="text-body-2">{{ formatCurrency(stockFinancials.ingresoTotalPotencial) }}</div>
                         </v-col>
-                         <v-col cols="6" md="3">
+                        <v-col cols="6" md="3">
                           <div class="text-caption font-weight-bold">Utilidad Potencial</div>
                           <div class="text-body-2 text-success font-weight-bold">{{ formatCurrency(stockFinancials.utilidadTotalPotencial) }}</div>
                         </v-col>
@@ -232,12 +232,12 @@
                       </v-row>
                     </div>
 
-                    <v-divider class="mb-4"></v-divider>
+                    <v-divider class="mb-4" />
 
                     <!-- Per Variant Analysis -->
                     <div class="mb-4">
                       <div class="text-overline text-medium-emphasis mb-2">Detalle por Variante</div>
-                      <v-table density="compact" class="text-caption">
+                      <v-table class="text-caption" density="compact">
                         <thead>
                           <tr>
                             <th>Variante</th>
@@ -257,7 +257,7 @@
                             <td class="text-right">{{ formatCurrency(Number(variant.costo_unitario) * Number(variant.stock_actual)) }}</td>
                             <td class="text-right text-success">{{ formatCurrency((Number(variant.precio_unitario) * Number(variant.stock_actual)) - (Number(variant.costo_unitario) * Number(variant.stock_actual))) }}</td>
                             <td class="text-right">
-                               {{ Number(variant.precio_unitario) > 0 ? Math.ceil((Number(variant.costo_unitario) * Number(variant.stock_actual)) / Number(variant.precio_unitario)) : 0 }} u.
+                              {{ Number(variant.precio_unitario) > 0 ? Math.ceil((Number(variant.costo_unitario) * Number(variant.stock_actual)) / Number(variant.precio_unitario)) : 0 }} u.
                             </td>
                           </tr>
                         </tbody>
@@ -266,10 +266,10 @@
 
                     <!-- Analysis Conclusion -->
                     <v-alert
+                      border="start"
+                      class="mb-4 text-caption"
                       :color="financialConclusion.color"
                       variant="tonal"
-                      class="mb-4 text-caption"
-                      border="start"
                     >
                       <div class="font-weight-bold mb-1">Conclusión del Análisis</div>
                       {{ financialConclusion.text }}
@@ -277,15 +277,21 @@
 
                     <!-- Glossary Carousel -->
                     <div class="bg-grey-lighten-4 rounded pa-2">
-                       <div class="text-caption font-weight-bold text-center text-medium-emphasis mb-1">Glosario de Términos (Desliza para ver más)</div>
-                       <v-carousel cycle height="80" hide-delimiters show-arrows="hover" :show-arrows="false">
-                          <v-carousel-item v-for="(term, i) in glossaryTerms" :key="i">
-                              <div class="d-flex flex-column align-center justify-center h-100 text-center px-4">
-                                  <div class="text-subtitle-2 text-primary font-weight-bold">{{ term.title }}</div>
-                                  <div class="text-caption">{{ term.definition }}</div>
-                              </div>
-                          </v-carousel-item>
-                       </v-carousel>
+                      <div class="text-caption font-weight-bold text-center text-medium-emphasis mb-1">Glosario de Términos (Desliza para ver más)</div>
+                      <v-carousel
+                        cycle
+                        height="80"
+                        hide-delimiters
+                        show-arrows="hover"
+                        :show-arrows="false"
+                      >
+                        <v-carousel-item v-for="(term, i) in glossaryTerms" :key="i">
+                          <div class="d-flex flex-column align-center justify-center h-100 text-center px-4">
+                            <div class="text-subtitle-2 text-primary font-weight-bold">{{ term.title }}</div>
+                            <div class="text-caption">{{ term.definition }}</div>
+                          </div>
+                        </v-carousel-item>
+                      </v-carousel>
                     </div>
 
                   </v-expansion-panel-text>
@@ -295,33 +301,33 @@
             
             <!-- Variants Table Section -->
             <v-col cols="12">
-                 <div class="text-h6 font-weight-bold mb-2 px-2">Variantes y Existencias</div>
-                 <v-table class="border rounded" density="compact" hover>
-                     <thead>
-                         <tr>
-                             <th class="text-left">Variante</th>
-                             <th class="text-left">SKU</th>
-                             <th class="text-right">Costo</th>
-                             <th class="text-right">Precio</th>
-                             <th class="text-right">Stock</th>
-                         </tr>
-                     </thead>
-                     <tbody>
-                         <tr v-for="variant in fullProduct.variantes" :key="variant.id">
-                             <td>
-                                 <div class="font-weight-medium">{{ getVariantName(variant) }}</div>
-                             </td>
-                             <td class="text-medium-emphasis">{{ variant.sku || '-' }}</td>
-                             <td class="text-right">{{ formatCurrency(variant.costo_unitario) }}</td>
-                             <td class="text-right">{{ formatCurrency(variant.precio_unitario) }}</td>
-                             <td class="text-right">
-                                 <v-chip :color="variant.stock_actual <= (variant.stock_minimo || 5) ? 'error' : 'success'" size="x-small" variant="flat">
-                                     {{ variant.stock_actual }}
-                                 </v-chip>
-                             </td>
-                         </tr>
-                     </tbody>
-                 </v-table>
+              <div class="text-h6 font-weight-bold mb-2 px-2">Variantes y Existencias</div>
+              <v-table class="border rounded" density="compact" hover>
+                <thead>
+                  <tr>
+                    <th class="text-left">Variante</th>
+                    <th class="text-left">SKU</th>
+                    <th class="text-right">Costo</th>
+                    <th class="text-right">Precio</th>
+                    <th class="text-right">Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="variant in fullProduct.variantes" :key="variant.id">
+                    <td>
+                      <div class="font-weight-medium">{{ getVariantName(variant) }}</div>
+                    </td>
+                    <td class="text-medium-emphasis">{{ variant.sku || '-' }}</td>
+                    <td class="text-right">{{ formatCurrency(variant.costo_unitario) }}</td>
+                    <td class="text-right">{{ formatCurrency(variant.precio_unitario) }}</td>
+                    <td class="text-right">
+                      <v-chip :color="variant.stock_actual <= (variant.stock_minimo || 5) ? 'error' : 'success'" size="x-small" variant="flat">
+                        {{ variant.stock_actual }}
+                      </v-chip>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
             </v-col>
 
           </v-row>

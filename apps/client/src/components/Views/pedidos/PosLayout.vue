@@ -69,20 +69,20 @@
     let product, variant;
     
     if (payload.producto && payload.variant) {
-        product = payload.producto;
-        variant = payload.variant;
+      product = payload.producto;
+      variant = payload.variant;
     } else {
-        // Fallback or direct product add (shouldn't happen with updated Catalog)
-        product = payload;
-        // Try to find default variant if exists
-        variant = product.variantes?.[0];
+      // Fallback or direct product add (shouldn't happen with updated Catalog)
+      product = payload;
+      // Try to find default variant if exists
+      variant = product.variantes?.[0];
     }
     
     // Validate Stock
     const stockAvailable = variant ? variant.stock_actual : product.stock_actual;
     if (stockAvailable <= 0) {
-        // Should have been disabled in UI, but double check
-        return;
+      // Should have been disabled in UI, but double check
+      return;
     }
 
     const cartItemId = Date.now() + Math.random().toString(36).slice(2, 11);

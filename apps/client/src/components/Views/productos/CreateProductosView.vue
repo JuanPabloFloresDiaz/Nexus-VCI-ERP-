@@ -104,9 +104,9 @@
     // User requested "single type and single size" per variant.
     // So we should pre-fill the structure.
     newVariant.detalles = availableFilters.value.map(f => ({
-        id_filtro: f.id,
-        nombre_filtro: f.nombre_filtro, // For UI display
-        id_opcion_filtro: null
+      id_filtro: f.id,
+      nombre_filtro: f.nombre_filtro, // For UI display
+      id_opcion_filtro: null
     }));
   }
 
@@ -130,30 +130,30 @@
     // Check if any filter is missing selection
     const missingFilter = newVariant.detalles.find(d => !d.id_opcion_filtro);
     if (missingFilter) {
-        showErrorToast(`Seleccione una opción para ${missingFilter.nombre_filtro}`);
-        return;
+      showErrorToast(`Seleccione una opción para ${missingFilter.nombre_filtro}`);
+      return;
     }
 
     // Check duplicate SKU in local list
     if (newVariant.sku && form.variantes.some(v => v.sku === newVariant.sku)) {
-        showErrorToast('El SKU ya existe en la lista de variantes');
-        return;
+      showErrorToast('El SKU ya existe en la lista de variantes');
+      return;
     }
 
     // Check duplicate Combination
     // Two variants shouldn't have exact same options?
     // Unless they differentiate by something else? Usually combination must be unique.
     const isDuplicate = form.variantes.some(v => {
-        // Check if all options match
-        return v.detalles.every(vd => {
-            const newVal = newVariant.detalles.find(nd => nd.id_filtro === vd.id_filtro);
-            return newVal && newVal.id_opcion_filtro === vd.id_opcion_filtro;
-        });
+      // Check if all options match
+      return v.detalles.every(vd => {
+        const newVal = newVariant.detalles.find(nd => nd.id_filtro === vd.id_filtro);
+        return newVal && newVal.id_opcion_filtro === vd.id_opcion_filtro;
+      });
     });
 
     if (isDuplicate) {
-        showErrorToast('Ya existe una variante con esta combinación de especificaciones');
-        return;
+      showErrorToast('Ya existe una variante con esta combinación de especificaciones');
+      return;
     }
 
     form.variantes.push(JSON.parse(JSON.stringify(newVariant)));
@@ -174,10 +174,10 @@
   }
 
   function getOptionName(detalle) {
-      if (!detalle.id_opcion_filtro) return '';
-      const opts = getFilterOptions(detalle.id_filtro);
-      const opt = opts.find(o => o.id === detalle.id_opcion_filtro);
-      return opt ? opt.valor_opcion : '';
+    if (!detalle.id_opcion_filtro) return '';
+    const opts = getFilterOptions(detalle.id_filtro);
+    const opt = opts.find(o => o.id === detalle.id_opcion_filtro);
+    return opt ? opt.valor_opcion : '';
   }
 
   // --- Image Upload ---
@@ -243,8 +243,8 @@
     if (!valid) return;
 
     if (form.variantes.length === 0) {
-        showErrorToast('Debe agregar al menos una variante (especificación) al producto');
-        return;
+      showErrorToast('Debe agregar al menos una variante (especificación) al producto');
+      return;
     }
 
     isSubmitting.value = true;
@@ -252,14 +252,14 @@
     // Prepare Payload
     // Clean details to only send { id_opcion_filtro }
     const cleanedVariants = form.variantes.map(v => ({
-        sku: v.sku,
-        precio_unitario: v.precio_unitario,
-        costo_unitario: v.costo_unitario,
-        stock_actual: v.stock_actual,
-        stock_minimo: v.stock_minimo,
-        detalles: v.detalles.map(d => ({
-            id_opcion_filtro: d.id_opcion_filtro
-        }))
+      sku: v.sku,
+      precio_unitario: v.precio_unitario,
+      costo_unitario: v.costo_unitario,
+      stock_actual: v.stock_actual,
+      stock_minimo: v.stock_minimo,
+      detalles: v.detalles.map(d => ({
+        id_opcion_filtro: d.id_opcion_filtro
+      }))
     }));
 
     const payload = {
@@ -320,9 +320,9 @@
                         cover
                         :src="previewImage"
                       >
-                         <template #placeholder>
-                           <v-progress-circular color="primary" indeterminate />
-                         </template>
+                        <template #placeholder>
+                          <v-progress-circular color="primary" indeterminate />
+                        </template>
                       </v-img>
                       <span v-else class="text-h3 font-weight-bold text-uppercase">
                         {{ form.nombre_producto?.charAt(0) || 'P' }}
@@ -340,7 +340,13 @@
                       @click="triggerFileInput"
                     />
                   </div>
-                  <input ref="fileInput" accept="image/*" class="d-none" type="file" @change="handleFileUpload">
+                  <input
+                    ref="fileInput"
+                    accept="image/*"
+                    class="d-none"
+                    type="file"
+                    @change="handleFileUpload"
+                  >
                 </div>
 
                 <v-text-field
@@ -390,140 +396,153 @@
           <!-- Right Column: Variants -->
           <v-col cols="12" md="8">
             <v-card v-if="form.id_subcategoria" title="Variantes y Especificaciones">
-               <template #append>
-                   <v-chip color="info" size="small" variant="tonal">
-                       {{ form.variantes.length }} variantes agregadas
-                   </v-chip>
-               </template>
+              <template #append>
+                <v-chip color="info" size="small" variant="tonal">
+                  {{ form.variantes.length }} variantes agregadas
+                </v-chip>
+              </template>
                
-               <v-card-text>
-                 <v-alert v-if="availableFilters.length === 0" class="mb-4" type="warning" variant="tonal">
-                    Esta subcategoría no tiene filtros configurados. Se creará una variante predeterminada.
-                 </v-alert>
+              <v-card-text>
+                <v-alert v-if="availableFilters.length === 0" class="mb-4" type="warning" variant="tonal">
+                  Esta subcategoría no tiene filtros configurados. Se creará una variante predeterminada.
+                </v-alert>
 
-                 <!-- Add Variant Form -->
-                 <v-sheet class="bg-grey-lighten-4 pa-4 rounded border mb-4">
-                    <div class="text-subtitle-2 font-weight-bold mb-2">Nueva Variante</div>
-                    <v-form ref="variantFormRef" @submit.prevent>
-                        <v-row dense>
-                            <!-- Dynamic Attributes -->
-                            <v-col v-for="(detalle, i) in newVariant.detalles" :key="i" cols="12" md="4">
-                                <v-select
-                                    v-model="detalle.id_opcion_filtro"
-                                    density="compact"
-                                    bg-color="white"
-                                    :items="getFilterOptions(detalle.id_filtro)"
-                                    item-title="valor_opcion"
-                                    item-value="id"
-                                    :label="detalle.nombre_filtro"
-                                    :rules="[requiredRule]"
-                                    variant="outlined"
-                                />
-                            </v-col>
+                <!-- Add Variant Form -->
+                <v-sheet class="bg-grey-lighten-4 pa-4 rounded border mb-4">
+                  <div class="text-subtitle-2 font-weight-bold mb-2">Nueva Variante</div>
+                  <v-form ref="variantFormRef" @submit.prevent>
+                    <v-row dense>
+                      <!-- Dynamic Attributes -->
+                      <v-col v-for="(detalle, i) in newVariant.detalles" :key="i" cols="12" md="4">
+                        <v-select
+                          v-model="detalle.id_opcion_filtro"
+                          bg-color="white"
+                          density="compact"
+                          item-title="valor_opcion"
+                          item-value="id"
+                          :items="getFilterOptions(detalle.id_filtro)"
+                          :label="detalle.nombre_filtro"
+                          :rules="[requiredRule]"
+                          variant="outlined"
+                        />
+                      </v-col>
                             
-                            <!-- Variant Details -->
-                             <v-col cols="12" md="4">
-                                <v-text-field
-                                    v-model="newVariant.sku"
-                                    v-maska="'***-###'"
-                                    density="compact"
-                                    bg-color="white"
-                                    label="SKU (Opcional)"
-                                    placeholder="AAA-123"
-                                    variant="outlined"
-                                />
-                            </v-col>
-                            <v-col cols="12" md="4">
-                                <v-text-field
-                                    v-model.number="newVariant.precio_unitario"
-                                    density="compact"
-                                    bg-color="white"
-                                    label="Precio Unitario"
-                                    prefix="$"
-                                    :rules="[requiredRule, numberRule]"
-                                    type="number"
-                                    variant="outlined"
-                                />
-                            </v-col>
-                            <v-col cols="12" md="4">
-                                <v-text-field
-                                    v-model.number="newVariant.costo_unitario"
-                                    density="compact"
-                                    bg-color="white"
-                                    label="Costo Unitario"
-                                    prefix="$"
-                                    :rules="[numberRule]"
-                                    type="number"
-                                    variant="outlined"
-                                />
-                            </v-col>
-                            <v-col cols="12" md="4">
-                                <v-text-field
-                                    v-model.number="newVariant.stock_actual"
-                                    density="compact"
-                                    bg-color="white"
-                                    label="Stock Inicial"
-                                    :rules="[requiredRule, numberRule]"
-                                    type="number"
-                                    variant="outlined"
-                                />
-                            </v-col>
-                            <v-col cols="12" md="4">
-                                <v-text-field
-                                    v-model.number="newVariant.stock_minimo"
-                                    density="compact"
-                                    bg-color="white"
-                                    label="Stock Mínimo"
-                                    :rules="[requiredRule, numberRule]"
-                                    type="number"
-                                    variant="outlined"
-                                />
-                            </v-col>
-                        </v-row>
-                        <div class="d-flex justify-end mt-2">
-                            <v-btn color="secondary" prepend-icon="mdi-plus" size="small" @click="addVariant">
-                                Agregar Variante
-                            </v-btn>
-                        </div>
-                    </v-form>
-                 </v-sheet>
+                      <!-- Variant Details -->
+                      <v-col cols="12" md="4">
+                        <v-text-field
+                          v-model="newVariant.sku"
+                          v-maska="'***-###'"
+                          bg-color="white"
+                          density="compact"
+                          label="SKU (Opcional)"
+                          placeholder="AAA-123"
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="4">
+                        <v-text-field
+                          v-model.number="newVariant.precio_unitario"
+                          bg-color="white"
+                          density="compact"
+                          label="Precio Unitario"
+                          prefix="$"
+                          :rules="[requiredRule, numberRule]"
+                          type="number"
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="4">
+                        <v-text-field
+                          v-model.number="newVariant.costo_unitario"
+                          bg-color="white"
+                          density="compact"
+                          label="Costo Unitario"
+                          prefix="$"
+                          :rules="[numberRule]"
+                          type="number"
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="4">
+                        <v-text-field
+                          v-model.number="newVariant.stock_actual"
+                          bg-color="white"
+                          density="compact"
+                          label="Stock Inicial"
+                          :rules="[requiredRule, numberRule]"
+                          type="number"
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="4">
+                        <v-text-field
+                          v-model.number="newVariant.stock_minimo"
+                          bg-color="white"
+                          density="compact"
+                          label="Stock Mínimo"
+                          :rules="[requiredRule, numberRule]"
+                          type="number"
+                          variant="outlined"
+                        />
+                      </v-col>
+                    </v-row>
+                    <div class="d-flex justify-end mt-2">
+                      <v-btn color="secondary" prepend-icon="mdi-plus" size="small" @click="addVariant">
+                        Agregar Variante
+                      </v-btn>
+                    </div>
+                  </v-form>
+                </v-sheet>
 
-                 <!-- Variants List Table -->
-                 <v-table v-if="form.variantes.length > 0" density="compact">
-                    <thead>
-                        <tr>
-                            <th class="text-left">Especificaciones</th>
-                            <th class="text-left">SKU</th>
-                            <th class="text-right">Precio</th>
-                            <th class="text-right">Stock</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(variant, idx) in form.variantes" :key="idx">
-                            <td>
-                                <v-chip v-for="(det, k) in variant.detalles" :key="k" class="mr-1 mb-1" size="x-small">
-                                    {{ det.nombre_filtro }}: {{ getOptionName(det) }}
-                                </v-chip>
-                            </td>
-                            <td>{{ variant.sku || '-' }}</td>
-                            <td class="text-right">${{ variant.precio_unitario }}</td>
-                            <td class="text-right">{{ variant.stock_actual }}</td>
-                            <td class="text-center">
-                                <v-btn color="error" icon="mdi-delete" size="x-small" variant="text" @click="removeVariant(idx)" />
-                            </td>
-                        </tr>
-                    </tbody>
-                 </v-table>
-                 <div v-else class="text-center text-medium-emphasis py-4">
-                    No has agregado variantes aún. Use el formulario de arriba.
-                 </div>
+                <!-- Variants List Table -->
+                <v-table v-if="form.variantes.length > 0" density="compact">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Especificaciones</th>
+                      <th class="text-left">SKU</th>
+                      <th class="text-right">Precio</th>
+                      <th class="text-right">Stock</th>
+                      <th class="text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(variant, idx) in form.variantes" :key="idx">
+                      <td>
+                        <v-chip v-for="(det, k) in variant.detalles" :key="k" class="mr-1 mb-1" size="x-small">
+                          {{ det.nombre_filtro }}: {{ getOptionName(det) }}
+                        </v-chip>
+                      </td>
+                      <td>{{ variant.sku || '-' }}</td>
+                      <td class="text-right">${{ variant.precio_unitario }}</td>
+                      <td class="text-right">{{ variant.stock_actual }}</td>
+                      <td class="text-center">
+                        <v-btn
+                          color="error"
+                          icon="mdi-delete"
+                          size="x-small"
+                          variant="text"
+                          @click="removeVariant(idx)"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </v-table>
+                <div v-else class="text-center text-medium-emphasis py-4">
+                  No has agregado variantes aún. Use el formulario de arriba.
+                </div>
 
-               </v-card-text>
+              </v-card-text>
             </v-card>
 
-            <v-alert v-else class="mt-4" icon="mdi-arrow-left" title="Seleccione Categoría" type="info" variant="text">
-                Seleccione una categoría y subcategoría para configurar las variantes.
+            <v-alert
+              v-else
+              class="mt-4"
+              icon="mdi-arrow-left"
+              title="Seleccione Categoría"
+              type="info"
+              variant="text"
+            >
+              Seleccione una categoría y subcategoría para configurar las variantes.
             </v-alert>
           </v-col>
         </v-row>

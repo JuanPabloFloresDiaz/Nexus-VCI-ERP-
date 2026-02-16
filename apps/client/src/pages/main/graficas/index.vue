@@ -7,7 +7,7 @@ meta:
 </route>
 
 <script setup>
-import GraficasView from '@/components/Views/graficas/GraficasView.vue';
+  import GraficasView from '@/components/Views/graficas/GraficasView.vue';
 </script>
 
 <template>

@@ -6,7 +6,7 @@ meta:
 </route>
 
 <script setup>
-import ReportesView from '@/components/Views/reportes/ReportesView.vue';
+  import ReportesView from '@/components/Views/reportes/ReportesView.vue';
 </script>
 
 <template>

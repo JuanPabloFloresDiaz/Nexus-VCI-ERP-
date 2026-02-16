@@ -137,8 +137,8 @@
       <v-toolbar class="px-4 border-b" color="transparent" density="comfortable">
         <v-text-field
           v-model="search"
-          density="compact"
           class="mr-2"
+          density="compact"
           hide-details
           placeholder="Buscar pedido (ID, Total)..."
           prepend-inner-icon="mdi-magnify"
@@ -149,8 +149,8 @@
                 
         <v-select
           v-model="selectedStatus"
-          clearable
           class="mr-2"
+          clearable
           density="compact"
           hide-details
           :items="['Pendiente', 'Completado', 'Cancelado']"

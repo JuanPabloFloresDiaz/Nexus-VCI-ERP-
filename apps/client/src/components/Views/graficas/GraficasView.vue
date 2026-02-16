@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-6">
+  <v-container class="pa-6" fluid>
     <!-- Header & Date Filter -->
     <div class="d-flex flex-wrap align-center justify-space-between mb-6 gap-4">
       <div>
@@ -10,26 +10,26 @@
       <div class="d-flex align-center gap-2">
         <v-select
           v-model="selectedRange"
-          :items="rangeOptions"
-          item-title="title"
-          item-value="value"
-          variant="outlined"
+          bg-color="white"
           density="compact"
           hide-details
-          bg-color="white"
-          width="200"
+          item-title="title"
+          item-value="value"
+          :items="rangeOptions"
           prepend-inner-icon="mdi-calendar"
-        ></v-select>
-        <v-btn icon="mdi-refresh" variant="text" color="primary" @click="refetchAll"></v-btn>
+          variant="outlined"
+          width="200"
+        />
+        <v-btn color="primary" icon="mdi-refresh" variant="text" @click="refetchAll" />
       </div>
     </div>
 
     <!-- Stats Cards -->
     <v-row>
-      <v-col cols="12" sm="6" md="4">
-        <v-card elevation="0" class="border-thin rounded-lg">
+      <v-col cols="12" md="4" sm="6">
+        <v-card class="border-thin rounded-lg" elevation="0">
           <v-card-text class="d-flex align-center">
-            <v-avatar color="blue-lighten-5" size="48" class="mr-4">
+            <v-avatar class="mr-4" color="blue-lighten-5" size="48">
               <v-icon color="blue" size="24">mdi-currency-usd</v-icon>
             </v-avatar>
             <div>
@@ -43,10 +43,10 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" sm="6" md="4">
-        <v-card elevation="0" class="border-thin rounded-lg">
+      <v-col cols="12" md="4" sm="6">
+        <v-card class="border-thin rounded-lg" elevation="0">
           <v-card-text class="d-flex align-center">
-            <v-avatar color="emerald-lighten-5" size="48" class="mr-4">
+            <v-avatar class="mr-4" color="emerald-lighten-5" size="48">
               <v-icon color="success" size="24">mdi-cart-outline</v-icon>
             </v-avatar>
             <div>
@@ -60,10 +60,10 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12" sm="6" md="4">
-        <v-card elevation="0" class="border-thin rounded-lg">
+      <v-col cols="12" md="4" sm="6">
+        <v-card class="border-thin rounded-lg" elevation="0">
           <v-card-text class="d-flex align-center">
-            <v-avatar color="amber-lighten-5" size="48" class="mr-4">
+            <v-avatar class="mr-4" color="amber-lighten-5" size="48">
               <v-icon color="warning" size="24">mdi-account-group</v-icon>
             </v-avatar>
             <div>
@@ -82,7 +82,7 @@
     <v-row class="mt-4">
       <!-- Sales History (Line) -->
       <v-col cols="12" md="8">
-        <v-card elevation="0" class="border-thin rounded-lg h-100">
+        <v-card class="border-thin rounded-lg h-100" elevation="0">
           <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
             Historial de Ventas
           </v-card-title>
@@ -90,7 +90,7 @@
             <div v-if="salesLoading" class="d-flex align-center justify-center h-100 text-slate-400">
               Cargando datos...
             </div>
-            <Line v-else-if="salesData.labels.length" :data="salesData" :options="lineOptions" />
+            <Line v-else-if="salesData.labels.length > 0" :data="salesData" :options="lineOptions" />
             <div v-else class="d-flex align-center justify-center h-100 text-slate-400">
               No hay datos disponibles en este rango
             </div>
@@ -100,13 +100,13 @@
 
       <!-- Order Status (Doughnut) -->
       <v-col cols="12" md="4">
-        <v-card elevation="0" class="border-thin rounded-lg h-100">
+        <v-card class="border-thin rounded-lg h-100" elevation="0">
           <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
             Estado de Pedidos
           </v-card-title>
-          <v-card-text style="height: 350px; position: relative;" class="d-flex justify-center align-center">
-             <div v-if="statusLoading" class="text-slate-400">Cargando...</div>
-            <Doughnut v-else-if="statusData.labels.length" :data="statusData" :options="doughnutOptions" />
+          <v-card-text class="d-flex justify-center align-center" style="height: 350px; position: relative;">
+            <div v-if="statusLoading" class="text-slate-400">Cargando...</div>
+            <Doughnut v-else-if="statusData.labels.length > 0" :data="statusData" :options="doughnutOptions" />
             <div v-else class="text-slate-400">
               Sin pedidos
             </div>
@@ -118,15 +118,15 @@
     <!-- Top Products (Bar) -->
     <v-row class="mt-4">
       <v-col cols="12" md="6">
-        <v-card elevation="0" class="border-thin rounded-lg">
+        <v-card class="border-thin rounded-lg" elevation="0">
           <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
             Productos Más Vendidos
           </v-card-title>
           <v-card-text style="height: 300px; position: relative;">
             <div v-if="topProductsLoading" class="d-flex align-center justify-center h-100 text-slate-400">
-               Cargando...
+              Cargando...
             </div>
-            <Bar v-else-if="topProductsData.labels.length" :data="topProductsData" :options="barOptions" />
+            <Bar v-else-if="topProductsData.labels.length > 0" :data="topProductsData" :options="barOptions" />
             <div v-else class="d-flex align-center justify-center h-100 text-slate-400">
               No hay datos de productos
             </div>
@@ -136,15 +136,15 @@
 
       <!-- Top Categories (Bar) -->
       <v-col cols="12" md="6">
-        <v-card elevation="0" class="border-thin rounded-lg">
+        <v-card class="border-thin rounded-lg" elevation="0">
           <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
             Categorías Más Vendidas
           </v-card-title>
           <v-card-text style="height: 300px; position: relative;">
             <div v-if="topCategoriesLoading" class="d-flex align-center justify-center h-100 text-slate-400">
-               Cargando...
+              Cargando...
             </div>
-            <Bar v-else-if="topCategoriesData.labels.length" :data="topCategoriesData" :options="barOptions" />
+            <Bar v-else-if="topCategoriesData.labels.length > 0" :data="topCategoriesData" :options="barOptions" />
             <div v-else class="d-flex align-center justify-center h-100 text-slate-400">
               No hay datos de categorías
             </div>
@@ -156,156 +156,156 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { Line, Bar, Doughnut } from 'vue-chartjs';
-import { colors, baseOptions } from '@/utils/chart';
-import { 
+  import { useQuery } from '@tanstack/vue-query';
+  import dayjs from 'dayjs';
+  import { computed, ref, watch } from 'vue';
+  import { Bar, Doughnut, Line } from 'vue-chartjs';
+  import { 
     getDashboardStats, 
+    getOrderStatus, 
     getSalesHistory, 
-    getTopProducts, 
-    getOrderStatus,
-    getTopCategories 
-} from '@/services/charts.service';
-import dayjs from 'dayjs';
+    getTopCategories,
+    getTopProducts 
+  } from '@/services/charts.service';
+  import { baseOptions, colors } from '@/utils/chart';
 
-// --- State ---
-const rangeOptions = [
-  { title: 'Últimos 7 días', value: 7 },
-  { title: 'Últimos 30 días', value: 30 },
-  { title: 'Últimos 90 días', value: 90 },
-  { title: 'Este año', value: 365 }
-];
-const selectedRange = ref(30);
+  // --- State ---
+  const rangeOptions = [
+    { title: 'Últimos 7 días', value: 7 },
+    { title: 'Últimos 30 días', value: 30 },
+    { title: 'Últimos 90 días', value: 90 },
+    { title: 'Este año', value: 365 }
+  ];
+  const selectedRange = ref(30);
 
-// --- Reactivity for Queries ---
-const queryParams = computed(() => {
+  // --- Reactivity for Queries ---
+  const queryParams = computed(() => {
     const endDate = dayjs().format('YYYY-MM-DD');
     const startDate = dayjs().subtract(selectedRange.value, 'day').format('YYYY-MM-DD');
     return { startDate, endDate };
-});
+  });
 
-// --- Queries ---
-const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+  // --- Queries ---
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['dashboard-stats', queryParams],
     queryFn: () => getDashboardStats(queryParams.value)
-});
+  });
 
-const { data: sales, isLoading: salesLoading, refetch: refetchSales } = useQuery({
+  const { data: sales, isLoading: salesLoading, refetch: refetchSales } = useQuery({
     queryKey: ['sales-history', queryParams],
     queryFn: () => getSalesHistory(queryParams.value)
-});
+  });
 
-const { data: topProducts, isLoading: topProductsLoading, refetch: refetchTopProducts } = useQuery({
+  const { data: topProducts, isLoading: topProductsLoading, refetch: refetchTopProducts } = useQuery({
     queryKey: ['top-products', queryParams],
     queryFn: () => getTopProducts(queryParams.value)
-});
+  });
 
-const { data: orderStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
+  const { data: orderStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
     queryKey: ['order-status', queryParams],
     queryFn: () => getOrderStatus(queryParams.value)
-});
+  });
 
-const { data: topCategories, isLoading: topCategoriesLoading, refetch: refetchTopCategories } = useQuery({
+  const { data: topCategories, isLoading: topCategoriesLoading, refetch: refetchTopCategories } = useQuery({
     queryKey: ['top-categories', queryParams],
     queryFn: () => getTopCategories(queryParams.value)
-});
+  });
 
-const refetchAll = () => {
+  function refetchAll () {
     refetchStats();
     refetchSales();
     refetchTopProducts();
     refetchStatus();
     refetchTopCategories();
-}
+  }
 
-// --- Chart Data Computeds ---
-const salesData = computed(() => {
-  const rawData = sales.value?.data || [];
-  return {
-    labels: rawData.map(d => dayjs(d.date).format('DD MMM')),
-    datasets: [{
-      label: 'Ventas ($)',
-      data: rawData.map(d => d.total),
-      borderColor: colors.secondary,
-      backgroundColor: (context) => {
-        const ctx = context.chart.ctx;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); // Blue 500
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-        return gradient;
-      },
-      fill: true,
-      tension: 0.4, 
-      pointRadius: 4,
-      pointHoverRadius: 6
-    }]
+  // --- Chart Data Computeds ---
+  const salesData = computed(() => {
+    const rawData = sales.value?.data || [];
+    return {
+      labels: rawData.map(d => dayjs(d.date).format('DD MMM')),
+      datasets: [{
+        label: 'Ventas ($)',
+        data: rawData.map(d => d.total),
+        borderColor: colors.secondary,
+        backgroundColor: (context) => {
+          const ctx = context.chart.ctx;
+          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); // Blue 500
+          gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+          return gradient;
+        },
+        fill: true,
+        tension: 0.4, 
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    };
+  });
+
+  const topProductsData = computed(() => {
+    const rawData = topProducts.value?.data || [];
+    return {
+      labels: rawData.map(p => p.product_name),
+      datasets: [{
+        label: 'Unidades Vendidas',
+        data: rawData.map(p => p.total_quantity),
+        backgroundColor: [
+          '#1E293B', '#3B82F6', '#0EA5E9', '#10B981', '#F59E0B'
+        ],
+        borderRadius: 4
+      }]
+    };
+  });
+
+  const topCategoriesData = computed(() => {
+    const rawData = topCategories.value?.data || [];
+    return {
+      labels: rawData.map(p => p.category_name),
+      datasets: [{
+        label: 'Unidades Vendidas',
+        data: rawData.map(p => p.total_quantity),
+        backgroundColor: [
+          '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#14B8A6'
+        ],
+        borderRadius: 4
+      }]
+    };
+  });
+
+  const statusData = computed(() => {
+    const rawData = orderStatus.value?.data || [];
+    return {
+      labels: rawData.map(s => s.estado_pedido),
+      datasets: [{
+        data: rawData.map(s => s.count),
+        backgroundColor: rawData.map(s => {
+          if (s.estado_pedido === 'Completado') return colors.success;
+          if (s.estado_pedido === 'Pendiente') return colors.accent;
+          if (s.estado_pedido === 'Cancelado') return colors.error;
+          return colors.info;
+        }),
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    };
+  });
+
+  // --- Options ---
+  const lineOptions = { ...baseOptions };
+  const barOptions = { 
+    ...baseOptions,
+    indexAxis: 'y', // Horizontal Bar
   };
-});
-
-const topProductsData = computed(() => {
-  const rawData = topProducts.value?.data || [];
-  return {
-    labels: rawData.map(p => p.product_name),
-    datasets: [{
-      label: 'Unidades Vendidas',
-      data: rawData.map(p => p.total_quantity),
-      backgroundColor: [
-        '#1E293B', '#3B82F6', '#0EA5E9', '#10B981', '#F59E0B'
-      ],
-      borderRadius: 4
-    }]
+  const doughnutOptions = {
+    ...baseOptions,
+    scales: { x: { display: false }, y: { display: false } },
+    cutout: '70%'
   };
-});
 
-const topCategoriesData = computed(() => {
-  const rawData = topCategories.value?.data || [];
-  return {
-    labels: rawData.map(p => p.category_name),
-    datasets: [{
-      label: 'Unidades Vendidas',
-      data: rawData.map(p => p.total_quantity),
-      backgroundColor: [
-        '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#14B8A6'
-      ],
-      borderRadius: 4
-    }]
-  };
-});
-
-const statusData = computed(() => {
-  const rawData = orderStatus.value?.data || [];
-  return {
-    labels: rawData.map(s => s.estado_pedido),
-    datasets: [{
-      data: rawData.map(s => s.count),
-      backgroundColor: rawData.map(s => {
-        if (s.estado_pedido === 'Completado') return colors.success;
-        if (s.estado_pedido === 'Pendiente') return colors.accent;
-        if (s.estado_pedido === 'Cancelado') return colors.error;
-        return colors.info;
-      }),
-      borderWidth: 0,
-      hoverOffset: 4
-    }]
-  };
-});
-
-// --- Options ---
-const lineOptions = { ...baseOptions };
-const barOptions = { 
-  ...baseOptions,
-  indexAxis: 'y', // Horizontal Bar
-};
-const doughnutOptions = {
-  ...baseOptions,
-  scales: { x: { display: false }, y: { display: false } },
-  cutout: '70%'
-};
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-};
+  function formatCurrency (value) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  }
 
 </script>
 

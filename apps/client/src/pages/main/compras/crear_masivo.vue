@@ -6,7 +6,7 @@ meta:
 </route>
 
 <script setup>
-import BulkCreateComprasView from '@/components/Views/compras/BulkCreateComprasView.vue';
+  import BulkCreateComprasView from '@/components/Views/compras/BulkCreateComprasView.vue';
 </script>
 
 <template>

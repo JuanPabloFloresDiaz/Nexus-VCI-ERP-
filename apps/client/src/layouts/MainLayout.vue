@@ -88,7 +88,7 @@
     <!-- App Bar (Header) - Optional mostly for mobile triggers or extra actions, keeping minimal as per request -->
     <v-app-bar class="border-b" color="background" flat>
       <v-app-bar-nav-icon v-if="mobile" color="grey-darken-1" @click="rail = !rail" />
-      <h1 class="text-h6 font-weight-bold text-primary ml-4">{{ currentPageTitle }}</h1>
+      <div class="text-h6 font-weight-bold text-primary ml-4">{{ currentPageTitle }}</div>
       <v-spacer />
       <!-- Right side info / notifications if needed -->
     </v-app-bar>

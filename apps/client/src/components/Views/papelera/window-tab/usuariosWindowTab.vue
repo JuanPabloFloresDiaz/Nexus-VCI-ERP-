@@ -113,8 +113,8 @@
     <v-toolbar class="px-0 mb-4" color="transparent" density="comfortable">
       <v-text-field
         v-model="search"
-        density="compact"
         class="mr-2"
+        density="compact"
         hide-details
         placeholder="Buscar usuario eliminado..."
         prepend-inner-icon="mdi-magnify"

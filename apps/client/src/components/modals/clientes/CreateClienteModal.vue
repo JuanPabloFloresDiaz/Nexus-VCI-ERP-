@@ -119,8 +119,8 @@
               <v-autocomplete
                 v-model="formData.id_empresa"
                 density="compact"
-                item-title="nombre_empresa"
                 hint="Asignar cliente a una empresa"
+                item-title="nombre_empresa"
                 item-value="id"
                 :items="empresas"
                 label="Empresa *"

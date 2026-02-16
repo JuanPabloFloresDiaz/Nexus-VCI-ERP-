@@ -4,7 +4,7 @@
   import { useRouter } from 'vue-router';
   import * as XLSX from 'xlsx';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
-  import { getCategoriaById, getSubcategorias, getAllCategorias } from '@/services/categorizacion.service';
+  import { getAllCategorias, getCategoriaById, getSubcategorias } from '@/services/categorizacion.service';
   import { bulkCreateProductos } from '@/services/productos.service';
 
   const router = useRouter();
@@ -108,13 +108,13 @@
     try {
       const catsResponse = await getAllCategorias();
       allCats = catsResponse.data || [];
-    } catch (e) {
-      console.error("Error fetching categories", e);
+    } catch (error) {
+      console.error("Error fetching categories", error);
       return [];
     }
     
     const catNameMap = new Map();
-    allCats.forEach(c => catNameMap.set(c.nombre_categoria.toLowerCase().trim(), c.id));
+    for (const c of allCats) catNameMap.set(c.nombre_categoria.toLowerCase().trim(), c.id);
 
     const fileCatNames = [...new Set(flatData.map(r => r.nombre_categoria?.toString().trim()).filter(Boolean))];
     const catDetailsMap = new Map();
@@ -125,7 +125,7 @@
         try {
           const details = await getCategoriaById(catId);
           if (details.data) catDetailsMap.set(catId, details.data);
-        } catch (e) { console.error(e); }
+        } catch (error) { console.error(error); }
       }
     }
 
@@ -147,58 +147,58 @@
       let subDetails = null;
 
       if (catName && subName) {
-           const catId = catNameMap.get(catName.toLowerCase());
-           if (catId) {
-             const fullCat = catDetailsMap.get(catId);
-             if (fullCat && fullCat.subcategorias) {
-               subDetails = fullCat.subcategorias.find(s => s.nombre_subcategoria.toLowerCase() === subName.toLowerCase());
-               if (subDetails) subId = subDetails.id;
-             }
-           }
+        const catId = catNameMap.get(catName.toLowerCase());
+        if (catId) {
+          const fullCat = catDetailsMap.get(catId);
+          if (fullCat && fullCat.subcategorias) {
+            subDetails = fullCat.subcategorias.find(s => s.nombre_subcategoria.toLowerCase() === subName.toLowerCase());
+            if (subDetails) subId = subDetails.id;
+          }
+        }
       }
 
       // Resolve Attribute
       const detalles = [];
       if (subDetails) {
-         const filtroName = row.filtro?.toString().trim();
-         const opcionValue = row.opcion?.toString().trim();
+        const filtroName = row.filtro?.toString().trim();
+        const opcionValue = row.opcion?.toString().trim();
          
-         if (filtroName && opcionValue) {
-           // Find Filter
-           const subFilters = subDetails.filtros || [];
-           const filtro = subFilters.find(f => f.nombre_filtro.toLowerCase() === filtroName.toLowerCase());
+        if (filtroName && opcionValue) {
+          // Find Filter
+          const subFilters = subDetails.filtros || [];
+          const filtro = subFilters.find(f => f.nombre_filtro.toLowerCase() === filtroName.toLowerCase());
            
-           if (filtro && filtro.opciones) {
-             const opcion = filtro.opciones.find(o => 
-                o.valor_opcion.toString().trim().toLowerCase() === opcionValue.toLowerCase()
-             );
+          if (filtro && filtro.opciones) {
+            const opcion = filtro.opciones.find(o => 
+              o.valor_opcion.toString().trim().toLowerCase() === opcionValue.toLowerCase()
+            );
              
-             if (opcion) {
-               detalles.push({
-                 id_opcion_filtro: opcion.id,
-                 nombre_filtro: filtro.nombre_filtro,
-                 valor_opcion: opcion.valor_opcion
-               });
-             }
-           }
-         }
+            if (opcion) {
+              detalles.push({
+                id_opcion_filtro: opcion.id,
+                nombre_filtro: filtro.nombre_filtro,
+                valor_opcion: opcion.valor_opcion
+              });
+            }
+          }
+        }
       }
 
       processedRows.push({
-          nombre_producto: prodName,
-          descripcion_producto: row.descripcion_producto,
-          // Common info might be repeated, backend takes first one or groups them
-          id_subcategoria: subId,
-          sku: row.sku?.toString(),
-          precio_unitario: Number(row.precio_unitario) || 0,
-          costo_unitario: Number(row.costo_unitario) || 0,
-          stock_actual: Number(row.stock_actual) || 0,
-          stock_minimo: Number(row.stock_minimo) || 5,
-          detalles: detalles,
-          // UI Helpers
-          catNameRaw: catName,
-          subNameRaw: subName,
-          isValid: !!subId
+        nombre_producto: prodName,
+        descripcion_producto: row.descripcion_producto,
+        // Common info might be repeated, backend takes first one or groups them
+        id_subcategoria: subId,
+        sku: row.sku?.toString(),
+        precio_unitario: Number(row.precio_unitario) || 0,
+        costo_unitario: Number(row.costo_unitario) || 0,
+        stock_actual: Number(row.stock_actual) || 0,
+        stock_minimo: Number(row.stock_minimo) || 5,
+        detalles: detalles,
+        // UI Helpers
+        catNameRaw: catName,
+        subNameRaw: subName,
+        isValid: !!subId
       });
     }
 
@@ -328,12 +328,12 @@
                   {{ prod.isValid ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                 </v-icon>
                 <div class="d-flex flex-column mr-2">
-                    <strong class="text-body-2">{{ prod.nombre_producto }}</strong>
-                    <div class="text-caption text-medium-emphasis">SKU: {{ prod.sku || 'N/A' }}</div>
+                  <strong class="text-body-2">{{ prod.nombre_producto }}</strong>
+                  <div class="text-caption text-medium-emphasis">SKU: {{ prod.sku || 'N/A' }}</div>
                 </div>
                 <v-spacer />
                 <div class="text-caption mr-2">
-                     {{ prod.catNameRaw }} > {{ prod.subNameRaw }}
+                  {{ prod.catNameRaw }} > {{ prod.subNameRaw }}
                 </div>
                 <v-chip class="mr-1" color="primary" size="x-small" variant="flat">
                   ${{ prod.precio_unitario }}

@@ -36,7 +36,7 @@
   <div v-else-if="isError || !orderData" class="pa-4 text-center">
     <v-icon color="error" size="64">mdi-alert-circle</v-icon>
     <div class="text-h6 mt-2">Error cargando pedido</div>
-    <div class="text-caption text-medium-emphasis mt-1" v-if="isError">
+    <div v-if="isError" class="text-caption text-medium-emphasis mt-1">
       No se pudo recuperar la información del pedido.
     </div>
     <v-btn class="mt-4" color="primary" @click="router.back()">Regresar</v-btn>

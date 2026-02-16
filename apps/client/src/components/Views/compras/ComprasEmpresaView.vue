@@ -1,9 +1,9 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
   import { computed, ref, watch } from 'vue';
+  import DetalleComprasModal from '@/components/modals/compras/DetalleComprasModal.vue';
   import { getCompras } from '@/services/compras.service';
   import { getProveedores } from '@/services/proveedores.service';
-  import DetalleComprasModal from '@/components/modals/compras/DetalleComprasModal.vue';
 
   const search = ref('');
   const page = ref(1);
@@ -74,10 +74,14 @@
 
   function getStatusColor (status) {
     switch (status) {
-      case 'Recibido': return 'success';
-      case 'Pendiente': return 'warning';
-      case 'Cancelado': return 'error';
-      default: return 'grey';
+      case 'Recibido': { return 'success';
+      }
+      case 'Pendiente': { return 'warning';
+      }
+      case 'Cancelado': { return 'error';
+      }
+      default: { return 'grey';
+      }
     }
   }
 
@@ -104,8 +108,8 @@
       <v-toolbar class="px-4 border-b" color="transparent" density="comfortable">
         <v-text-field
           v-model="search"
-          density="compact"
           class="mr-2"
+          density="compact"
           hide-details
           placeholder="Buscar (ID, Total)..."
           prepend-inner-icon="mdi-magnify"
@@ -116,8 +120,8 @@
                 
         <v-select
           v-model="selectedStatus"
-          clearable
           class="mr-2"
+          clearable
           density="compact"
           hide-details
           :items="['Pendiente', 'Recibido', 'Cancelado']"
@@ -128,11 +132,11 @@
 
         <v-autocomplete
           v-model="selectedProveedor"
-          :items="proveedoresList"
-          clearable
           class="mr-2"
+          clearable
           density="compact"
           hide-details
+          :items="proveedoresList"
           label="Proveedor"
           style="max-width: 250px;"
           variant="outlined"

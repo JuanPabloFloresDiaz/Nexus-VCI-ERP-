@@ -87,9 +87,9 @@
       <v-text-field
         v-model="form.password"
         :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+        class="mb-4"
         color="primary"
         label="Contraseña"
-        class="mb-4"
         placeholder="Ingresa tu contraseña"
         prepend-inner-icon="mdi-lock-outline"
         :rules="[rules.required]"

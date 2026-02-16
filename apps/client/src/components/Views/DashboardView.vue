@@ -15,7 +15,7 @@
             <div class="d-flex align-start justify-space-between mb-4">
               <div>
                 <div class="text-overline font-weight-bold text-medium-emphasis mb-1">Ventas Totales</div>
-                <div class="text-h4 font-weight-bold text-secondary">
+                <div class="text-h4 font-weight-bold text-success">
                   {{ formatCurrency(metrics.total_ventas) }}
                 </div>
               </div>
@@ -34,7 +34,7 @@
             <div class="d-flex align-center justify-space-between mb-4">
               <div>
                 <div class="text-overline font-weight-bold text-medium-emphasis mb-1">Total Productos</div>
-                <div class="text-h4 font-weight-bold text-secondary">
+                <div class="text-h4 font-weight-bold text-info">
                   {{ metrics.total_productos }}
                 </div>
               </div>
@@ -53,7 +53,7 @@
       <v-col cols="12" md="6">
         <v-card class="border rounded-lg h-100 bg-surface" elevation="1">
           <v-card-title class="d-flex align-center py-4 px-4 border-b">
-            <span class="text-h6 font-weight-bold text-secondary">Top Productos</span>
+            <span class="text-h6 font-weight-bold text-primary">Top Productos</span>
             <v-spacer />
             <v-icon color="amber" icon="mdi-trophy-outline" size="small" />
           </v-card-title>
@@ -79,7 +79,7 @@
                   />
                 </template>
                 
-                <v-list-item-title class="font-weight-bold text-body-2 text-secondary">
+                <v-list-item-title class="font-weight-bold text-body-2 text-primary">
                   {{ item.producto?.nombre_producto || 'Producto Desconocido' }}
                 </v-list-item-title>
                 
@@ -111,9 +111,9 @@
       <v-col cols="12" md="6">
         <v-card class="border rounded-lg h-100 bg-surface" elevation="1">
           <v-card-title class="d-flex align-center py-4 px-4 border-b">
-            <span class="text-h6 font-weight-bold text-secondary">Mejores Clientes</span>
+            <span class="text-h6 font-weight-bold text-primary">Mejores Clientes</span>
             <v-spacer />
-            <v-icon color="info" icon="mdi-account-star-outline" size="small" />
+            <v-icon color="primary" icon="mdi-account-star-outline" size="small" />
           </v-card-title>
           <v-list class="pa-0" lines="two">
             <template v-if="isLoadingClients">
@@ -137,7 +137,7 @@
                   />
                 </template>
 
-                <v-list-item-title class="font-weight-bold text-body-2 text-secondary">
+                <v-list-item-title class="font-weight-bold text-body-2 text-primary">
                   {{ getClientName(client.cliente) }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text-caption mt-1">

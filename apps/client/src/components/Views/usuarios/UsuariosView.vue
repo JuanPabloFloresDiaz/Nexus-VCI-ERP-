@@ -1,15 +1,32 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
+  
+  // Components
+  import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
+
   // Modals
   import CreateUsuarioModal from '@/components/modals/usuarios/CreateUsuarioModal.vue';
   import DeleteUsuarioModal from '@/components/modals/usuarios/DeleteUsuarioModal.vue';
-
   import UpdateUsuarioModal from '@/components/modals/usuarios/UpdateUsuarioModal.vue';
+
   import { useAuth } from '@/hooks/useAuth';
   import { getUsuarios } from '@/services/usuarios.service';
 
   const { isSuperAdmin, user } = useAuth();
+  
+  // --- SEO ---
+  useHead({
+    title: 'Gestión de Usuarios',
+    meta: [
+      { name: 'description', content: 'Administración de usuarios, roles y permisos del sistema.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
+
   const search = ref('');
   const page = ref(1);
   const itemsPerPage = ref(10);
@@ -17,7 +34,7 @@
   // Headers
   const headers = computed(() => {
     const baseHeaders = [
-      { title: 'Nombre', key: 'nombre_usuario', align: 'start' },
+      { title: 'Nombre', key: 'nombre_usuario', align: 'start' }, // Will contain Avatar
       { title: 'Correo', key: 'correo_electronico', align: 'start' },
       { title: 'Rol', key: 'rol_usuario', align: 'center' },
       { title: 'Estado', key: 'estado_usuario', align: 'center' },
@@ -84,7 +101,7 @@
   <v-container class="pa-6" fluid>
     <div class="mb-6 d-flex flex-wrap align-center justify-space-between gap-4">
       <div>
-        <h1 class="text-h4 font-weight-bold text-primary">Usuarios</h1>
+        <h1 class="text-h4 font-weight-bold text-secondary">Usuarios</h1>
         <p class="text-body-1 text-medium-emphasis">Gestión de acceso y roles</p>
       </div>
       <div>
@@ -99,7 +116,7 @@
       </div>
     </div>
 
-    <v-card class="border rounded-lg" elevation="0">
+    <v-card class="border rounded-lg bg-surface" elevation="1">
       <!-- Toolbar / Filters -->
       <v-toolbar class="px-4 border-b" color="transparent" density="comfortable">
         <v-text-field
@@ -119,12 +136,10 @@
         </v-btn>
       </v-toolbar>
 
-
-
       <!-- Table -->
       <v-data-table-server
         v-model:items-per-page="itemsPerPage"
-        class="elevation-0"
+        class="elevation-0 bg-surface"
         :headers="headers"
         hover
         :items="usuarios"
@@ -138,10 +153,28 @@
           <v-skeleton-loader type="table-row@5" />
         </template>
 
-        <!-- Role Column -->
+        <!-- Nombre Column (Avatar + Name) -->
+        <template #item.nombre_usuario="{ item }">
+          <div class="d-flex align-center py-2">
+            <AsyncAvatar 
+              :alt="item.nombre_usuario"
+              class="mr-3"
+              color="primary"
+              :name="item.nombre_usuario"
+              size="40"
+              :src="item.foto_perfil_url"
+              variant="tonal"
+            />
+            <div class="d-flex flex-column">
+              <span class="font-weight-medium text-body-2">{{ item.nombre_usuario }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Rol Column -->
         <template #item.rol_usuario="{ item }">
           <v-chip
-            class="font-weight-medium"
+            class="font-weight-bold"
             :color="item.rol_usuario === 'Administrador' || item.rol_usuario === 'SuperAdministrador' ? 'primary' : 'secondary'"
             size="small"
             variant="flat"
@@ -170,7 +203,7 @@
           <div class="d-flex justify-end gap-2">
             <v-btn
               v-tooltip="'Editar'"
-              color="primary"
+              color="secondary"
               icon
               size="small"
               variant="text"

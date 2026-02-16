@@ -39,7 +39,7 @@
     @update:model-value="handleClose"
   >
     <v-card class="rounded-lg">
-      <v-card-title class="text-h5 font-weight-bold text-primary pa-4">
+      <v-card-title class="text-h5 font-weight-bold text-secondary pa-4">
         Confirmar Eliminación
       </v-card-title>
             

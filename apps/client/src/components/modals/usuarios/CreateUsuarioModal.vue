@@ -96,7 +96,7 @@
     @update:model-value="handleClose"
   >
     <v-card class="rounded-lg">
-      <v-card-title class="d-flex justify-space-between align-center pa-4 text-h5 font-weight-bold text-primary">
+      <v-card-title class="d-flex justify-space-between align-center pa-4 text-h5 font-weight-bold text-secondary">
         Nuevo Usuario
         <v-btn icon variant="text" @click="handleClose">
           <v-icon>mdi-close</v-icon>

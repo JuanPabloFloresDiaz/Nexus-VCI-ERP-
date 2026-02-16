@@ -111,7 +111,7 @@ import { useHead } from '@unhead/vue';
 <template>
   <v-container class="pa-6" fluid>
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Compras</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary">Compras</h1>
       <p class="text-body-1 text-medium-emphasis">Historial de compras de la empresa</p>
     </div>
 

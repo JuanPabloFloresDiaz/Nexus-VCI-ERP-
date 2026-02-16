@@ -294,7 +294,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <div>
-        <h1 class="text-h6 font-weight-bold">Nuevo Producto</h1>
+        <h1 class="text-h6 font-weight-bold text-secondary">Nuevo Producto</h1>
         <div class="text-caption text-medium-emphasis">
           Registra un nuevo producto y sus variantes
         </div>

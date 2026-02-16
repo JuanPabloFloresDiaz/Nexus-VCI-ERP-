@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-6" fluid>
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Papelera de Reciclaje</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary">Papelera de Reciclaje</h1>
       <p class="text-body-1 text-medium-emphasis">Recupera elementos eliminados o bórralos permanentemente.</p>
     </div>
 

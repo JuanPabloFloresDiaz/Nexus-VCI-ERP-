@@ -104,7 +104,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <div>
-        <h1 class="text-h6 font-weight-bold">Nueva Categoría</h1>
+        <h1 class="text-h6 font-weight-bold text-secondary">Nueva Categoría</h1>
         <div class="text-caption text-medium-emphasis">
           Define la estructura completa: Categoría > Subcategorías > Filtros
         </div>

@@ -2,7 +2,7 @@
   <v-container class="pa-6" fluid>
     <div class="mb-6 d-flex flex-wrap align-center justify-space-between gap-4">
       <div>
-        <h1 class="text-h4 font-weight-bold text-primary">Gestión de Empresas</h1>
+        <h1 class="text-h4 font-weight-bold text-secondary">Gestión de Empresas</h1>
         <p class="text-body-1 text-medium-emphasis">Administración total de empresas (SuperAdmin)</p>
       </div>
       <div>

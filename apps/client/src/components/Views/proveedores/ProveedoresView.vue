@@ -110,7 +110,7 @@
   <v-container class="pa-6" fluid>
     <div class="mb-6 d-flex flex-wrap align-center justify-space-between gap-4">
       <div>
-        <h1 class="text-h4 font-weight-bold text-primary">Proveedores</h1>
+        <h1 class="text-h4 font-weight-bold text-secondary">Proveedores</h1>
         <p class="text-body-1 text-medium-emphasis">Gestión de proveedores y contactos</p>
       </div>
       <div class="d-flex gap-2">

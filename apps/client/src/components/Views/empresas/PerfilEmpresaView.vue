@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-6" fluid>
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Perfil de Empresa</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary">Perfil de Empresa</h1>
       <p class="text-body-1 text-medium-emphasis">Información general de su organización</p>
     </div>
 

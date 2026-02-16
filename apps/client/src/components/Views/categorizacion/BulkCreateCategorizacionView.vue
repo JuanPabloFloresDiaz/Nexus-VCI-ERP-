@@ -187,7 +187,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <div>
-        <h1 class="text-h6 font-weight-bold">Carga Masiva de Categorización</h1>
+        <h1 class="text-h6 font-weight-bold text-secondary">Carga Masiva de Categorización</h1>
         <div class="text-caption text-medium-emphasis">
           Sube un archivo Excel para crear categorías, subcategorías y filtros
         </div>

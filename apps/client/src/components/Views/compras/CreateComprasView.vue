@@ -205,7 +205,7 @@
   <v-container class="pa-6" fluid>
     <div class="mb-6 d-flex flex-wrap align-center justify-space-between">
       <div>
-        <h1 class="text-h4 font-weight-bold text-primary">Nueva Compra</h1>
+        <h1 class="text-h4 font-weight-bold text-secondary">Nueva Compra</h1>
         <p class="text-body-1 text-medium-emphasis">Registrar ingreso de mercadería</p>
       </div>
       <v-btn prepend-icon="mdi-arrow-left" variant="text" @click="router.back()">

@@ -270,7 +270,7 @@
   <v-container class="pa-6" fluid>
     <div class="mb-6 d-flex flex-wrap align-center justify-space-between">
       <div>
-        <h1 class="text-h4 font-weight-bold text-primary">Carga Masiva de Compras</h1>
+        <h1 class="text-h4 font-weight-bold text-secondary">Carga Masiva de Compras</h1>
         <p class="text-body-1 text-medium-emphasis">Importar compras desde Excel</p>
       </div>
       <v-btn prepend-icon="mdi-arrow-left" variant="text" @click="router.back()">

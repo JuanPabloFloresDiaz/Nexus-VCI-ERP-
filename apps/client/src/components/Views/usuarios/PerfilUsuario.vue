@@ -31,7 +31,7 @@
              variant="flat"
           />
         </template>
-        <v-card-title class="text-h5 font-weight-bold">
+        <v-card-title class="text-h5 font-weight-bold text-secondary">
           Mi Perfil
         </v-card-title>
         <v-card-subtitle class="text-white opacity-80">

@@ -380,7 +380,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <div>
-        <h1 class="text-h6 font-weight-bold">Editar Producto</h1>
+        <h1 class="text-h6 font-weight-bold text-secondary">Editar Producto</h1>
         <div class="text-caption text-medium-emphasis">
           Actualiza información y variantes
         </div>

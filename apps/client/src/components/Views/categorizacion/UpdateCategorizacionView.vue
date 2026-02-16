@@ -146,7 +146,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <div>
-        <h1 class="text-h6 font-weight-bold">Editar Categoría</h1>
+        <h1 class="text-h6 font-weight-bold text-secondary">Editar Categoría</h1>
         <div class="text-caption text-medium-emphasis">
           Actualiza la estructura: Categoría > Subcategorías > Filtros
         </div>

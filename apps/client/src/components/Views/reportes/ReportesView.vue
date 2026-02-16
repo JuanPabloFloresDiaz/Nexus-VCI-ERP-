@@ -118,7 +118,7 @@
 <template>
   <v-container class="pa-6" fluid>
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Reportes</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary">Reportes</h1>
       <p class="text-body-1 text-medium-emphasis">Generación de documentación y exportables</p>
     </div>
 

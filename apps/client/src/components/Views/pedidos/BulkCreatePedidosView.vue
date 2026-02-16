@@ -266,7 +266,7 @@
 <template>
   <v-container class="pa-6" fluid>
     <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold text-primary">Carga Masiva de Pedidos</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary">Carga Masiva de Pedidos</h1>
       <p class="text-body-1 text-medium-emphasis">Importar pedidos históricos o masivos dede Excel</p>
     </div>
 

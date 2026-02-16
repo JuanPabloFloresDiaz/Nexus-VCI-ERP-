@@ -47,7 +47,7 @@
 <template>
   <v-container class="pa-6" fluid>
     <div class="mb-8">
-      <h1 class="text-h4 font-weight-bold text-primary mb-2">Directorio de Proveedores</h1>
+      <h1 class="text-h4 font-weight-bold text-secondary mb-2">Directorio de Proveedores</h1>
       <p class="text-body-1 text-medium-emphasis">Consulta la lista de proveedores autorizados de la empresa.</p>
     </div>
 

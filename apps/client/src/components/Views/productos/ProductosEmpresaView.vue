@@ -72,7 +72,7 @@
     <!-- Header -->
     <div class="d-flex align-center pa-4 gap-4 bg-white border-b">
       <div>
-        <h1 class="text-h5 font-weight-bold">Catálogo de Productos</h1>
+        <h1 class="text-h5 font-weight-bold text-secondary">Catálogo de Productos</h1>
         <div class="text-subtitle-2 text-medium-emphasis">
           Visualiza los productos disponibles en tu empresa
         </div>

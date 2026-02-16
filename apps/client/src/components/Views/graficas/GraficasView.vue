@@ -3,7 +3,7 @@
     <!-- Header & Date Filter -->
     <div class="d-flex flex-wrap align-center justify-space-between mb-6 gap-4">
       <div>
-        <h1 class="text-h4 font-weight-bold text-slate-800">Panel de Control</h1>
+        <h1 class="text-h4 font-weight-bold text-secondary">Panel de Control</h1>
         <p class="text-body-2 text-slate-500">Visualización de métricas clave</p>
       </div>
       

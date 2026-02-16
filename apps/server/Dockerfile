@@ -1,17 +1,19 @@
 # Usar la imagen oficial de Node.js 22 como base
 FROM node:22-alpine
 
-# Instalar herramientas básicas de sistema
-RUN apk add --no-cache bash
+# Instalar herramientas básicas de sistema y dependencias de compilación
+# python3, make, g++ son necesarios para node-gyp
+# py3-setuptools proporciona distutils para Python 3.12+ en Alpine
+RUN apk add --no-cache bash python3 make g++ py3-setuptools
 
 # Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de configuración de dependencias
-COPY package*.json ./
+# Copiar SOLO package.json (ignorando package-lock.json para evitar conflictos con opsys)
+COPY package.json ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias ignorando scripts de compilación (fix para gl/brain.js en Alpine)
+RUN npm install --ignore-scripts
 
 # Copiar el resto de la aplicación
 COPY . .

@@ -8,6 +8,7 @@ class Pedidos extends BaseEntity {
         this.belongsTo(models.Clientes, { foreignKey: 'id_cliente', as: 'cliente' });
         this.belongsTo(models.Usuarios, { foreignKey: 'id_usuario_creador', as: 'usuario_creador' });
         this.hasMany(models.DetallesPedidos, { foreignKey: 'id_pedido', as: 'detalles' });
+        this.belongsTo(models.Almacenes, { foreignKey: 'id_almacen_origen', as: 'almacen_origen' });
     }
 
     static initModel(sequelize) {
@@ -34,6 +35,14 @@ class Pedidos extends BaseEntity {
                     allowNull: false,
                     references: {
                         model: 'usuarios',
+                        key: 'id'
+                    }
+                },
+                id_almacen_origen: {
+                    type: DataTypes.UUID,
+                    allowNull: true,
+                    references: {
+                        model: 'almacenes',
                         key: 'id'
                     }
                 },

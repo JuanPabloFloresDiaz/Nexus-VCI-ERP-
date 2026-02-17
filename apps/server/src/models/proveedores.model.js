@@ -34,6 +34,18 @@ class Proveedores extends BaseEntity {
                 correo_proveedor: {
                     type: DataTypes.STRING(100),
                     allowNull: true
+                },
+                nit_dui_proveedor: {
+                    type: DataTypes.STRING(20),
+                    allowNull: true
+                },
+                direccion_proveedor: {
+                    type: DataTypes.TEXT,
+                    allowNull: true
+                },
+                dias_credito: {
+                    type: DataTypes.INTEGER,
+                    defaultValue: 0
                 }
             },
             {

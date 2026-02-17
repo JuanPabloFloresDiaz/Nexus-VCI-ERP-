@@ -1,4 +1,4 @@
-const { Productos, ProductoVariantes, ProductoDetallesFiltros, Subcategorias, OpcionesFiltro, Filtros, sequelize } = require('../models');
+const { Productos, ProductoVariantes, ProductoDetallesFiltros, Subcategorias, OpcionesFiltro, Filtros, StockAlmacenes, Almacenes, sequelize } = require('../models');
 const StorageController = require('./storage.controller');
 const { Op } = require('sequelize');
 const catchErrors = require('../utils/tryCatch');
@@ -72,6 +72,9 @@ class ProductosController {
                                 as: 'filtro'
                             }]
                         }]
+                    }, {
+                        model: StockAlmacenes,
+                        as: 'stock'
                     }]
                 }
             ]
@@ -86,7 +89,10 @@ class ProductosController {
                 const prices = plain.variantes.map(v => Number(v.precio_unitario));
                 plain.precio_min = Math.min(...prices);
                 plain.precio_max = Math.max(...prices);
-                plain.stock_total = plain.variantes.reduce((sum, v) => sum + Number(v.stock_actual), 0);
+                plain.stock_total = plain.variantes.reduce((sum, v) => {
+                    const variantStock = v.stock ? v.stock.reduce((s, st) => s + st.stock_actual, 0) : 0;
+                    return sum + variantStock;
+                }, 0);
             } else {
                 plain.precio_min = 0;
                 plain.precio_max = 0;
@@ -173,6 +179,10 @@ class ProductosController {
                                 as: 'filtro'
                             }]
                         }]
+                    }, {
+                        model: StockAlmacenes,
+                        as: 'stock',
+                        include: [{ model: Almacenes, as: 'almacen', attributes: ['nombre_almacen'] }]
                     }]
                 }
             ]
@@ -211,15 +221,45 @@ class ProductosController {
 
             // 2. Create Variants
             if (variantes && variantes.length > 0) {
+                // Find user's main warehouse
+                const mainWarehouse = await Almacenes.findOne({
+                    where: { id_empresa: req.user.id_empresa, es_principal: true, deleted_at: null },
+                    transaction: t
+                });
+                // Fallback: search any warehouse or throw error? Better create one if missing (should exist by migration)
+                const warehouseId = mainWarehouse ? mainWarehouse.id : null;
+
                 for (const v of variantes) {
                     const newVariant = await ProductoVariantes.create({
                         id_producto: newProducto.id,
-                        sku: v.sku, // Can be null if auto-generated logic needed (for now assume frontend provides or null)
-                        stock_actual: v.stock_actual || 0,
+                        sku: v.sku,
+                        // stock_actual removed
                         precio_unitario: v.precio_unitario,
                         costo_unitario: v.costo_unitario,
                         imagen_url: v.imagen_url || null
                     }, { transaction: t });
+
+                    // Create Stock in Main Warehouse
+                    if (warehouseId) { // Only if warehouse exists
+                        await StockAlmacenes.create({
+                            id_variante: newVariant.id,
+                            id_almacen: warehouseId,
+                            stock_actual: v.stock_actual || 0
+                        }, { transaction: t });
+
+                        // Note: Ideally create a Movement "Initial Inventory" log here too
+                        if (v.stock_actual > 0) {
+                            await MovimientosInventario.create({
+                                id_empresa: req.user.id_empresa,
+                                id_variante: newVariant.id,
+                                id_almacen: warehouseId,
+                                tipo_movimiento: 'Ajuste', // Initial load
+                                cantidad: v.stock_actual,
+                                costo_unitario: v.costo_unitario || 0,
+                                fecha_movimiento: new Date()
+                            }, { transaction: t });
+                        }
+                    }
 
                     // 3. Associate Filters to this Variant
                     if (v.detalles && v.detalles.length > 0) {
@@ -362,6 +402,13 @@ class ProductosController {
                 const existingIds = existingVariants.map(v => v.id);
                 const incomingIds = variantes.filter(v => v.id).map(v => v.id);
 
+                // Get Main Warehouse
+                const mainWarehouse = await Almacenes.findOne({
+                    where: { id_empresa: req.user.id_empresa, es_principal: true, deleted_at: null },
+                    transaction: t
+                });
+                const warehouseId = mainWarehouse ? mainWarehouse.id : null;
+
                 // Delete removed variants
                 const toDelete = existingIds.filter(eid => !incomingIds.includes(eid));
                 if (toDelete.length > 0) {
@@ -377,7 +424,7 @@ class ProductosController {
                         variantInstance = await ProductoVariantes.findOne({ where: { id: v.id }, transaction: t });
                         await variantInstance.update({
                             sku: v.sku,
-                            stock_actual: v.stock_actual, // Be careful updating stock manually here vs transactions
+                            // stock_actual removed from update
                             precio_unitario: v.precio_unitario,
                             costo_unitario: v.costo_unitario,
                             imagen_url: v.imagen_url
@@ -387,11 +434,32 @@ class ProductosController {
                         variantInstance = await ProductoVariantes.create({
                             id_producto: id,
                             sku: v.sku,
-                            stock_actual: v.stock_actual || 0,
+                            // stock_actual removed
                             precio_unitario: v.precio_unitario,
                             costo_unitario: v.costo_unitario,
                             imagen_url: v.imagen_url
                         }, { transaction: t });
+
+                        // Initial Stock for new Variant
+                        if (warehouseId) {
+                            await StockAlmacenes.create({
+                                id_variante: variantInstance.id,
+                                id_almacen: warehouseId,
+                                stock_actual: v.stock_actual || 0
+                            }, { transaction: t });
+
+                            if (v.stock_actual > 0) {
+                                await MovimientosInventario.create({
+                                    id_empresa: req.user.id_empresa,
+                                    id_variante: variantInstance.id,
+                                    id_almacen: warehouseId,
+                                    tipo_movimiento: 'Ajuste', // Initial load
+                                    cantidad: v.stock_actual,
+                                    costo_unitario: v.costo_unitario || 0,
+                                    fecha_movimiento: new Date()
+                                }, { transaction: t });
+                            }
+                        }
                     }
 
                     // Sync filters for this variant

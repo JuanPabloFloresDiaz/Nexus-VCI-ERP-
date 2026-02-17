@@ -8,6 +8,7 @@ class Compras extends BaseEntity {
         this.belongsTo(models.Proveedores, { foreignKey: 'id_proveedor', as: 'proveedor' });
         this.belongsTo(models.Usuarios, { foreignKey: 'id_usuario_comprador', as: 'usuario_comprador' });
         this.hasMany(models.DetallesCompras, { foreignKey: 'id_compra', as: 'detalles' });
+        this.belongsTo(models.Almacenes, { foreignKey: 'id_almacen_destino', as: 'almacen_destino' });
     }
 
     static initModel(sequelize) {
@@ -36,6 +37,22 @@ class Compras extends BaseEntity {
                         model: 'usuarios',
                         key: 'id'
                     }
+                },
+                id_almacen_destino: {
+                    type: DataTypes.UUID,
+                    allowNull: true,
+                    references: {
+                        model: 'almacenes',
+                        key: 'id'
+                    }
+                },
+                metodo_pago: {
+                    type: DataTypes.ENUM('Efectivo', 'Tarjeta', 'Transferencia', 'Cheque', 'Credito'),
+                    defaultValue: 'Efectivo'
+                },
+                referencia_pago: {
+                    type: DataTypes.STRING(100),
+                    allowNull: true
                 },
                 estado_compra: {
                     type: DataTypes.ENUM('Pendiente', 'Recibido', 'Cancelado'),

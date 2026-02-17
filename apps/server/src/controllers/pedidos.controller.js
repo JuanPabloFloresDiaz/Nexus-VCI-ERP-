@@ -1,4 +1,4 @@
-const { Pedidos, DetallesPedidos, Productos, ProductoVariantes, Clientes, Usuarios, ProductoDetallesFiltros, OpcionesFiltro, Filtros, sequelize } = require('../models');
+const { Pedidos, DetallesPedidos, Productos, ProductoVariantes, Clientes, Usuarios, ProductoDetallesFiltros, OpcionesFiltro, Filtros, Almacenes, StockAlmacenes, MovimientosInventario, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const catchErrors = require('../utils/tryCatch');
 const ApiResponse = require('../utils/apiResponse');
@@ -299,7 +299,7 @@ class PedidosController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { id_cliente, detalles, estado_pedido } = req.body;
+        const { id_cliente, detalles, estado_pedido, id_almacen_origen } = req.body;
         const { id, id_empresa } = req.user;
         const id_usuario_creador = id;
 
@@ -310,12 +310,23 @@ class PedidosController {
             });
             if (!cliente) throw new Error('Cliente no encontrado');
 
+            // Determinar Almacén
+            let finalAlmacenId = id_almacen_origen;
+            if (!finalAlmacenId) {
+                const mainWarehouse = await Almacenes.findOne({
+                    where: { id_empresa, es_principal: true },
+                    transaction: t
+                });
+                if (mainWarehouse) finalAlmacenId = mainWarehouse.id;
+                else throw new Error("No se especificó almacén origen y no existe almacén principal");
+            }
+
+
             let totalPedido = 0;
             const detallesToCreate = [];
             const emailDetalles = [];
 
             for (const item of detalles) {
-                // item must now include id_variante
                 const variant = await ProductoVariantes.findOne({
                     where: { id: item.id_variante },
                     include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
@@ -324,14 +335,27 @@ class PedidosController {
 
                 if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
 
-                if (variant.stock_actual < item.cantidad) {
-                    throw new Error(`Stock insuficiente para: ${variant.producto.nombre_producto} (SKU: ${variant.sku})`);
-                }
-
-                await variant.decrement('stock_actual', {
-                    by: item.cantidad,
+                // Comprobar Stock en Almacén
+                const stockEntry = await StockAlmacenes.findOne({
+                    where: { id_variante: variant.id, id_almacen: finalAlmacenId },
                     transaction: t
                 });
+
+                const currentStock = stockEntry ? stockEntry.stock_actual : 0;
+
+                // Descontar si NO es Cancelado (Pendiente reserva stock)
+                if (estado_pedido !== 'Cancelado') {
+                    if (currentStock < item.cantidad) {
+                        throw new Error(`Stock insuficiente en almacén para: ${variant.producto.nombre_producto} (SKU: ${variant.sku}). Disponible: ${currentStock}`);
+                    }
+
+                    if (stockEntry) {
+                        await stockEntry.decrement('stock_actual', { by: item.cantidad, transaction: t });
+                    } else {
+                        // Técnicamente no debería pasar si la comprobación pasó (0 < valido), pero por seguridad:
+                        throw new Error(`Error de consistencia de stock para variante ${variant.sku}`);
+                    }
+                }
 
                 const subtotal = Number(item.cantidad) * Number(item.precio_historico);
                 totalPedido += subtotal;
@@ -356,6 +380,7 @@ class PedidosController {
                 id_empresa: id_empresa,
                 id_cliente: id_cliente,
                 id_usuario_creador: id_usuario_creador,
+                id_almacen_origen: finalAlmacenId,
                 total_pedido: totalPedido,
                 estado_pedido: estado_pedido || 'Pendiente'
             }, { transaction: t });
@@ -366,6 +391,24 @@ class PedidosController {
             }));
 
             await DetallesPedidos.bulkCreate(detallesWithPedidoId, { transaction: t });
+
+            // Crear Movimientos (vinculados al Pedido)
+            if (estado_pedido !== 'Cancelado') {
+                for (const d of detallesWithPedidoId) {
+                    await MovimientosInventario.create({
+                        id_empresa,
+                        id_variante: d.id_variante,
+                        id_almacen: finalAlmacenId,
+                        tipo_movimiento: 'Venta', // O 'Pedido'
+                        // Venta implica resta. La cantidad almacenada es la cantidad absoluta involucrada.
+                        // Las consultas interpretarán Venta como Salida (-).
+                        cantidad: d.cantidad,
+                        costo_unitario: d.precio_historico, // Usando precio de venta, idealmente debería ser Costo
+                        fecha_movimiento: new Date(),
+                        id_referencia: newPedido.id
+                    }, { transaction: t });
+                }
+            }
 
             return { pedido: newPedido, cliente, emailDetalles };
         });
@@ -555,7 +598,7 @@ class PedidosController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_cliente, detalles, estado_pedido } = req.body;
+        const { id_cliente, detalles, estado_pedido, id_almacen_origen } = req.body;
         const { id_empresa } = req.user;
 
         const result = await sequelize.transaction(async (t) => {
@@ -568,86 +611,168 @@ class PedidosController {
 
             if (!pedido) throw new Error('Pedido no encontrado');
 
-            if (pedido.estado_pedido === 'Completado' || pedido.estado_pedido === 'Cancelado') {
-                if (pedido.estado_pedido === 'Completado') console.warn('Editing a completed order - stock logic handling required');
+            // Determinar Almacén (Antiguo y Nuevo)
+            const oldWarehouseId = pedido.id_almacen_origen;
+            let newWarehouseId = id_almacen_origen || oldWarehouseId;
+            if (!newWarehouseId) {
+                const main = await Almacenes.findOne({ where: { id_empresa, es_principal: true }, transaction: t });
+                newWarehouseId = main ? main.id : null;
             }
 
-            // 2. Restore Stock to VARIANTS for old items
-            for (const detalle of pedido.detalles) {
-                if (detalle.id_variante) {
-                    await ProductoVariantes.increment('stock_actual', {
-                        by: detalle.cantidad,
-                        where: { id: detalle.id_variante },
-                        transaction: t
-                    });
-                } else {
-                    // Fallback if data was old (shouldn't happen with fresh DB, but for safety)
-                    console.warn(`Legacy detail without id_variante found in order ${id}`);
+            // 2. Restaurar Stock al almacén ANTIGUO (si NO estaba Cancelado)
+            if (pedido.estado_pedido !== 'Cancelado') {
+                const revertWarehouseId = oldWarehouseId || newWarehouseId; // Mejor esfuerzo
+
+                for (const detalle of pedido.detalles) {
+                    if (detalle.id_variante && revertWarehouseId) {
+                        const stockEntry = await StockAlmacenes.findOne({
+                            where: { id_variante: detalle.id_variante, id_almacen: revertWarehouseId },
+                            transaction: t
+                        });
+                        if (stockEntry) {
+                            await stockEntry.increment('stock_actual', { by: detalle.cantidad, transaction: t });
+                        } else {
+                            // Crear si falta
+                            await StockAlmacenes.create({
+                                id_empresa, id_variante: detalle.id_variante, id_almacen: revertWarehouseId, stock_actual: detalle.cantidad
+                            }, { transaction: t });
+                        }
+
+                        // Registrar Reversión (Anular Venta)
+                        await MovimientosInventario.create({
+                            id_empresa,
+                            id_variante: detalle.id_variante,
+                            id_almacen: revertWarehouseId,
+                            tipo_movimiento: 'Ajuste', // o Cancelacion Venta
+                            cantidad: detalle.cantidad, // Positivo para devolver
+                            costo_unitario: detalle.precio_historico, // Aproximado
+                            fecha_movimiento: new Date(),
+                            id_referencia: pedido.id,
+                            notas: 'Reversion de pedido por actualizacion'
+                        }, { transaction: t });
+                    }
                 }
             }
 
-            // 3. Delete old details
+            // 3. Eliminar detalles antiguos
             await DetallesPedidos.destroy({
                 where: { id_pedido: id },
                 transaction: t
             });
 
-            // 4. Process NEW details (Deduct Stock & Create)
+            // 4. Procesar NUEVOS detalles (Descontar Stock y Crear)
             let totalPedido = 0;
             const detallesToCreate = [];
             const emailDetalles = [];
 
-            for (const item of detalles) {
-                // Fetch Variant
-                const variant = await ProductoVariantes.findOne({
-                    where: { id: item.id_variante },
-                    include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
-                    transaction: t
-                });
+            // Si actualizamos a 'Cancelado', paramos aquí (stock ya restaurado arriba).
+            // Pero usualmente update() implica guardar nuevo estado.
+            // Si el nuevo estado es Cancelado, solo guardamos cabecera?
+            // Re-implementando lógica para soportar actualización parcial.
 
-                if (!variant) throw new Error(`Variante ${item.id_variante} no encontrada`);
+            const effectiveDetalles = detalles || pedido.detalles; // Usar provistos o existentes
 
-                if (variant.stock_actual < item.cantidad) {
-                    throw new Error(`Stock insuficiente para: ${variant.producto.nombre_producto} (SKU: ${variant.sku})`);
+            if (estado_pedido !== 'Cancelado') {
+                // Procesar Items
+                for (const item of effectiveDetalles) {
+                    // Obtener Variante
+                    // Si reusamos item antiguo, puede ser Objeto Sequelize. Normalizar.
+                    const variantId = item.id_variante;
+                    const qty = item.cantidad;
+                    const price = item.precio_historico;
+                    const dets = item.detalles_producto;
+
+                    const variant = await ProductoVariantes.findOne({
+                        where: { id: variantId },
+                        include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                        transaction: t
+                    });
+
+                    if (!variant) throw new Error(`Variante ${variantId} no encontrada`);
+
+                    // Comprobar Stock
+                    const stockEntry = await StockAlmacenes.findOne({
+                        where: { id_variante: variant.id, id_almacen: newWarehouseId },
+                        transaction: t
+                    });
+                    const currentStock = stockEntry ? stockEntry.stock_actual : 0;
+
+                    if (currentStock < qty) {
+                        throw new Error(`Stock insuficiente para: ${variant.producto.nombre_producto}. Disponible: ${currentStock}`);
+                    }
+
+                    if (stockEntry) {
+                        await stockEntry.decrement('stock_actual', { by: qty, transaction: t });
+                    }
+
+                    const subtotal = Number(qty) * Number(price);
+                    totalPedido += subtotal;
+
+                    detallesToCreate.push({
+                        id_pedido: id,
+                        id_producto: variant.id_producto,
+                        id_variante: variant.id,
+                        cantidad: qty,
+                        precio_historico: price,
+                        subtotal,
+                        detalles_producto: dets
+                    });
+
+                    // Registrar Movimiento
+                    await MovimientosInventario.create({
+                        id_empresa,
+                        id_variante: variant.id,
+                        id_almacen: newWarehouseId,
+                        tipo_movimiento: 'Venta',
+                        cantidad: qty,
+                        costo_unitario: price,
+                        fecha_movimiento: new Date(),
+                        id_referencia: pedido.id
+                    }, { transaction: t });
+
+                    emailDetalles.push({
+                        nombre_producto: variant.producto.nombre_producto,
+                        cantidad: qty,
+                        subtotal
+                    });
                 }
+            } else {
+                // Si Cancelado, no descontamos stock. 
+                // Debemos recrear detalles para historial.
+                for (const item of effectiveDetalles) {
+                    const price = item.precio_historico;
+                    const qty = item.cantidad;
+                    const subtotal = Number(qty) * Number(price);
+                    totalPedido += subtotal;
 
-                await variant.decrement('stock_actual', {
-                    by: item.cantidad,
-                    transaction: t
-                });
+                    // Necesitamos IDs de producto
+                    const variant = await ProductoVariantes.findOne({ where: { id: item.id_variante } });
 
-                const subtotal = Number(item.cantidad) * Number(item.precio_historico);
-                totalPedido += subtotal;
-
-                detallesToCreate.push({
-                    id_pedido: id,
-                    id_producto: variant.id_producto,
-                    id_variante: variant.id,
-                    cantidad: item.cantidad,
-                    precio_historico: item.precio_historico,
-                    subtotal,
-                    detalles_producto: item.detalles_producto
-                });
-
-                emailDetalles.push({
-                    nombre_producto: variant.producto.nombre_producto,
-                    cantidad: item.cantidad,
-                    subtotal
-                });
+                    detallesToCreate.push({
+                        id_pedido: id,
+                        id_producto: variant ? variant.id_producto : null, // fallback
+                        id_variante: item.id_variante,
+                        cantidad: qty,
+                        precio_historico: price,
+                        subtotal,
+                        detalles_producto: item.detalles_producto
+                    });
+                }
             }
 
             // 5. Update Order Header
             await pedido.update({
-                id_cliente,
+                id_cliente: id_cliente || pedido.id_cliente,
                 total_pedido: totalPedido,
-                estado_pedido: estado_pedido || pedido.estado_pedido
+                estado_pedido: estado_pedido || pedido.estado_pedido,
+                id_almacen_origen: newWarehouseId
             }, { transaction: t });
 
             // 6. Bulk Create New Details
             await DetallesPedidos.bulkCreate(detallesToCreate, { transaction: t });
 
             // Fetch updated client for email
-            const cliente = await Clientes.findByPk(id_cliente, { transaction: t });
+            const cliente = await Clientes.findByPk(id_cliente || pedido.id_cliente, { transaction: t });
 
             return { pedido, cliente, emailDetalles };
         });

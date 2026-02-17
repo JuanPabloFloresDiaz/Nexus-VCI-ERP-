@@ -67,20 +67,20 @@ Para gestionar correctamente el origen y destino de la mercadería:
     - Asegurar que `sequelize-cli` funcione correctamente.
 
 #### Fase 2: Base de Datos (Migraciones)
-- [ ] **Crear tabla `almacenes`:**
+- [x] **Crear tabla `almacenes`:**
     - Campos: `id`, `id_empresa`, `nombre_almacen`, `ubicacion`, `es_principal`, `created_at`, `updated_at`, `deleted_at`.
-- [ ] **Crear tabla `stock_almacenes`:**
+- [x] **Crear tabla `stock_almacenes`:**
     - Campos: `id`, `id_variante`, `id_almacen`, `stock_actual`, `created_at`, `updated_at`, `deleted_at`.
     - Clave única compuesta: `(id_variante, id_almacen)`.
-- [ ] **Crear tabla `movimientos_inventario` (Kardex):**
+- [x] **Crear tabla `movimientos_inventario` (Kardex):**
     - Campos: `id`, `id_variante`, `id_almacen`, `tipo_movimiento` (ENUM: 'Compra', 'Venta', 'Ajuste', 'Traslado'), `cantidad`, `costo_unitario`, `id_referencia` (Id de la compra/pedido), `fecha_movimiento`, `created_at`, `updated_at`, `deleted_at`.
-- [ ] **Actualizar tabla `proveedores`:**
+- [x] **Actualizar tabla `proveedores`:**
     - Agregar: `nit_dui`, `direccion`, `dias_credito`.
-- [ ] **Actualizar tabla `compras`:**
+- [x] **Actualizar tabla `compras`:**
     - Agregar: `id_almacen_destino`, `metodo_pago`, `referencia_pago`.
-- [ ] **Actualizar tabla `pedidos`:**
+- [x] **Actualizar tabla `pedidos`:**
     - Agregar: `id_almacen_origen` (De donde sale la mercadería).
-- [ ] **Migración de Datos (Script):**
+- [x] **Migración de Datos (Script):**
     - Crear un script que mueva el `stock_actual` existente en `producto_variantes` a un "Almacén Principal" por defecto en `stock_almacenes`.
 
 #### Fase 3: Backend Core (Modelos y Controladores)

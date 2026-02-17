@@ -23,11 +23,6 @@ class ProductoVariantes extends Sequelize.Model {
                 allowNull: true,
                 unique: true
             },
-            stock_actual: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: 0
-            },
             precio_unitario: {
                 type: DataTypes.DECIMAL(10, 2),
                 allowNull: true
@@ -84,6 +79,8 @@ class ProductoVariantes extends Sequelize.Model {
         ProductoVariantes.hasMany(models.ProductoDetallesFiltros, { foreignKey: "id_variante", as: "detalles_filtros" });
         ProductoVariantes.hasMany(models.DetallesPedidos, { foreignKey: "id_variante", as: "pedidos" });
         ProductoVariantes.hasMany(models.DetallesCompras, { foreignKey: "id_variante", as: "compras" });
+        ProductoVariantes.hasMany(models.StockAlmacenes, { foreignKey: "id_variante", as: "stock" });
+        ProductoVariantes.hasMany(models.MovimientosInventario, { foreignKey: "id_variante", as: "movimientos" });
     }
 }
 

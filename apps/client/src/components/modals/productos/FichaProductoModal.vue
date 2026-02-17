@@ -47,7 +47,11 @@
     };
 
     const prices = vars.map(v => Number(v.precio_unitario));
-    const totalStock = vars.reduce((acc, v) => acc + Number(v.stock_actual), 0);
+    // Calculate stock from the 'stock' relation (array)
+    const totalStock = vars.reduce((acc, v) => {
+      const variantStock = v.stock ? v.stock.reduce((s, st) => s + Number(st.stock_actual), 0) : 0;
+      return acc + variantStock;
+    }, 0);
       
     return {
       priceMin: Math.min(...prices),
@@ -58,6 +62,7 @@
 
   const priceDisplay = computed(() => {
     const { priceMin, priceMax } = aggregates.value;
+    if (priceMin === undefined) return '';
     if (priceMin === priceMax) return formatCurrency(priceMin);
     return `${formatCurrency(priceMin)} - ${formatCurrency(priceMax)}`;
   });
@@ -73,7 +78,7 @@
     for (const v of fullProduct.value.variantes) {
       const cost = Number(v.costo_unitario) || 0;
       const price = Number(v.precio_unitario) || 0;
-      const stock = Number(v.stock_actual) || 0;
+      const stock = v.stock ? v.stock.reduce((s, st) => s + Number(st.stock_actual), 0) : 0;
 
       inversionTotal += cost * stock;
       ingresoTotalPotencial += price * stock;
@@ -97,8 +102,24 @@
     }).join(', ');
   }
 
+  function getVariantStock(variant) {
+    if (!variant.stock) return 0;
+    return variant.stock.reduce((acc, st) => acc + Number(st.stock_actual), 0);
+  }
+
   const financialConclusion = computed(() => {
-    const margin = stockFinancials.value.margenGeneral || 0;
+    let margin = stockFinancials.value.margenGeneral || 0;
+    
+    // If no stock, calculate theoretical margin based on average price/cost of variants
+    if (aggregates.value.stockTotal === 0 && fullProduct.value.variantes?.length > 0) {
+      const vars = fullProduct.value.variantes;
+      const avgPrice = vars.reduce((acc, v) => acc + Number(v.precio_unitario), 0) / vars.length;
+      const avgCost = vars.reduce((acc, v) => acc + Number(v.costo_unitario), 0) / vars.length;
+      if (avgPrice > 0) {
+        margin = ((avgPrice - avgCost) / avgPrice) * 100;
+      }
+    }
+
     const utility = stockFinancials.value.utilidadTotalPotencial || 0;
     
     if (margin >= 50) {
@@ -254,10 +275,10 @@
                               {{ formatCurrency(Number(variant.precio_unitario) - Number(variant.costo_unitario)) }}
                               <span class="text-medium-emphasis">({{ ((Number(variant.precio_unitario) - Number(variant.costo_unitario)) / Number(variant.precio_unitario) * 100).toFixed(0) }}%)</span>
                             </td>
-                            <td class="text-right">{{ formatCurrency(Number(variant.costo_unitario) * Number(variant.stock_actual)) }}</td>
-                            <td class="text-right text-success">{{ formatCurrency((Number(variant.precio_unitario) * Number(variant.stock_actual)) - (Number(variant.costo_unitario) * Number(variant.stock_actual))) }}</td>
+                            <td class="text-right">{{ formatCurrency(Number(variant.costo_unitario) * getVariantStock(variant)) }}</td>
+                            <td class="text-right text-success">{{ formatCurrency((Number(variant.precio_unitario) * getVariantStock(variant)) - (Number(variant.costo_unitario) * getVariantStock(variant))) }}</td>
                             <td class="text-right">
-                              {{ Number(variant.precio_unitario) > 0 ? Math.ceil((Number(variant.costo_unitario) * Number(variant.stock_actual)) / Number(variant.precio_unitario)) : 0 }} u.
+                              {{ Number(variant.precio_unitario) > 0 ? Math.ceil((Number(variant.costo_unitario) * getVariantStock(variant)) / Number(variant.precio_unitario)) : 0 }} u.
                             </td>
                           </tr>
                         </tbody>
@@ -321,8 +342,8 @@
                     <td class="text-right">{{ formatCurrency(variant.costo_unitario) }}</td>
                     <td class="text-right">{{ formatCurrency(variant.precio_unitario) }}</td>
                     <td class="text-right">
-                      <v-chip :color="variant.stock_actual <= (variant.stock_minimo || 5) ? 'error' : 'success'" size="x-small" variant="flat">
-                        {{ variant.stock_actual }}
+                      <v-chip :color="getVariantStock(variant) <= (variant.stock_minimo || 5) ? 'error' : 'success'" size="x-small" variant="flat">
+                        {{ getVariantStock(variant) }}
                       </v-chip>
                     </td>
                   </tr>

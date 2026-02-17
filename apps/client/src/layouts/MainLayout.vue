@@ -227,6 +227,24 @@
     // Header: Inventario
     { header: 'Inventario' },
     {
+      title: 'Almacenes',
+      icon: 'mdi-warehouse',
+      to: '/main/almacenes',
+      value: 'almacenes',
+      tags: ['bodegas', 'sucursales', 'stock', 'ubicaciones'],
+      description: 'Gestión de almacenes y sucursales',
+      category: 'Inventario'
+    },
+    {
+      title: 'Movimientos',
+      icon: 'mdi-transfer',
+      to: '/main/movimientos',
+      value: 'movimientos',
+      tags: ['ajustes', 'transferencias', 'kardex', 'entradas', 'salidas'],
+      description: 'Registro de movimientos de inventario',
+      category: 'Inventario'
+    },
+    {
       title: 'Categorización',
       icon: 'mdi-shape-outline',
       to: '/main/categorizacion',

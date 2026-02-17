@@ -1,4 +1,4 @@
-const { Productos, ProductoVariantes, ProductoDetallesFiltros, Subcategorias, OpcionesFiltro, Filtros, StockAlmacenes, Almacenes, sequelize } = require('../models');
+const { Productos, ProductoVariantes, ProductoDetallesFiltros, Subcategorias, OpcionesFiltro, Filtros, StockAlmacenes, Almacenes, MovimientosInventario, sequelize } = require('../models');
 const StorageController = require('./storage.controller');
 const { Op } = require('sequelize');
 const catchErrors = require('../utils/tryCatch');
@@ -236,6 +236,7 @@ class ProductosController {
                         // stock_actual removed
                         precio_unitario: v.precio_unitario,
                         costo_unitario: v.costo_unitario,
+                        stock_minimo: v.stock_minimo || 5,
                         imagen_url: v.imagen_url || null
                     }, { transaction: t });
 
@@ -338,16 +339,46 @@ class ProductosController {
                 // Create Parent
                 const newProd = await Productos.create(group.data, { transaction: t });
 
+                // Find user's main warehouse for the batch
+                const mainWarehouse = await Almacenes.findOne({
+                    where: { id_empresa: req.user.id_empresa, es_principal: true, deleted_at: null },
+                    transaction: t
+                });
+                const warehouseId = mainWarehouse ? mainWarehouse.id : null;
+
                 // Create Variants
                 for (const v of group.variants) {
                     const newVariant = await ProductoVariantes.create({
                         id_producto: newProd.id,
                         sku: v.sku,
-                        stock_actual: v.stock_actual || 0,
+                        // stock_actual removed from model, handled below
                         precio_unitario: v.precio_unitario,
                         costo_unitario: v.costo_unitario,
+                        stock_minimo: v.stock_minimo || 5, // Default 5
                         imagen_url: v.imagen_url
                     }, { transaction: t });
+
+                    // Create Stock in Main Warehouse
+                    if (warehouseId) {
+                        await StockAlmacenes.create({
+                            id_variante: newVariant.id,
+                            id_almacen: warehouseId,
+                            stock_actual: v.stock_actual || 0
+                        }, { transaction: t });
+
+                        // Log Initial Movement
+                        if (v.stock_actual > 0) {
+                            await MovimientosInventario.create({
+                                id_empresa: req.user.id_empresa,
+                                id_variante: newVariant.id,
+                                id_almacen: warehouseId,
+                                tipo_movimiento: 'Ajuste', // Initial load
+                                cantidad: v.stock_actual,
+                                costo_unitario: v.costo_unitario || 0,
+                                fecha_movimiento: new Date()
+                            }, { transaction: t });
+                        }
+                    }
 
                     // Create Filters for Variant
                     if (v.detalles && v.detalles.length > 0) {
@@ -427,6 +458,7 @@ class ProductosController {
                             // stock_actual removed from update
                             precio_unitario: v.precio_unitario,
                             costo_unitario: v.costo_unitario,
+                            stock_minimo: v.stock_minimo,
                             imagen_url: v.imagen_url
                         }, { transaction: t });
                     } else {
@@ -437,6 +469,7 @@ class ProductosController {
                             // stock_actual removed
                             precio_unitario: v.precio_unitario,
                             costo_unitario: v.costo_unitario,
+                            stock_minimo: v.stock_minimo,
                             imagen_url: v.imagen_url
                         }, { transaction: t });
 

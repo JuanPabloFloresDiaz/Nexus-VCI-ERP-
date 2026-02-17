@@ -46,6 +46,9 @@ const createProveedorSchema = z.object({
         contacto_nombre: z.string().max(100).optional().nullable(),
         telefono_proveedor: z.string().max(15).optional().nullable(),
         correo_proveedor: z.string().email('Debe ser un correo válido').max(100).optional().nullable(),
+        nit_dui_proveedor: z.string().max(20).optional().nullable(),
+        direccion_proveedor: z.string().optional().nullable(),
+        dias_credito: z.number().int().min(0).optional().default(0),
         id_empresa: z.string().uuid().optional()
     })
 });
@@ -56,6 +59,9 @@ const updateProveedorSchema = z.object({
         contacto_nombre: z.string().max(100).optional().nullable(),
         telefono_proveedor: z.string().max(15).optional().nullable(),
         correo_proveedor: z.string().email().max(100).optional().nullable(),
+        nit_dui_proveedor: z.string().max(20).optional().nullable(),
+        direccion_proveedor: z.string().optional().nullable(),
+        dias_credito: z.number().int().min(0).optional(),
         id_empresa: z.string().uuid().optional()
     })
 });
@@ -67,6 +73,9 @@ const bulkProveedorSchema = z.object({
             contacto_nombre: z.string().max(100).optional().nullable(),
             telefono_proveedor: z.string().max(15).optional().nullable(),
             correo_proveedor: z.string().email('Debe ser un correo válido').max(100).optional().nullable(),
+            nit_dui_proveedor: z.string().max(20).optional().nullable(),
+            direccion_proveedor: z.string().optional().nullable(),
+            dias_credito: z.number().int().min(0).optional().default(0),
             id_empresa: z.string().uuid().optional()
         })
     ).min(1, 'Debe enviar al menos un proveedor')

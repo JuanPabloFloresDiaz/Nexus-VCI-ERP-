@@ -25,3 +25,4 @@ yarn-error.log*
 
 # DATABASE
 database.sql
+sync_inventory.sql

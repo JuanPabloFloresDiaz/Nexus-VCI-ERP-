@@ -44,8 +44,6 @@ const createAlmacenSchema = z.object({
     body: z.object({
         nombre_almacen: z.string().min(1, 'El nombre del almacén es requerido').max(100),
         ubicacion: z.string().optional(),
-        responsable: z.string().optional(),
-        telefono: z.string().optional(),
         es_principal: z.boolean().optional().default(false),
         id_empresa: z.string().uuid().optional()
     })

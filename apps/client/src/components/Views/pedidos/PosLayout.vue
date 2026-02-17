@@ -61,8 +61,31 @@
       if (val.cliente) {
         selectedClient.value = val.cliente;
       }
+      if (val.almacen_origen) {
+        // If editing, use the order's warehouse
+         selectedWarehouse.value = val.id_almacen_origen || val.almacen_origen?.id; // Adjust based on API response
+      }
     }
   }, { immediate: true });
+
+  // Fetch Almacenes
+  import { getAlmacenes } from '@/services/almacenes.service';
+  const almacenes = ref([]);
+  const selectedWarehouse = ref(null);
+
+  onMounted(async () => {
+    try {
+      const res = await getAlmacenes({ limit: 100 });
+      if (res.data) {
+        almacenes.value = res.data;
+        // Default to main or first if not editing
+        if (!props.isEdit && !selectedWarehouse.value) {
+            const main = almacenes.value.find(a => a.es_principal);
+            selectedWarehouse.value = main ? main.id : almacenes.value[0]?.id;
+        }
+      }
+    } catch (e) { console.error(e); }
+  });
 
   function addToCart (payload) {
     // payload can be { producto, variant } or just producto (legacy/safeguard)
@@ -125,13 +148,28 @@
             
       <!-- Left: Catalog & Client Search -->
       <div class="d-flex flex-column flex-grow-1 w-66">
-        <!-- Client Widget Section -->
+        <!-- Header: Client & Warehouse -->
         <div class="bg-white pa-3 border-b">
           <v-row align="center">
-            <v-col cols="12" md="8">
+            <v-col cols="12" md="6">
               <ClienteWidget v-model="selectedClient" />
             </v-col>
-            <v-col class="text-right d-none d-md-block" cols="12" md="4">
+            <v-col cols="12" md="4">
+               <v-select
+                 v-model="selectedWarehouse"
+                 :items="almacenes"
+                 item-title="nombre_almacen"
+                 item-value="id"
+                 label="Almacén de Origen"
+                 density="compact"
+                 variant="outlined"
+                 hide-details
+                 :disabled="cart.length > 0" 
+               />
+               <!-- Disable changing warehouse if cart has items to avoid stock mismatch issues? 
+                    Or just re-validate. Safer to disable or warn. -->
+            </v-col>
+            <v-col class="text-right d-none d-md-block" cols="12" md="2">
               <v-chip v-if="selectedClient" color="success" variant="tonal">
                 <v-icon start>mdi-account-check</v-icon>
                 Cliente seleccionado
@@ -146,7 +184,10 @@
 
         <!-- Catalog Widget -->
         <div class="flex-grow-1 overflow-hidden position-relative">
-          <CatalogoProductosWidget @add-to-cart="addToCart" />
+          <CatalogoProductosWidget 
+            :warehouse-id="selectedWarehouse"
+            @add-to-cart="addToCart" 
+          />
         </div>
       </div>
 
@@ -155,6 +196,7 @@
         <CarritoWidget
           v-model="cart"
           :cliente="selectedClient"
+          :warehouse-id="selectedWarehouse"
           :is-edit="isEdit"
           :order-id="initialOrder?.id"
           @clear-cart="clearCart"

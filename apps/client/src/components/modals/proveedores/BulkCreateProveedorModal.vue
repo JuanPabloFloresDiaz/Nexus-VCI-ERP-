@@ -26,12 +26,14 @@
     const defaultHeaders = [
       { title: 'Nombre', key: 'nombre_proveedor', sortable: true },
       { title: 'Contacto', key: 'contacto_nombre', sortable: true },
+      { title: 'NIT/DUI', key: 'nit_dui_proveedor', sortable: true },
       { title: 'Correo', key: 'correo_proveedor', sortable: true },
       { title: 'Teléfono', key: 'telefono_proveedor', sortable: true },
+      { title: 'Días Crédito', key: 'dias_credito', sortable: true },
       { title: 'Acciones', key: 'actions', sortable: false, align: 'end' },
     ];
     if (isSuperAdmin.value) {
-      defaultHeaders.splice(4, 0, { title: 'ID Empresa', key: 'id_empresa', sortable: true });
+      defaultHeaders.splice(6, 0, { title: 'ID Empresa', key: 'id_empresa', sortable: true });
     }
     return defaultHeaders;
   });
@@ -43,6 +45,9 @@
     contacto_nombre: '',
     correo_proveedor: '',
     telefono_proveedor: '',
+    nit_dui_proveedor: '',
+    direccion_proveedor: '',
+    dias_credito: 0,
     id_empresa: ''
   });
 
@@ -64,7 +69,7 @@
   // Methods
 
   function downloadTemplate () {
-    const headersConfig = ['nombre_proveedor', 'contacto_nombre', 'correo_proveedor', 'telefono_proveedor'];
+    const headersConfig = ['nombre_proveedor', 'contacto_nombre', 'correo_proveedor', 'telefono_proveedor', 'nit_dui_proveedor', 'direccion_proveedor', 'dias_credito'];
     if (isSuperAdmin.value) {
       headersConfig.push('id_empresa');
     }
@@ -74,7 +79,10 @@
       nombre_proveedor: 'Distribuidora Ejemplo S.A.',
       contacto_nombre: 'Juan Perez',
       correo_proveedor: 'ventas@ejemplo.com',
-      telefono_proveedor: '7777-7777'
+      telefono_proveedor: '7777-7777',
+      nit_dui_proveedor: '0614-010190-102-1',
+      direccion_proveedor: 'Av. Principal #123, San Salvador',
+      dias_credito: 30
     };
     if (isSuperAdmin.value) {
       sampleRow.id_empresa = 'UUID-EMPRESA';
@@ -112,6 +120,9 @@
           contacto_nombre: item.contacto_nombre?.toString().trim() || '',
           correo_proveedor: item.correo_proveedor?.toString().trim() || '',
           telefono_proveedor: item.telefono_proveedor?.toString().trim() || '',
+          nit_dui_proveedor: item.nit_dui_proveedor?.toString().trim() || '',
+          direccion_proveedor: item.direccion_proveedor?.toString().trim() || '',
+          dias_credito: Number(item.dias_credito) || 0,
           id_empresa: item.id_empresa?.toString().trim() || (isSuperAdmin.value ? '' : user.value.id_empresa)
         }));
 
@@ -133,6 +144,9 @@
     editForm.contacto_nombre = item.contacto_nombre;
     editForm.correo_proveedor = item.correo_proveedor;
     editForm.telefono_proveedor = item.telefono_proveedor;
+    editForm.nit_dui_proveedor = item.nit_dui_proveedor;
+    editForm.direccion_proveedor = item.direccion_proveedor;
+    editForm.dias_credito = item.dias_credito;
     editForm.id_empresa = item.id_empresa;
   }
 
@@ -142,6 +156,9 @@
       contacto_nombre: editForm.contacto_nombre,
       correo_proveedor: editForm.correo_proveedor,
       telefono_proveedor: editForm.telefono_proveedor,
+      nit_dui_proveedor: editForm.nit_dui_proveedor,
+      direccion_proveedor: editForm.direccion_proveedor,
+      dias_credito: Number(editForm.dias_credito),
       id_empresa: editForm.id_empresa
     };
 
@@ -157,6 +174,9 @@
     editForm.contacto_nombre = '';
     editForm.correo_proveedor = '';
     editForm.telefono_proveedor = '';
+    editForm.nit_dui_proveedor = '';
+    editForm.direccion_proveedor = '';
+    editForm.dias_credito = 0;
     editForm.id_empresa = '';
   }
 
@@ -315,6 +335,25 @@
                         bg-color="white"
                         density="compact"
                         label="Correo"
+                        variant="outlined"
+                      />
+                    </v-col>
+                    <v-col cols="12" md="4">
+                      <v-text-field
+                        v-model="editForm.nit_dui_proveedor"
+                        bg-color="white"
+                        density="compact"
+                        label="NIT / DUI"
+                        variant="outlined"
+                      />
+                    </v-col>
+                    <v-col cols="12" md="4">
+                      <v-text-field
+                        v-model.number="editForm.dias_credito"
+                        bg-color="white"
+                        density="compact"
+                        label="Días Crédito"
+                        type="number"
                         variant="outlined"
                       />
                     </v-col>

@@ -97,7 +97,7 @@ class AlmacenesController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { nombre_almacen, ubicacion, responsable, telefono, es_principal } = req.body;
+        const { nombre_almacen, ubicacion, es_principal } = req.body;
         const { id, id_empresa } = req.user;
 
         // Validar si ya existe principal
@@ -117,8 +117,6 @@ class AlmacenesController {
             id_empresa,
             nombre_almacen,
             ubicacion,
-            responsable,
-            telefono,
             es_principal: es_principal || false
         });
 
@@ -133,7 +131,7 @@ class AlmacenesController {
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
         const { id_empresa } = req.user;
-        const { nombre_almacen, ubicacion, responsable, telefono, es_principal, estado } = req.body;
+        const { nombre_almacen, ubicacion, es_principal, estado } = req.body;
 
         const almacen = await Almacenes.findOne({ where: { id, id_empresa } });
         if (!almacen) {
@@ -156,8 +154,6 @@ class AlmacenesController {
         await almacen.update({
             nombre_almacen,
             ubicacion,
-            responsable,
-            telefono,
             es_principal,
             estado
         });
@@ -253,19 +249,22 @@ class AlmacenesController {
 
         const where = { ...query, id_almacen: id };
 
+        if (search) {
+            where[Op.or] = [
+                { '$variante.sku$': { [Op.like]: `%${search}%` } },
+                { '$variante.producto.nombre_producto$': { [Op.like]: `%${search}%` } }
+            ];
+        }
+
         // Search in Product via Include
         const productInclude = {
             model: ProductoVariantes,
             as: 'variante',
+            // If searching, we need to ensure the join matches, though for stock it should always be there.
+            // But to trigger the where clause on the include alias, we simply use the top-level where.
             include: [{
                 model: Productos,
-                as: 'producto',
-                where: search ? {
-                    [Op.or]: [
-                        { nombre_producto: { [Op.like]: `%${search}%` } },
-                        { sku: { [Op.like]: `%${search}%` } } // SKU is usually on Variant but user might search logic
-                    ]
-                } : undefined
+                as: 'producto'
             }]
         };
 

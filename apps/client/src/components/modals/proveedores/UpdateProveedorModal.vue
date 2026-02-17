@@ -28,6 +28,9 @@
     contacto_nombre: '',
     correo_proveedor: '',
     telefono_proveedor: '',
+    nit_dui_proveedor: '',
+    direccion_proveedor: '',
+    dias_credito: 0,
     id_empresa: null
   });
 
@@ -54,6 +57,9 @@
       formData.contacto_nombre = newItem.contacto_nombre;
       formData.correo_proveedor = newItem.correo_proveedor;
       formData.telefono_proveedor = newItem.telefono_proveedor;
+      formData.nit_dui_proveedor = newItem.nit_dui_proveedor;
+      formData.direccion_proveedor = newItem.direccion_proveedor;
+      formData.dias_credito = newItem.dias_credito;
       formData.id_empresa = newItem.id_empresa; // Important for SuperAdmin
     }
   }, { immediate: true });
@@ -157,6 +163,37 @@
                 density="compact"
                 label="Correo Electrónico"
                 :rules="[rules.email]"
+                variant="outlined"
+              />
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="formData.nit_dui_proveedor"
+                v-maska="'####-######-###-#'"
+                density="compact"
+                label="NIT / DUI"
+                variant="outlined"
+              />
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model.number="formData.dias_credito"
+                density="compact"
+                label="Días de Crédito"
+                type="number"
+                min="0"
+                variant="outlined"
+              />
+            </v-col>
+
+            <v-col cols="12">
+              <v-textarea
+                v-model="formData.direccion_proveedor"
+                density="compact"
+                label="Dirección"
+                rows="2"
                 variant="outlined"
               />
             </v-col>

@@ -22,16 +22,16 @@ const { z } = require('zod');
  *           items:
  *             type: object
  *             required:
- *               - id_producto
+ *               - id_variante
  *               - cantidad
- *               - precio_historico
+ *               - precio_costo_historico
  *             properties:
- *               id_producto:
+ *               id_variante:
  *                 type: string
  *                 format: uuid
  *               cantidad:
- *                 type: integer
- *               precio_historico:
+ *                 type: number
+ *               precio_costo_historico:
  *                 type: number
  *         id_empresa:
  *           type: string
@@ -52,13 +52,15 @@ const createPedidoSchema = z.object({
         id_usuario_creador: z.string().uuid('ID de usuario creador inválido'),
         detalles: z.array(
             z.object({
-                id_producto: z.string().uuid('ID de producto inválido'),
+                id_variante: z.string().uuid('ID de variante inválido'),
                 cantidad: z.number().int().positive('La cantidad debe ser positiva'),
                 precio_historico: z.number().positive('El precio debe ser positivo'),
                 detalles_producto: z.record(z.any()).optional()
             })
         ).min(1, 'El pedido debe tener al menos un detalle'),
-        id_empresa: z.string().uuid().optional()
+        id_empresa: z.string().uuid().optional(),
+        // Add optional ALMACEN_ORIGEN override in body? Controller allows it.
+        id_almacen_origen: z.string().uuid().optional()
     })
 });
 

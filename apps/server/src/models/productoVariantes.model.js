@@ -35,6 +35,11 @@ class ProductoVariantes extends Sequelize.Model {
                 type: DataTypes.STRING(255),
                 allowNull: true
             },
+            stock_minimo: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                defaultValue: 5
+            },
             created_at: {
                 allowNull: true,
                 type: DataTypes.DATE

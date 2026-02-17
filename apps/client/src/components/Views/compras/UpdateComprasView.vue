@@ -123,6 +123,7 @@
           <v-col cols="12" md="6">
             <div class="test-body-1"><strong>ID:</strong> #{{ compraData?.id.substring(0,8) }}</div>
             <div class="test-body-1"><strong>Proveedor:</strong> {{ compraData?.proveedor?.nombre_proveedor }}</div>
+            <div class="test-body-1"><strong>Almacén:</strong> {{ compraData?.almacen_destino?.nombre_almacen || 'N/A' }}</div>
             <div class="test-body-1"><strong>Comprador:</strong> {{ compraData?.usuario_comprador?.nombre_usuario || 'Yo' }}</div>
             <div class="test-body-1"><strong>Total:</strong> {{ formatCurrency(compraData?.total_compra) }}</div>
           </v-col>

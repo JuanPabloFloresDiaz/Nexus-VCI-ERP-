@@ -129,7 +129,7 @@ class ProveedoresController {
     });
 
     static store = catchErrors(async (req, res) => {
-        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor, id_empresa: bodyIdEmpresa } = req.body;
+        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor, nit_dui_proveedor, direccion_proveedor, dias_credito, id_empresa: bodyIdEmpresa } = req.body;
         const { id_empresa: userIdEmpresa, rol_usuario } = req.user;
 
         if (rol_usuario === 'Vendedor') {
@@ -161,7 +161,10 @@ class ProveedoresController {
             nombre_proveedor,
             contacto_nombre,
             telefono_proveedor,
-            correo_proveedor
+            correo_proveedor,
+            nit_dui_proveedor,
+            direccion_proveedor,
+            dias_credito
         });
 
         return ApiResponse.success(res, {
@@ -209,7 +212,7 @@ class ProveedoresController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor, id_empresa: bodyIdEmpresa } = req.body;
+        const { nombre_proveedor, contacto_nombre, telefono_proveedor, correo_proveedor, nit_dui_proveedor, direccion_proveedor, dias_credito, id_empresa: bodyIdEmpresa } = req.body;
         const { id_empresa: userIdEmpresa, rol_usuario } = req.user;
 
         if (rol_usuario === 'Vendedor') {
@@ -261,6 +264,9 @@ class ProveedoresController {
             contacto_nombre,
             telefono_proveedor,
             correo_proveedor,
+            nit_dui_proveedor,
+            direccion_proveedor,
+            dias_credito
             // id_empresa is updated via instance modification above if applicable
         });
 

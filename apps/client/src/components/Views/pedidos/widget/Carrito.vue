@@ -22,6 +22,10 @@
     isEdit: {
       type: Boolean,
       default: false
+    },
+    warehouseId: {
+      type: String,
+      default: null
     }
   });
 
@@ -126,7 +130,9 @@
       id_cliente: props.cliente.id,
       id_usuario_creador: authStore.user.id,
       detalles,
-      estado_pedido: estadoPedido.value
+      estado_pedido: estadoPedido.value,
+      id_almacen_origen: props.warehouseId,
+      // If backend logic for 'store' requires id_almacen_origen in body (it does per my earlier check).
     };
    
     if (props.isEdit && props.orderId) {

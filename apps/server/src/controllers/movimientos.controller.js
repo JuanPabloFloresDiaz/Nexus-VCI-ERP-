@@ -99,7 +99,7 @@ class MovimientosController {
 
     static store = catchErrors(async (req, res) => {
         // Manual adjustment or single movement creation
-        const { id_variante, id_almacen, tipo_movimiento, cantidad, costo_unitario, notas } = req.body;
+        const { id_variante, id_almacen, tipo_movimiento, cantidad, costo_unitario } = req.body;
         const { id_empresa } = req.user;
 
         const result = await sequelize.transaction(async (t) => {
@@ -128,10 +128,16 @@ class MovimientosController {
             // Salida/Venta (Negative impact, but usually Input Quantity is positive) -> Decrement
             // Let's assume input 'cantidad' is absolute positive.
 
+            // Mapping Logic for DB ENUM ('Compra', 'Venta', 'Ajuste', 'Traslado')
+            let dbTipoMovimiento = tipo_movimiento;
+            if (['Entrada', 'Salida'].includes(tipo_movimiento)) {
+                dbTipoMovimiento = 'Ajuste';
+            } else if (tipo_movimiento === 'Transferencia') {
+                dbTipoMovimiento = 'Traslado';
+            }
+
             const qty = Number(cantidad);
             if (['Entrada', 'Compra', 'Ajuste'].includes(tipo_movimiento)) {
-                // If Ajuste is negative? User creates 'Ajuste' usually to set stock or modify. 
-                // Let's assume Ajuste implies adding. If user wants to reduce, they use Salida.
                 await stockEntry.increment('stock_actual', { by: qty, transaction: t });
             } else if (['Salida', 'Venta'].includes(tipo_movimiento)) {
                 if (stockEntry.stock_actual < qty) throw new Error('Stock insuficiente');
@@ -143,11 +149,10 @@ class MovimientosController {
                 id_empresa,
                 id_variante,
                 id_almacen,
-                tipo_movimiento, // 'Entrada', 'Salida', 'Ajuste'
+                tipo_movimiento: dbTipoMovimiento,
                 cantidad: ['Salida', 'Venta'].includes(tipo_movimiento) ? -qty : qty,
                 costo_unitario: costo_unitario || variante.costo_unitario,
-                fecha_movimiento: new Date(),
-                notas
+                fecha_movimiento: new Date()
             }, { transaction: t });
 
             return mov;
@@ -235,57 +240,86 @@ class MovimientosController {
     });
 
     static transferir = catchErrors(async (req, res) => {
-        const { id_variante, id_almacen_origen, id_almacen_destino, cantidad, notas } = req.body;
+        const { id_almacen_origen, id_almacen_destino, items } = req.body; // items: [{ id_variante, cantidad }]
         const { id_empresa } = req.user;
 
+        if (id_almacen_origen === id_almacen_destino) {
+            return ApiResponse.error(res, { error: 'El almacén de origen y destino no pueden ser iguales', status: 400 });
+        }
+
         const result = await sequelize.transaction(async (t) => {
-            // Check Variants and Warehouses
+            // Validate Warehouses Once
             const origen = await Almacenes.findOne({ where: { id: id_almacen_origen, id_empresa }, transaction: t });
             const destino = await Almacenes.findOne({ where: { id: id_almacen_destino, id_empresa }, transaction: t });
-            if (!origen || !destino) throw new Error('Almacén origen o destino inválido');
 
-            const stockOrigen = await StockAlmacenes.findOne({ where: { id_variante, id_almacen: id_almacen_origen }, transaction: t });
-            if (!stockOrigen || stockOrigen.stock_actual < cantidad) throw new Error('Stock insuficiente en origen');
+            if (!origen) throw new Error('Almacén origen no encontrado');
+            if (!destino) throw new Error('Almacén destino no encontrado');
 
-            let stockDestino = await StockAlmacenes.findOne({ where: { id_variante, id_almacen: id_almacen_destino }, transaction: t });
-            if (!stockDestino) {
-                stockDestino = await StockAlmacenes.create({
-                    id_empresa, id_variante, id_almacen: id_almacen_destino, stock_actual: 0
+            const results = [];
+
+            for (const item of items) {
+                const { id_variante, cantidad } = item;
+
+                // Validate Origin Stock
+                const stockOrigen = await StockAlmacenes.findOne({
+                    where: { id_variante, id_almacen: id_almacen_origen },
+                    transaction: t
+                });
+
+                if (!stockOrigen || stockOrigen.stock_actual < cantidad) {
+                    // Fetch product name for better error message if possible, or just error out
+                    throw new Error(`Stock insuficiente en origen para la variante ${id_variante}`);
+                }
+
+                // Get or Create Destination Stock
+                let stockDestino = await StockAlmacenes.findOne({
+                    where: { id_variante, id_almacen: id_almacen_destino },
+                    transaction: t
+                });
+
+                if (!stockDestino) {
+                    stockDestino = await StockAlmacenes.create({
+                        id_empresa,
+                        id_variante,
+                        id_almacen: id_almacen_destino,
+                        // If it doesn't exist, start with 0
+                        stock_actual: 0
+                    }, { transaction: t });
+                }
+
+                // Execute Transfer logic
+                await stockOrigen.decrement('stock_actual', { by: cantidad, transaction: t });
+                await stockDestino.increment('stock_actual', { by: cantidad, transaction: t });
+
+                // Log Movements
+                // 1. Out from Origin
+                await MovimientosInventario.create({
+                    id_empresa,
+                    id_variante,
+                    id_almacen: id_almacen_origen,
+                    tipo_movimiento: 'Traslado',
+                    cantidad: -cantidad,
+                    costo_unitario: 0, // Transfer cost logic could be complex, keeping 0 or carrying over avg cost
+                    fecha_movimiento: new Date(),
+                    id_referencia: id_almacen_destino // Reference to destination warehouse ID? Or other Mov ID?
                 }, { transaction: t });
+
+                // 2. In to Destination
+                await MovimientosInventario.create({
+                    id_empresa,
+                    id_variante,
+                    id_almacen: id_almacen_destino,
+                    tipo_movimiento: 'Traslado',
+                    cantidad: cantidad,
+                    costo_unitario: 0,
+                    fecha_movimiento: new Date(),
+                    id_referencia: id_almacen_origen
+                }, { transaction: t });
+
+                results.push({ id_variante, status: 'transferred' });
             }
 
-            // Execute Transfer
-            await stockOrigen.decrement('stock_actual', { by: cantidad, transaction: t });
-            await stockDestino.increment('stock_actual', { by: cantidad, transaction: t });
-
-            // Log Movements
-            // Out from Origin
-            await MovimientosInventario.create({
-                id_empresa,
-                id_variante,
-                id_almacen: id_almacen_origen,
-                tipo_movimiento: 'Transferencia',
-                cantidad: -cantidad,
-                costo_unitario: 0, // Should fetch from variant
-                fecha_movimiento: new Date(),
-                id_referencia: id_almacen_destino, // Link to destination warehouse ID?
-                notas: `Transferencia a ${destino.nombre_almacen}. ${notas || ''}`
-            }, { transaction: t });
-
-            // In to Destination
-            await MovimientosInventario.create({
-                id_empresa,
-                id_variante,
-                id_almacen: id_almacen_destino,
-                tipo_movimiento: 'Transferencia',
-                cantidad: cantidad,
-                costo_unitario: 0,
-                fecha_movimiento: new Date(),
-                id_referencia: id_almacen_origen,
-                notas: `Transferencia desde ${origen.nombre_almacen}. ${notas || ''}`
-            }, { transaction: t });
-
-            return { success: true };
+            return results;
         });
 
         return ApiResponse.success(res, {

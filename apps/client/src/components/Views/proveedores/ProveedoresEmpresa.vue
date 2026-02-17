@@ -98,9 +98,12 @@
                 {{ proveedor.nombre_proveedor }}
               </h3>
                             
-              <v-chip class="mb-4" color="primary" size="small" variant="tonal">
+              <v-chip class="mb-2" color="primary" size="small" variant="tonal">
                 Proveedor
               </v-chip>
+              <div v-if="proveedor.nit_dui_proveedor" class="text-caption text-medium-emphasis mb-2">
+                NIT: {{ proveedor.nit_dui_proveedor }}
+              </div>
 
               <v-divider class="w-100 mb-4" />
 
@@ -120,6 +123,11 @@
                   <a class="text-body-2 text-decoration-none text-medium-emphasis table-link text-truncate d-inline-block" :href="`mailto:${proveedor.correo_proveedor}`" style="max-width: 200px;">
                     {{ proveedor.correo_proveedor }}
                   </a>
+                </div>
+                <!-- Address -->
+                 <div v-if="proveedor.direccion_proveedor" class="d-flex align-start mt-2">
+                  <v-icon class="mr-2 mt-1" color="medium-emphasis" size="small">mdi-map-marker</v-icon>
+                  <span class="text-caption text-medium-emphasis text-truncate-2-lines">{{ proveedor.direccion_proveedor }}</span>
                 </div>
               </div>
             </v-card-text>

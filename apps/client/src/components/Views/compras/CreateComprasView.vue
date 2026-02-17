@@ -6,6 +6,7 @@
   import { createCompra } from '@/services/compras.service';
   import { getProductos } from '@/services/productos.service';
   import { getProveedores } from '@/services/proveedores.service';
+  import { getAlmacenes } from '@/services/almacenes.service';
   import { useHead } from '@unhead/vue';
 
   // --- SEO ---
@@ -27,6 +28,7 @@
   const loading = ref(false);
 
   const proveedor = ref(null);
+  const almacenDestino = ref(null);
   const fechaEntrega = ref(null);
   const estado = ref('Recibido'); 
   const detalles = ref([]); // Array of { producto_obj, variant_obj, cantidad: 1, costo: 0 }
@@ -45,6 +47,24 @@
       value: p.id,
       raw: p
     })) || [];
+  });
+
+  // Almacenes
+  const { data: almacenesData } = useQuery({
+    queryKey: ['almacenes-list-create'],
+    queryFn: () => getAlmacenes({ limit: 100 })
+  });
+
+  const almacenesList = computed(() => {
+    return almacenesData.value?.data || [];
+  });
+  
+  // Set default main warehouse
+  watch(almacenesList, (list) => {
+    if (list.length > 0 && !almacenDestino.value) {
+        const main = list.find(a => a.es_principal);
+        almacenDestino.value = main ? main.id : list[0].id;
+    }
   });
 
   // Productos (For Autocomplete)
@@ -188,6 +208,7 @@
 
     const payload = {
       id_proveedor: proveedor.value,
+      id_almacen_destino: almacenDestino.value,
       fecha_entrega_estimada: fechaEntrega.value, 
       estado_compra: estado.value,
       detalles: detalles.value.map(d => ({
@@ -229,6 +250,17 @@
               :rules="[v => !!v || 'Proveedor es requerido']"
               variant="outlined"
             />
+          </v-col>
+          <v-col cols="12" md="3">
+             <v-select
+               v-model="almacenDestino"
+               :items="almacenesList"
+               item-title="nombre_almacen"
+               item-value="id"
+               label="Almacén Destino"
+               :rules="[v => !!v || 'Requerido']"
+               variant="outlined"
+             />
           </v-col>
           <v-col cols="12" md="3">
             <v-text-field

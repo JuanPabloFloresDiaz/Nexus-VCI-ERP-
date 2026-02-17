@@ -34,11 +34,11 @@ const { z } = require('zod');
  *           items:
  *             type: object
  *             required:
- *               - id_producto
+ *               - id_variante
  *               - cantidad
  *               - precio_costo_historico
  *             properties:
- *               id_producto:
+ *               id_variante:
  *                 type: string
  *                 format: uuid
  *               cantidad:

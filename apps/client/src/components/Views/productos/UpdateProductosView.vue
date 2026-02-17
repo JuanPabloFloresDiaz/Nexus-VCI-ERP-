@@ -254,7 +254,8 @@
         form.variantes = prod.variantes.map(v => ({
           id: v.id,
           sku: v.sku,
-          stock_actual: v.stock_actual,
+          // Calculate stock from relation
+          stock_actual: v.stock ? v.stock.reduce((acc, st) => acc + Number(st.stock_actual), 0) : 0,
           precio_unitario: Number(v.precio_unitario),
           costo_unitario: Number(v.costo_unitario),
           stock_minimo: v.stock_minimo || 5, // Default if missing
@@ -565,6 +566,9 @@
                           :rules="[requiredRule, numberRule]"
                           type="number"
                           variant="outlined"
+                          :disabled="!!newVariant.id"
+                          :hint="!!newVariant.id ? 'Gestione el stock desde Inventario' : 'Stock Inicial'"
+                          persistent-hint
                         />
                       </v-col>
                       <v-col cols="12" md="4">

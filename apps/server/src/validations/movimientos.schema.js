@@ -60,18 +60,19 @@ const createMovimientoSchema = z.object({
         // Nota: En la base de datos se puede guardar negativo si es salida, pero el input de usuario 'cantidad' suele ser absoluto
         // El controlador decide el signo basado en el tipo.
         costo_unitario: z.number().optional(),
-        notas: z.string().optional(),
         id_empresa: z.string().uuid().optional()
     })
 });
 
 const transferenciaSchema = z.object({
     body: z.object({
-        id_variante: z.string().uuid('ID de variante inválido'),
         id_almacen_origen: z.string().uuid('ID de almacén origen inválido'),
         id_almacen_destino: z.string().uuid('ID de almacén destino inválido'),
-        cantidad: z.number().int().positive('La cantidad a transferir debe ser mayor a 0'),
-        notas: z.string().optional()
+        items: z.array(z.object({
+            id_variante: z.string().uuid('ID de variante inválido'),
+            sku: z.string().optional(),
+            cantidad: z.number().int().positive('La cantidad a transferir debe ser mayor a 0')
+        })).nonempty('Debe incluir al menos un producto para transferir')
     })
 });
 

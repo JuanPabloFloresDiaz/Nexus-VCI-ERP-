@@ -41,8 +41,10 @@
     const baseHeaders = [
       { title: 'Proveedor', key: 'nombre_proveedor', align: 'start' },
       { title: 'Contacto', key: 'contacto_nombre', align: 'start' },
+      { title: 'NIT / DUI', key: 'nit_dui_proveedor', align: 'start' },
       { title: 'Correo', key: 'correo_proveedor', align: 'start' },
       { title: 'Teléfono', key: 'telefono_proveedor', align: 'start' },
+      { title: 'Días Crédito', key: 'dias_credito', align: 'end' },
     ];
 
     if (isSuperAdmin.value) {

@@ -36,6 +36,19 @@
 
         const variant = d.variante;
         const product = d.producto;
+        const warehouseId = val.id_almacen_origen || val.almacen_origen?.id;
+
+        let currentStock = 0;
+        if (variant) {
+            if (warehouseId && variant.stock) {
+                const entry = variant.stock.find(s => s.id_almacen === warehouseId);
+                currentStock = entry ? entry.stock_actual : 0;
+            } else {
+                currentStock = variant.stock_actual || 0;
+            }
+        } else {
+            currentStock = product?.stock_actual || 0;
+        }
 
         return {
           ...product,
@@ -45,7 +58,7 @@
           sku: variant?.sku,
           nombre_producto: product?.nombre_producto,
           imagen_url: variant?.imagen_url || product?.imagen_url,
-          stock_actual: variant ? (variant.stock_actual + d.cantidad) : (product?.stock_actual + d.cantidad), 
+          stock_actual: currentStock + d.cantidad, 
           // Note: added d.cantidad back to stock for "Available" logic in UI editing
 
           cantidad: d.cantidad,
@@ -101,8 +114,19 @@
       variant = product.variantes?.[0];
     }
     
+
     // Validate Stock
-    const stockAvailable = variant ? variant.stock_actual : product.stock_actual;
+    let stockAvailable = 0;
+    if (variant) {
+        if (selectedWarehouse.value && variant.stock) {
+            const entry = variant.stock.find(s => s.id_almacen === selectedWarehouse.value);
+            stockAvailable = entry ? entry.stock_actual : 0;
+        } else {
+            stockAvailable = variant.stock_actual || 0;
+        }
+    } else {
+        stockAvailable = product.stock_actual || 0;
+    }
     if (stockAvailable <= 0) {
       // Should have been disabled in UI, but double check
       return;

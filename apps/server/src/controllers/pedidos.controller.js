@@ -255,12 +255,12 @@ class PedidosController {
                         {
                             model: Productos,
                             as: 'producto',
-                            attributes: ['id', 'nombre_producto', 'imagen_url', 'stock_actual']
+                            attributes: ['id', 'nombre_producto', 'imagen_url']
                         },
                         {
                             model: ProductoVariantes,
                             as: 'variante',
-                            attributes: ['id', 'sku', 'imagen_url', 'stock_actual'],
+                            attributes: ['id', 'sku', 'imagen_url'],
                             include: [
                                 {
                                     model: ProductoDetallesFiltros,
@@ -402,7 +402,7 @@ class PedidosController {
                         tipo_movimiento: 'Venta', // O 'Pedido'
                         // Venta implica resta. La cantidad almacenada es la cantidad absoluta involucrada.
                         // Las consultas interpretarán Venta como Salida (-).
-                        cantidad: d.cantidad,
+                        cantidad: -d.cantidad,
                         costo_unitario: d.precio_historico, // Usando precio de venta, idealmente debería ser Costo
                         fecha_movimiento: new Date(),
                         id_referencia: newPedido.id
@@ -724,7 +724,7 @@ class PedidosController {
                         id_variante: variant.id,
                         id_almacen: newWarehouseId,
                         tipo_movimiento: 'Venta',
-                        cantidad: qty,
+                        cantidad: -qty,
                         costo_unitario: price,
                         fecha_movimiento: new Date(),
                         id_referencia: pedido.id

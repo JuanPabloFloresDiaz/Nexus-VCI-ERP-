@@ -49,7 +49,7 @@
       estado.value = newVal.data.estado_compra;
       fechaEntrega.value = newVal.data.fecha_entrega_estimada;
     }
-  });
+  }, { immediate: true });
 
   const { mutate } = useMutation({
     mutationFn: (payload) => updateCompra(props.id, payload),

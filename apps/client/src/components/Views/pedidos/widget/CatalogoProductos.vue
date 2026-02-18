@@ -69,6 +69,16 @@
     }).format(amount);
   }
 
+  // Helper to get Stock for a specific variant in the selected warehouse
+  function getVariantStock(variant) {
+    if (!variant) return 0;
+    if (props.warehouseId && variant.stock) {
+        const entry = variant.stock.find(s => s.id_almacen === props.warehouseId);
+        return entry ? entry.stock_actual : 0;
+    }
+    return variant.stock_actual || 0; // Fallback or global (if virtual field exists)
+  }
+
   // Helper to get Product Display Info
   function getProductDisplayInfo(producto) {
     const variants = producto.variantes || [];
@@ -80,25 +90,8 @@
       };
     }
 
-    // Filter stock by warehouse if provided
-    let variants = producto.variantes || [];
-    
     // Calculate total stock for THIS warehouse
-    const totalStock = variants.reduce((acc, v) => {
-        let stockInWarehouse = 0;
-        if (v.stock && props.warehouseId) {
-            const entry = v.stock.find(s => s.id_almacen === props.warehouseId);
-            stockInWarehouse = entry ? entry.stock_actual : 0;
-        } else {
-             // If no warehouse selected or no stock info, fallback to v.stock_actual (which might be sum or raw)
-             // But backend 'stock_actual' on variant is usually the SUM or the field on the variant table?
-             // Since we refactored to StockAlmacenes, v.stock_actual on Variant might be removed or is a virtual field.
-             // If backend virtual field 'stock_actual' exists, it's global.
-             // For specific warehouse, we MUST look at 'stock' array.
-             stockInWarehouse = v.stock_actual || 0; 
-        }
-        return acc + stockInWarehouse;
-    }, 0);
+    const totalStock = variants.reduce((acc, v) => acc + getVariantStock(v), 0);
 
     const prices = variants.map(v => Number(v.precio_unitario));
     const minPrice = prices.length ? Math.min(...prices) : (producto.precio_unitario || 0);
@@ -127,16 +120,17 @@
       expandedProductId.value = producto.id;
     } else if (producto.variantes && producto.variantes.length === 1) {
       const variant = producto.variantes[0];
-      if (variant.stock_actual > 0) {
+      if (getVariantStock(variant) > 0) {
         emit('add-to-cart', { producto, variant });
       }
     } else {
-      // Fallback for no variants (shouldn't happen with strict data)
+      // Fallback
+      if ((producto.stock_actual || 0) > 0) emit('add-to-cart', { producto });
     }
   }
 
   function addVariantToCart(producto, variant) {
-    if (variant.stock_actual > 0) {
+    if (getVariantStock(variant) > 0) {
       emit('add-to-cart', { producto, variant });
     }
   }
@@ -259,12 +253,12 @@
                         <div class="d-flex flex-column align-end">
                           <div class="text-subtitle-2 font-weight-bold">{{ formatCurrency(variant.precio_unitario) }}</div>
                           <div class="d-flex align-center gap-2">
-                            <span class="text-caption" :class="(variant.stock?.find(s => s.id_almacen === warehouseId)?.stock_actual || 0) > 0 ? 'text-success' : 'text-error'">
-                              {{ variant.stock?.find(s => s.id_almacen === warehouseId)?.stock_actual || 0 }}
+                            <span class="text-caption" :class="getVariantStock(variant) > 0 ? 'text-success' : 'text-error'">
+                              {{ getVariantStock(variant) }}
                             </span>
                             <v-btn 
                               color="primary" 
-                              :disabled="(variant.stock?.find(s => s.id_almacen === warehouseId)?.stock_actual || 0) <= 0" 
+                              :disabled="getVariantStock(variant) <= 0" 
                               icon="mdi-plus" 
                               size="x-small" 
                               variant="tonal"

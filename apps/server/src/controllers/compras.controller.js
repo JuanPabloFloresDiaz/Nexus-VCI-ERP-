@@ -57,6 +57,11 @@ class ComprasController {
                 model: Proveedores,
                 as: 'proveedor',
                 attributes: ['id', 'nombre_proveedor']
+            },
+            {
+                model: require('../models').Usuarios,
+                as: 'usuario_comprador',
+                attributes: ['id', 'nombre_usuario']
             }]
         });
 
@@ -82,6 +87,16 @@ class ComprasController {
                     attributes: ['id', 'nombre_proveedor', 'contacto_nombre', 'telefono_proveedor', 'correo_proveedor']
                 },
                 {
+                    model: Almacenes,
+                    as: 'almacen_destino',
+                    attributes: ['id', 'nombre_almacen']
+                },
+                {
+                    model: require('../models').Usuarios,
+                    as: 'usuario_comprador',
+                    attributes: ['id', 'nombre_usuario']
+                },
+                {
                     model: DetallesCompras,
                     as: 'detalles',
                     include: [
@@ -93,7 +108,7 @@ class ComprasController {
                         {
                             model: ProductoVariantes,
                             as: 'variante',
-                            attributes: ['id', 'sku', 'stock_actual']
+                            attributes: ['id', 'sku']
                         }
                     ]
                 }
@@ -242,11 +257,19 @@ class ComprasController {
     });
 
     static bulkStore = catchErrors(async (req, res) => {
-        const compras = req.body;
+        const { compras, id_almacen_destino } = req.body; // Expect global warehouse or per-item
         const { id_empresa, id: id_usuario_comprador } = req.user;
 
         const result = await sequelize.transaction(async (t) => {
             const createdCompras = [];
+
+            // Determine Default Warehouse
+            let defaultWarehouseId = id_almacen_destino;
+            if (!defaultWarehouseId) {
+                const main = await Almacenes.findOne({ where: { id_empresa, es_principal: true }, transaction: t });
+                if (main) defaultWarehouseId = main.id;
+                else throw new Error("Debe seleccionar un almacén destino o configurar uno principal.");
+            }
 
             for (const c of compras) {
                 const { id_proveedor, nuevo_proveedor, fecha_entrega_estimada, estado_compra, detalles } = c;
@@ -273,6 +296,8 @@ class ComprasController {
 
                 let totalCompra = 0;
                 const detallesToCreate = [];
+                const movimientosToCreate = []; // New
+                const effectiveWarehouseId = defaultWarehouseId; // Could potentially be per-purchase if needed
 
                 for (const item of detalles) {
                     const variant = await ProductoVariantes.findOne({
@@ -285,10 +310,31 @@ class ComprasController {
                     const subtotal = Number(item.cantidad) * Number(item.precio_costo_historico);
                     totalCompra += subtotal;
 
-                    // If 'Recibido', update stock
+                    // Update Stock Logic (StockAlmacenes)
                     if (!c.estado_compra || c.estado_compra === 'Recibido') {
-                        await variant.increment('stock_actual', { by: item.cantidad, transaction: t });
+                        // Update Stock in Specific Warehouse
+                        const [stockEntry] = await StockAlmacenes.findOrCreate({
+                            where: { id_variante: variant.id, id_almacen: effectiveWarehouseId },
+                            defaults: { stock_actual: 0 },
+                            transaction: t
+                        });
+
+                        await stockEntry.increment('stock_actual', { by: item.cantidad, transaction: t });
+
+                        // Update Cost
                         await variant.update({ costo_unitario: item.precio_costo_historico }, { transaction: t });
+
+                        // Prepare Movement
+                        movimientosToCreate.push({
+                            id_empresa,
+                            id_variante: variant.id,
+                            id_almacen: effectiveWarehouseId,
+                            tipo_movimiento: 'Compra',
+                            cantidad: item.cantidad,
+                            costo_unitario: item.precio_costo_historico,
+                            fecha_movimiento: new Date(),
+                            // id_referencia set later
+                        });
                     }
 
                     detallesToCreate.push({
@@ -304,6 +350,7 @@ class ComprasController {
                     id_empresa,
                     id_proveedor: finalIdProveedor,
                     id_usuario_comprador,
+                    id_almacen_destino: effectiveWarehouseId, // Save warehouse
                     total_compra: totalCompra,
                     estado_compra: c.estado_compra || 'Recibido',
                     fecha_entrega_estimada
@@ -311,6 +358,13 @@ class ComprasController {
 
                 const detallesWithId = detallesToCreate.map(d => ({ ...d, id_compra: newCompra.id }));
                 await DetallesCompras.bulkCreate(detallesWithId, { transaction: t });
+
+                // Create Movements
+                if (movimientosToCreate.length > 0) {
+                    const movs = movimientosToCreate.map(m => ({ ...m, id_referencia: newCompra.id }));
+                    await MovimientosInventario.bulkCreate(movs, { transaction: t });
+                }
+
                 createdCompras.push(newCompra);
             }
             return createdCompras;

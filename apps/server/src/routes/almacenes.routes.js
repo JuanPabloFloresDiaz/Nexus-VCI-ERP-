@@ -44,6 +44,18 @@ router.get('/', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), Almac
 
 /**
  * @swagger
+ * /almacenes/select:
+ *   get:
+ *     summary: Obtener lista simple de almacenes para selectores
+ *     tags: [Almacenes]
+ *     responses:
+ *       200:
+ *         description: Lista de almacenes (ID, Nombre)
+ */
+router.get('/select', checkAuthAny(['SuperAdmin', 'Administrador', 'Vendedor']), AlmacenesController.getSelect);
+
+/**
+ * @swagger
  * /almacenes/trashed:
  *   get:
  *     summary: Obtener almacenes eliminados (Papelera)

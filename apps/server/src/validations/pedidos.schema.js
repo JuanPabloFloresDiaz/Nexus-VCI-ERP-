@@ -73,36 +73,37 @@ const updateEstadoSchema = z.object({
 });
 
 const bulkPedidoSchema = z.object({
-    body: z.array(
-        z.object({
-            // Allow resolving by ID or by Object
-            id_cliente: z.string().uuid().optional(),
-            cliente: z.object({
-                nombre_cliente: z.string().min(1, 'Nombre requerido'),
-                apellido_cliente: z.string().min(1, 'Apellido requerido'),
-                dui_cliente: z.string().optional(), // DUI is optional but recommended for uniqueness
-                correo_cliente: z.string().email('Correo inválido'),
-                telefono_cliente: z.string().optional(),
-                direccion_cliente: z.string().optional() // Although model doesn't have it, we might receive it and ignore or store in future. But user said NO ADDRESS. Let's keep it optional or remove. User said "no hay dirección". I'll remove it from strict validation or just leave optional and ignore.
-            }).optional(),
+    body: z.object({
+        pedidos: z.array(
+            z.object({
+                // Allow resolving by ID or by Object
+                id_cliente: z.string().uuid().optional(),
+                cliente: z.object({
+                    nombre_cliente: z.string().min(1, 'Nombre requerido'),
+                    apellido_cliente: z.string().min(1, 'Apellido requerido'),
+                    dui_cliente: z.string().optional(), // DUI is optional but recommended for uniqueness
+                    correo_cliente: z.string().email('Correo inválido'),
+                    telefono_cliente: z.string().optional(),
+                    direccion_cliente: z.string().optional()
+                }).optional(),
 
-            // Order Metadata
-            fecha_pedido: z.string().optional(), // YYYY-MM-DD or ISO
-            estado_pedido: z.enum(['Pendiente', 'Completado', 'Cancelado']).optional(),
+                // Order Metadata
+                fecha_pedido: z.string().optional(), // YYYY-MM-DD or ISO
+                estado_pedido: z.enum(['Pendiente', 'Completado', 'Cancelado']).optional(),
 
-            // User creator is inferred from token, but we can allow override if needed? No, plan says "Use req.user.id".
-
-            detalles: z.array(
-                z.object({
-                    sku: z.string().min(1, 'SKU requerido'), // We use SKU to resolve variant
-                    cantidad: z.number().int().positive(),
-                    precio_historico: z.number().positive(),
-                    detalles_producto: z.record(z.any()).optional()
-                })
-            ).min(1),
-            id_empresa: z.string().uuid().optional()
-        })
-    ).min(1, 'Debe enviar al menos un pedido')
+                detalles: z.array(
+                    z.object({
+                        sku: z.string().min(1, 'SKU requerido'), // We use SKU to resolve variant
+                        cantidad: z.number().int().positive(),
+                        precio_historico: z.number().positive(),
+                        detalles_producto: z.record(z.any()).optional()
+                    })
+                ).min(1),
+                id_empresa: z.string().uuid().optional()
+            })
+        ).min(1, 'Debe enviar al menos un pedido'),
+        id_almacen_origen: z.string().uuid().optional()
+    })
 });
 
 module.exports = {

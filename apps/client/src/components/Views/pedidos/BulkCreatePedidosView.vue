@@ -5,6 +5,7 @@
   import * as XLSX from 'xlsx';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { bulkCreatePedidos } from '@/services/pedidos.service';
+  import { getAlmacenesList } from '@/services/almacenes.service';
   import { getProductos } from '@/services/productos.service';
   import { useHead } from '@unhead/vue';
 
@@ -25,6 +26,12 @@
   const parsedData = ref([]);
   const isProcessing = ref(false);
   const showPreview = ref(false);
+  const selectedWarehouse = ref(null);
+
+  const { data: almacenesData } = useQuery({
+    queryKey: ['almacenes-list-bulk-pedidos'],
+    queryFn: () => getAlmacenesList()
+  });
 
   const { data: productosData } = useQuery({
     queryKey: ['productos-list-bulk-pedidos'],
@@ -239,6 +246,11 @@
   });
 
   function uploadData () {
+    if (!selectedWarehouse.value) {
+        showErrorToast('Debe seleccionar un almacén origen');
+        return;
+    }
+
     const invalid = parsedData.value.filter(g => !g.valid);
     if (invalid.length > 0) {
       showErrorToast(`Hay ${invalid.length} pedidos con errores. Revise la vista previa.`);
@@ -246,7 +258,7 @@
     }
     
     // Payload construction matches new Schema
-    const payload = parsedData.value.map(g => ({
+    const pedidosPayload = parsedData.value.map(g => ({
       cliente: g.cliente,
       fecha_pedido: g.fecha_pedido, // Frontend should ensure format? Excel usually gives YYYY-MM-DD string or number. 
       // If string '2023-12-31', it's fine.
@@ -259,7 +271,10 @@
       }))
     }));
 
-    mutate(payload);
+    mutate({
+        pedidos: pedidosPayload,
+        id_almacen_origen: selectedWarehouse.value
+    });
   }
 </script>
 
@@ -290,6 +305,17 @@
           Descargar Plantilla
         </v-btn>
       </div>
+
+      <v-select
+        v-model="selectedWarehouse"
+        :items="almacenesData?.data || []"
+        item-title="nombre_almacen"
+        item-value="id"
+        label="Almacén Origen"
+        variant="outlined"
+        class="mb-4"
+        :rules="[v => !!v || 'Requerido']"
+      />
 
       <v-file-input
         v-model="file"

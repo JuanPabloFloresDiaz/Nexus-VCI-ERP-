@@ -1,4 +1,4 @@
-const { Pedidos, DetallesPedidos, Productos, ProductoVariantes, ProductoDetallesFiltros, Clientes, Categorias, Subcategorias, Filtros, OpcionesFiltro, Empresas, sequelize } = require('../models');
+const { Pedidos, DetallesPedidos, Productos, ProductoVariantes, ProductoDetallesFiltros, Clientes, Categorias, Subcategorias, Filtros, OpcionesFiltro, Empresas, StockAlmacenes, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const catchErrors = require('../utils/tryCatch');
 const { createPdfStream } = require('../utils/pdfGenerator');
@@ -132,7 +132,6 @@ class ReportesController {
     });
 
     // 2. Reporte de Productos
-    // 2. Reporte de Productos
     static getProductosReport = catchErrors(async (req, res) => {
         const companyData = await ReportesController.getCompanyData(req);
         const { id_categoria } = req.query;
@@ -170,6 +169,11 @@ class ReportesController {
                             include: [
                                 { model: OpcionesFiltro, as: 'opcion_filtro', include: [{ model: Filtros, as: 'filtro' }] }
                             ]
+                        },
+                        {
+                            model: StockAlmacenes, // Includes warehouse stock
+                            as: 'stock',
+                            attributes: ['stock_actual']
                         }
                     ]
                 }
@@ -186,7 +190,7 @@ class ReportesController {
                 { text: 'Categoría', style: 'tableHeader', fillColor: '#3B82F6', color: 'white' },
                 { text: 'Subcategoría', style: 'tableHeader', fillColor: '#3B82F6', color: 'white' },
                 { text: 'Precio', style: 'tableHeader', fillColor: '#3B82F6', color: 'white' },
-                { text: 'Stock', style: 'tableHeader', fillColor: '#3B82F6', color: 'white' }
+                { text: 'Stock Total', style: 'tableHeader', fillColor: '#3B82F6', color: 'white' }
             ]
         ];
 
@@ -206,12 +210,15 @@ class ReportesController {
                         `${df.opcion_filtro?.filtro?.nombre_filtro}: ${df.opcion_filtro?.valor_opcion}`
                     ).join(', ') || 'Estándar';
 
+                    // Calculate total stock across all warehouses
+                    const totalStock = v.stock?.reduce((acc, s) => acc + (parseInt(s.stock_actual) || 0), 0) || 0;
+
                     bodyData.push([
                         { text: `  • SKU: ${v.sku || 'N/A'} - ${attributes}`, fillColor, fontSize: 9, color: '#475569' },
                         { text: p.subcategoria?.categoria?.nombre_categoria || 'N/A', fillColor, fontSize: 9 },
                         { text: p.subcategoria?.nombre_subcategoria || 'N/A', fillColor, fontSize: 9 },
                         { text: `$${v.precio_unitario}`, fillColor, fontSize: 9 },
-                        { text: (v.stock_actual || 0).toString(), fillColor, fontSize: 9 }
+                        { text: totalStock.toString(), fillColor, fontSize: 9 }
                     ]);
                 });
             } else {

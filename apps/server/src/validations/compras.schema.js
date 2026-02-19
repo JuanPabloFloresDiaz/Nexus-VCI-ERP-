@@ -110,19 +110,22 @@ const updateCompraSchema = z.object({
 });
 
 const bulkCompraSchema = z.object({
-    body: z.array(
-        z.object({
-            id_proveedor: z.string().uuid().optional().nullable(),
-            nuevo_proveedor: inlineProveedorSchema.optional().nullable(),
-            fecha_entrega_estimada: z.string().optional().nullable(),
-            estado_compra: z.enum(['Pendiente', 'Recibido', 'Cancelado']).default('Recibido'),
-            detalles: z.array(detalleCompraSchema).min(1),
-            id_empresa: z.string().uuid().optional()
-        }).refine(data => data.id_proveedor || data.nuevo_proveedor, {
-            message: "Debe proporcionar un 'id_proveedor' existente o un 'nuevo_proveedor'",
-            path: ["id_proveedor"]
-        })
-    ).min(1, 'Debe enviar al menos una compra')
+    body: z.object({
+        compras: z.array(
+            z.object({
+                id_proveedor: z.string().uuid().optional().nullable(),
+                nuevo_proveedor: inlineProveedorSchema.optional().nullable(),
+                fecha_entrega_estimada: z.string().optional().nullable(),
+                estado_compra: z.enum(['Pendiente', 'Recibido', 'Cancelado']).default('Recibido'),
+                detalles: z.array(detalleCompraSchema).min(1),
+                id_empresa: z.string().uuid().optional()
+            }).refine(data => data.id_proveedor || data.nuevo_proveedor, {
+                message: "Debe proporcionar un 'id_proveedor' existente o un 'nuevo_proveedor'",
+                path: ["id_proveedor"]
+            })
+        ).min(1, 'Debe enviar al menos una compra'),
+        id_almacen_destino: z.string().uuid().optional()
+    })
 });
 
 module.exports = {

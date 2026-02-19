@@ -7,6 +7,10 @@ export async function getAlmacenes(params) {
     return AxiosRequest(RESOURCE, mapMethod('R'), {}, params);
 }
 
+export async function getAlmacenesList() {
+    return AxiosRequest(`${RESOURCE}/select`, mapMethod('R'));
+}
+
 export async function getAlmacenById(id) {
     return AxiosRequest(`${RESOURCE}/${id}`, mapMethod('R'));
 }

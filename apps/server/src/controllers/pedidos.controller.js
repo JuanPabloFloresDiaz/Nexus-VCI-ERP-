@@ -463,127 +463,150 @@ class PedidosController {
     });
 
     static bulkStore = catchErrors(async (req, res) => {
-        const pedidos = req.body;
+        const { pedidos, id_almacen_origen } = req.body;
         const { id_empresa, id: id_usuario_actual } = req.user;
 
         const result = await sequelize.transaction(async (t) => {
             const created = [];
-            const errors = [];
+
+            // Determine Default Warehouse
+            let defaultWarehouseId = id_almacen_origen;
+            if (!defaultWarehouseId) {
+                const main = await Almacenes.findOne({ where: { id_empresa, es_principal: true }, transaction: t });
+                if (main) defaultWarehouseId = main.id;
+                else throw new Error("Debe seleccionar un almacén origen o configurar uno principal.");
+            }
 
             for (const [index, p] of pedidos.entries()) {
-                try {
-                    const { cliente: clienteData, detalles, fecha_pedido, estado_pedido, id_cliente: providedIdCliente } = p;
-                    let id_cliente = providedIdCliente;
+                // ... same client resolving logic ...
+                const { cliente: clienteData, detalles, fecha_pedido, estado_pedido, id_cliente: providedIdCliente } = p;
+                let id_cliente = providedIdCliente;
 
-                    // 1. Resolve Client
-                    if (!id_cliente && clienteData) {
-                        // Try to find by DUI (if provided)
-                        if (clienteData.dui_cliente) {
-                            const existingClient = await Clientes.findOne({
-                                where: {
-                                    id_empresa,
-                                    dui_cliente: clienteData.dui_cliente
-                                },
-                                transaction: t
-                            });
-                            if (existingClient) id_cliente = existingClient.id;
-                        }
-
-                        // Try to find by Email (if not found by DUI)
-                        if (!id_cliente && clienteData.correo_cliente) {
-                            const existingClient = await Clientes.findOne({
-                                where: {
-                                    id_empresa,
-                                    correo_cliente: clienteData.correo_cliente
-                                },
-                                transaction: t
-                            });
-                            if (existingClient) id_cliente = existingClient.id;
-                        }
-
-                        // Create if not found
-                        if (!id_cliente) {
-                            const newClient = await Clientes.create({
+                // 1. Resolve Client
+                if (!id_cliente && clienteData) {
+                    // Try to find by DUI (if provided)
+                    if (clienteData.dui_cliente) {
+                        const existingClient = await Clientes.findOne({
+                            where: {
                                 id_empresa,
-                                nombre_cliente: clienteData.nombre_cliente,
-                                apellido_cliente: clienteData.apellido_cliente,
-                                dui_cliente: clienteData.dui_cliente,
-                                correo_cliente: clienteData.correo_cliente,
-                                telefono_cliente: clienteData.telefono_cliente
-                            }, { transaction: t });
-                            id_cliente = newClient.id;
-                        }
+                                dui_cliente: clienteData.dui_cliente
+                            },
+                            transaction: t
+                        });
+                        if (existingClient) id_cliente = existingClient.id;
                     }
 
+                    // Try to find by Email (if not found by DUI)
+                    if (!id_cliente && clienteData.correo_cliente) {
+                        const existingClient = await Clientes.findOne({
+                            where: {
+                                id_empresa,
+                                correo_cliente: clienteData.correo_cliente
+                            },
+                            transaction: t
+                        });
+                        if (existingClient) id_cliente = existingClient.id;
+                    }
+
+                    // Create if not found
                     if (!id_cliente) {
-                        throw new Error(`Fila ${index + 1}: No se pudo identificar ni crear al cliente.`);
+                        const newClient = await Clientes.create({
+                            id_empresa,
+                            nombre_cliente: clienteData.nombre_cliente,
+                            apellido_cliente: clienteData.apellido_cliente,
+                            dui_cliente: clienteData.dui_cliente,
+                            correo_cliente: clienteData.correo_cliente,
+                            telefono_cliente: clienteData.telefono_cliente
+                        }, { transaction: t });
+                        id_cliente = newClient.id;
+                    }
+                }
+
+                if (!id_cliente) {
+                    throw new Error(`Fila ${index + 1}: No se pudo identificar ni crear al cliente.`);
+                }
+
+                // 2. Process Details
+                let totalPedido = 0;
+                const detallesToCreate = [];
+                const movimientosToCreate = [];
+
+                for (const item of detalles) {
+                    const variant = await ProductoVariantes.findOne({
+                        where: { sku: item.sku },
+                        include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                        transaction: t
+                    });
+
+                    if (!variant) {
+                        throw new Error(`Fila ${index + 1}: SKU '${item.sku}' no encontrado.`);
                     }
 
-                    // 2. Process Details
-                    let totalPedido = 0;
-                    const detallesToCreate = [];
-
-                    for (const item of detalles) {
-                        // Find Variant by SKU
-                        // Use include to ensure it belongs to the company
-                        const variant = await ProductoVariantes.findOne({
-                            where: { sku: item.sku },
-                            include: [{ model: Productos, as: 'producto', where: { id_empresa } }],
+                    // Stock Logic with StockAlmacenes
+                    if (estado_pedido !== 'Cancelado') {
+                        const stockEntry = await StockAlmacenes.findOne({
+                            where: { id_variante: variant.id, id_almacen: defaultWarehouseId },
                             transaction: t
                         });
 
-                        if (!variant) {
-                            throw new Error(`Fila ${index + 1}: SKU '${item.sku}' no encontrado.`);
+                        const currentStock = stockEntry ? stockEntry.stock_actual : 0;
+
+                        if (currentStock < item.cantidad) {
+                            throw new Error(`Fila ${index + 1}, SKU ${item.sku}: Stock insuficiente en almacén. (${currentStock} disponibles)`);
                         }
 
-                        // Stock Check (Deduct if requested, even for historical?
-                        // User said: "Creating historical 'Completed' orders will still deduct stock from the current inventory.")
-                        // Only deduct if status is NOT 'Cancelado' (assuming 'Pendiente' reserves stock too?)
-                        // Usually Pendiente reserves, Completado deducts. Cancelado releases.
-                        // Let's assume we deduct for Pendiente and Completado.
-
-                        if (estado_pedido !== 'Cancelado') {
-                            if (variant.stock_actual < item.cantidad) {
-                                throw new Error(`Fila ${index + 1}: Stock insuficiente para SKU ${item.sku}. Existencia: ${variant.stock_actual}`);
-                            }
-                            await variant.decrement('stock_actual', { by: item.cantidad, transaction: t });
+                        if (stockEntry) {
+                            await stockEntry.decrement('stock_actual', { by: item.cantidad, transaction: t });
                         }
 
-                        const subtotal = Number(item.cantidad) * Number(item.precio_historico);
-                        totalPedido += subtotal;
-
-                        detallesToCreate.push({
-                            id_producto: variant.id_producto,
+                        // Prepare Movement (Negative for Sale)
+                        movimientosToCreate.push({
+                            id_empresa,
                             id_variante: variant.id,
-                            cantidad: item.cantidad,
-                            precio_historico: item.precio_historico,
-                            subtotal,
-                            detalles_producto: item.detalles_producto || {}
+                            id_almacen: defaultWarehouseId,
+                            tipo_movimiento: 'Venta',
+                            cantidad: -item.cantidad, // Negative!
+                            costo_unitario: item.precio_historico,
+                            fecha_movimiento: fecha_pedido ? new Date(fecha_pedido) : new Date(),
+                            // id_referencia set later
                         });
                     }
 
-                    // 3. Create Order
-                    const newPedido = await Pedidos.create({
-                        id_empresa,
-                        id_cliente,
-                        id_usuario_creador: id_usuario_actual,
-                        total_pedido: totalPedido,
-                        estado_pedido: estado_pedido || 'Completado', // Default to Completed for historical imports? Or Pendiente? Plan said 'Pendiente' default in other places, but for bulk history 'Completado' makes sense. Let's use user input or default 'Pendiente'.
-                        created_at: fecha_pedido ? new Date(fecha_pedido) : new Date() // Allow override
-                    }, { transaction: t });
+                    const subtotal = Number(item.cantidad) * Number(item.precio_historico);
+                    totalPedido += subtotal;
 
-                    // 4. Bulk Create Details
-                    const detallesWithId = detallesToCreate.map(d => ({ ...d, id_pedido: newPedido.id }));
-                    await DetallesPedidos.bulkCreate(detallesWithId, { transaction: t });
-
-                    created.push(newPedido);
-
-                } catch (error) {
-                    errors.push(error.message);
-                    // Decide: Fail all or partial?
-                    // Transaction wraps ALL, so if one fails, all fail.
-                    throw error; // Rollback everything
+                    detallesToCreate.push({
+                        id_producto: variant.id_producto,
+                        id_variante: variant.id,
+                        cantidad: item.cantidad,
+                        precio_historico: item.precio_historico,
+                        subtotal,
+                        detalles_producto: item.detalles_producto || {}
+                    });
                 }
+
+                // 3. Create Order
+                const newPedido = await Pedidos.create({
+                    id_empresa,
+                    id_cliente,
+                    id_usuario_creador: id_usuario_actual,
+                    id_almacen_origen: defaultWarehouseId,
+                    total_pedido: totalPedido,
+                    estado_pedido: estado_pedido || 'Completado',
+                    created_at: fecha_pedido ? new Date(fecha_pedido) : new Date()
+                }, { transaction: t });
+
+                // 4. Bulk Create Details
+                const detallesWithId = detallesToCreate.map(d => ({ ...d, id_pedido: newPedido.id }));
+                await DetallesPedidos.bulkCreate(detallesWithId, { transaction: t });
+
+                // 5. Create Movements
+                if (movimientosToCreate.length > 0) {
+                    const movs = movimientosToCreate.map(m => ({ ...m, id_referencia: newPedido.id }));
+                    await MovimientosInventario.bulkCreate(movs, { transaction: t });
+                }
+
+                created.push(newPedido);
             }
             return created;
         });

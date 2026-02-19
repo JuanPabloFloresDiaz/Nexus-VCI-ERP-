@@ -37,6 +37,23 @@ class AlmacenesController {
         });
     });
 
+    static getSelect = catchErrors(async (req, res) => {
+        const { id_empresa } = req.user;
+
+        const data = await Almacenes.findAll({
+            where: { id_empresa },
+            attributes: ['id', 'nombre_almacen', 'es_principal'],
+            order: [['es_principal', 'DESC'], ['nombre_almacen', 'ASC']]
+        });
+
+        return ApiResponse.success(res, {
+            data,
+            message: 'Lista de almacenes obtenida correctamente',
+            status: 200,
+            route: `${this.routes}/select`
+        });
+    });
+
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;

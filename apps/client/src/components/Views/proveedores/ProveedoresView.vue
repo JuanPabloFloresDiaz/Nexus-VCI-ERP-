@@ -1,16 +1,16 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import BulkCreateProveedorModal from '@/components/modals/proveedores/BulkCreateProveedorModal.vue';
+
   // Modals
   import CreateProveedorModal from '@/components/modals/proveedores/CreateProveedorModal.vue';
-
   import DeleteProveedorModal from '@/components/modals/proveedores/DeleteProveedorModal.vue';
   import UpdateProveedorModal from '@/components/modals/proveedores/UpdateProveedorModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getProveedores } from '@/services/proveedores.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

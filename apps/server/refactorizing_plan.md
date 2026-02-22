@@ -84,21 +84,21 @@ Para gestionar correctamente el origen y destino de la mercadería:
     - Crear un script que mueva el `stock_actual` existente en `producto_variantes` a un "Almacén Principal" por defecto en `stock_almacenes`.
 
 #### Fase 3: Backend Core (Modelos y Controladores)
-- [ ] **Modelos Sequelize:**
+- [x] **Modelos Sequelize:**
     - Crear `Almacen.js`, `StockAlmacen.js`, `MovimientoInventario.js`.
     - Actualizar `Compra.js`, `Pedido.js`, `Proveedor.js`.
     - Definir asociaciones (HasMany, BelongsTo) entre Variantes <-> Stock <-> Almacenes.
-- [ ] **Refactorización `ProductosController`:**
+- [x] **Refactorización `ProductosController`:**
     - `getProductos`: Incluir sumatoria de stock desde `stock_almacenes`.
-- [ ] **Refactorización `ComprasController`:**
+- [x] **Refactorización `ComprasController`:**
     - `store/update`: Al recibir compra, incrementar stock en `stock_almacenes` (no en variantes) y registrar `movimiento_inventario`.
-- [ ] **Refactorización `PedidosController`:**
+- [x] **Refactorización `PedidosController`:**
     - `store/update`: Al vender, decrementar stock de `stock_almacenes` y registrar `movimiento_inventario`.
-- [ ] **Nuevo `InventarioController`:**
+- [x] **Nuevo `InventarioController`:**
     - Endpoints para transferencias entre almacenes.
     - Endpoint para consultar Kardex.
 
-#### Fase 4: Inteligencia Artificial (Servicios)
+#### Fase 5: Inteligencia Artificial (Servicios)
 - [ ] **Servicio `PredictionService.js`:**
     - Implementar lógica con `brain.js` para predecir demanda futura basada en historial de `pedidos`.
 - [ ] **Servicio `RecomendacionCompraService.js`:**

@@ -1,10 +1,10 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { getPedidoById } from '@/services/pedidos.service';
   import PosLayout from './PosLayout.vue';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

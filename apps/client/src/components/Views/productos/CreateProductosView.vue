@@ -1,11 +1,15 @@
 <script setup>
   import { useMutation, useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, reactive, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getCategoriaById, getCategorias } from '@/services/categorizacion.service';
   import { createProducto } from '@/services/productos.service';
-  import { useHead } from '@unhead/vue';
+
+  // Image Upload Logic
+  import { uploadFile } from '@/services/storage.service';
+  import { getImage } from '@/utils/getImage';
 
   // --- SEO ---
   useHead({
@@ -17,10 +21,6 @@
       { rel: 'canonical', href: window.location.href }
     ]
   });
-
-  // Image Upload Logic
-  import { uploadFile } from '@/services/storage.service';
-  import { getImage } from '@/utils/getImage';
 
   const router = useRouter();
   const formRef = ref(null);

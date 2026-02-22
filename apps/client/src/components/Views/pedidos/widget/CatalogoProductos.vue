@@ -73,8 +73,8 @@
   function getVariantStock(variant) {
     if (!variant) return 0;
     if (props.warehouseId && variant.stock) {
-        const entry = variant.stock.find(s => s.id_almacen === props.warehouseId);
-        return entry ? entry.stock_actual : 0;
+      const entry = variant.stock.find(s => s.id_almacen === props.warehouseId);
+      return entry ? entry.stock_actual : 0;
     }
     return variant.stock_actual || 0; // Fallback or global (if virtual field exists)
   }
@@ -94,8 +94,8 @@
     const totalStock = variants.reduce((acc, v) => acc + getVariantStock(v), 0);
 
     const prices = variants.map(v => Number(v.precio_unitario));
-    const minPrice = prices.length ? Math.min(...prices) : (producto.precio_unitario || 0);
-    const maxPrice = prices.length ? Math.max(...prices) : (producto.precio_unitario || 0);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : (producto.precio_unitario || 0);
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : (producto.precio_unitario || 0);
       
     let priceDisplay = formatCurrency(minPrice);
     if (minPrice !== maxPrice) {

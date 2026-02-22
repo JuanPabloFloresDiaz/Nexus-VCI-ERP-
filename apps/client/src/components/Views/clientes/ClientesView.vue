@@ -1,15 +1,15 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import BulkCreateClienteModal from '@/components/modals/clientes/BulkCreateClienteModal.vue';
+
   // Modals
   import CreateClienteModal from '@/components/modals/clientes/CreateClienteModal.vue';
-
   import DeleteClienteModal from '@/components/modals/clientes/DeleteClienteModal.vue';
   import UpdateClienteModal from '@/components/modals/clientes/UpdateClienteModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getClientes } from '@/services/clientes.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

@@ -1,5 +1,6 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { useDebounce } from '@vueuse/core';
   import { computed, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
@@ -7,7 +8,6 @@
   import DeleteProductoModal from '@/components/modals/productos/DeleteProductoModal.vue';
   import FichaProductoModal from '@/components/modals/productos/FichaProductoModal.vue';
   import { getProductos } from '@/services/productos.service'; // Need to implement this service
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

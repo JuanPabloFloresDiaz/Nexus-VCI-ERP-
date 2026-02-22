@@ -1,16 +1,16 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import DeletePedidoModal from '@/components/modals/pedidos/DeletePedidoModal.vue';
+
   // Modals
   import DetallePedidosModal from '@/components/modals/pedidos/DetallePedidosModal.vue';
-
   import { useAuth } from '@/hooks/useAuth';
-  import { getPedidos } from '@/services/pedidos.service';
   // import UpdatePedidoModal from ... (Maybe later for quick status update)
 
-  import { useHead } from '@unhead/vue';
+  import { getPedidos } from '@/services/pedidos.service';
 
   // --- SEO ---
   useHead({

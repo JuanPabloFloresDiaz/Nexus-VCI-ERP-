@@ -1,13 +1,13 @@
 <script setup>
   import { useMutation, useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import Swal from 'sweetalert2';
   import { computed, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
+  import { getAlmacenes } from '@/services/almacenes.service';
   import { createCompra } from '@/services/compras.service';
   import { getProductos } from '@/services/productos.service';
   import { getProveedores } from '@/services/proveedores.service';
-  import { getAlmacenes } from '@/services/almacenes.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({
@@ -62,8 +62,8 @@
   // Set default main warehouse
   watch(almacenesList, (list) => {
     if (list.length > 0 && !almacenDestino.value) {
-        const main = list.find(a => a.es_principal);
-        almacenDestino.value = main ? main.id : list[0].id;
+      const main = list.find(a => a.es_principal);
+      almacenDestino.value = main ? main.id : list[0].id;
     }
   });
 
@@ -252,15 +252,15 @@
             />
           </v-col>
           <v-col cols="12" md="3">
-             <v-select
-               v-model="almacenDestino"
-               :items="almacenesList"
-               item-title="nombre_almacen"
-               item-value="id"
-               label="Almacén Destino"
-               :rules="[v => !!v || 'Requerido']"
-               variant="outlined"
-             />
+            <v-select
+              v-model="almacenDestino"
+              item-title="nombre_almacen"
+              item-value="id"
+              :items="almacenesList"
+              label="Almacén Destino"
+              :rules="[v => !!v || 'Requerido']"
+              variant="outlined"
+            />
           </v-col>
           <v-col cols="12" md="3">
             <v-text-field
@@ -307,10 +307,10 @@
                 <v-autocomplete
                   v-model="item.producto_id"
                   v-model:search="searchProducto"
+                  class="mb-1"
                   density="compact"
                   hide-details
                   item-title="title"
-                  class="mb-1"
                   item-value="value"
                   :items="productosList"
                   :loading="isLoadingProductos"
@@ -323,10 +323,10 @@
                 <v-select
                   v-if="item.requiresVariantSelection"
                   v-model="item.variant_id"
+                  class="mt-2"
                   density="compact"
                   hide-details
                   item-title="title"
-                  class="mt-2"
                   item-value="value"
                   :items="item.variantsList"
                   placeholder="Seleccionar variante..."

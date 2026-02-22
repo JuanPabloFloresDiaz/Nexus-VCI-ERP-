@@ -1,13 +1,13 @@
 <script setup>
   import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import Swal from 'sweetalert2';
   import { onMounted, ref } from 'vue';
   // Update refs when data loaded
   import { watch } from 'vue';
-  import { useRouter } from 'vue-router';
 
+  import { useRouter } from 'vue-router';
   import { getCompraById, updateCompra } from '@/services/compras.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

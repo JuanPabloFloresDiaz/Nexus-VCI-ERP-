@@ -1,11 +1,11 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { useDebounce } from '@vueuse/core';
   import { computed, ref, watch } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import FichaProductoModal from '@/components/modals/productos/FichaProductoModal.vue';
   import { getProductos } from '@/services/productos.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

@@ -1,8 +1,8 @@
 <script setup>
+  import { useHead } from '@unhead/vue';
   import { reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuth } from '@/hooks/useAuth';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

@@ -1,11 +1,11 @@
 <script setup>
   import { useMutation, useQueryClient } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { ref } from 'vue';
   import { useRouter } from 'vue-router';
   import * as XLSX from 'xlsx';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { bulkCreateCategorias } from '@/services/categorizacion.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

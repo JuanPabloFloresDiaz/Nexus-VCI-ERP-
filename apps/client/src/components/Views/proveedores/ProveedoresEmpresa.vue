@@ -1,9 +1,9 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import { getProveedores } from '@/services/proveedores.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({
@@ -125,7 +125,7 @@
                   </a>
                 </div>
                 <!-- Address -->
-                 <div v-if="proveedor.direccion_proveedor" class="d-flex align-start mt-2">
+                <div v-if="proveedor.direccion_proveedor" class="d-flex align-start mt-2">
                   <v-icon class="mr-2 mt-1" color="medium-emphasis" size="small">mdi-map-marker</v-icon>
                   <span class="text-caption text-medium-emphasis text-truncate-2-lines">{{ proveedor.direccion_proveedor }}</span>
                 </div>

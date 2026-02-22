@@ -1,9 +1,12 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  // --- SEO ---
+  import { useHead } from '@unhead/vue';
   import Swal from 'sweetalert2';
   import { computed, ref } from 'vue';
   import ReportCard from '@/components/cards/ReportCard.vue';
   import { getAllCategorias } from '@/services/categorizacion.service';
+
   import { 
     getCategorizacionReport, 
     getClientesReport, 
@@ -11,9 +14,6 @@
     getPedidosLogReport, 
     getProductosReport 
   } from '@/services/reportes.service';
-
-  // --- SEO ---
-  import { useHead } from '@unhead/vue';
   useHead({
     title: 'Reportes',
     meta: [

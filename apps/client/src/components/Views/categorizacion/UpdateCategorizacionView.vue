@@ -1,11 +1,11 @@
 <script setup>
   import { useMutation, useQueryClient } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import Swal from 'sweetalert2';
   import { onMounted, reactive, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getCategoriaById, updateCategoria } from '@/services/categorizacion.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

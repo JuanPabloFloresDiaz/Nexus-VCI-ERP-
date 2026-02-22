@@ -1,7 +1,7 @@
 <script setup>
   import { useHead } from '@unhead/vue';
-  import { useAuth } from '@/hooks/useAuth';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
+  import { useAuth } from '@/hooks/useAuth';
 
   // --- SEO ---
   useHead({
@@ -23,12 +23,12 @@
       <v-card-item class="bg-primary text-white py-4">
         <template #prepend>
           <AsyncAvatar 
-             class="mr-4 border-2 border-white"
-             color="white"
-             :name="user?.nombre_usuario"
-             size="64"
-             :src="user?.foto_perfil_url"
-             variant="flat"
+            class="mr-4 border-2 border-white"
+            color="white"
+            :name="user?.nombre_usuario"
+            size="64"
+            :src="user?.foto_perfil_url"
+            variant="flat"
           />
         </template>
         <v-card-title class="text-h5 font-weight-bold text-secondary">

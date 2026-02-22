@@ -1,13 +1,13 @@
 <script setup>
   import { useMutation, useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import * as XLSX from 'xlsx';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
-  import { bulkCreatePedidos } from '@/services/pedidos.service';
   import { getAlmacenesList } from '@/services/almacenes.service';
+  import { bulkCreatePedidos } from '@/services/pedidos.service';
   import { getProductos } from '@/services/productos.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({
@@ -247,8 +247,8 @@
 
   function uploadData () {
     if (!selectedWarehouse.value) {
-        showErrorToast('Debe seleccionar un almacén origen');
-        return;
+      showErrorToast('Debe seleccionar un almacén origen');
+      return;
     }
 
     const invalid = parsedData.value.filter(g => !g.valid);
@@ -272,8 +272,8 @@
     }));
 
     mutate({
-        pedidos: pedidosPayload,
-        id_almacen_origen: selectedWarehouse.value
+      pedidos: pedidosPayload,
+      id_almacen_origen: selectedWarehouse.value
     });
   }
 </script>
@@ -308,13 +308,13 @@
 
       <v-select
         v-model="selectedWarehouse"
-        :items="almacenesData?.data || []"
+        class="mb-4"
         item-title="nombre_almacen"
         item-value="id"
+        :items="almacenesData?.data || []"
         label="Almacén Origen"
-        variant="outlined"
-        class="mb-4"
         :rules="[v => !!v || 'Requerido']"
+        variant="outlined"
       />
 
       <v-file-input

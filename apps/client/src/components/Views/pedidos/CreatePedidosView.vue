@@ -1,6 +1,6 @@
 <script setup>
-  import PosLayout from './PosLayout.vue';
   import { useHead } from '@unhead/vue';
+  import PosLayout from './PosLayout.vue';
 
   // --- SEO ---
   useHead({

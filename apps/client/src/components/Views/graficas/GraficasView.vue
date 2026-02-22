@@ -157,6 +157,7 @@
 
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import dayjs from 'dayjs';
   import { computed, ref, watch } from 'vue';
   import { Bar, Doughnut, Line } from 'vue-chartjs';
@@ -168,7 +169,6 @@
     getTopProducts 
   } from '@/services/charts.service';
   import { baseOptions, colors } from '@/utils/chart';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

@@ -1,21 +1,21 @@
 <script setup>
-  import { useRouter } from 'vue-router';
   import { useHead } from '@unhead/vue';
+  import { useRouter } from 'vue-router';
   import heroImage from '@/assets/hero-1.avif';
   
-  // Icons
-  import IconLinkedIn from '@/components/icons/LinkedIn.vue';
+  import IconChart from '@/components/icons/Chart.vue';
   import IconGithub from '@/components/icons/Github.vue';
   import IconJavaScript from '@/components/icons/JavaScript.vue';
+  // Icons
+  import IconLinkedIn from '@/components/icons/LinkedIn.vue';
   import IconMariaDB from '@/components/icons/MariaDB.vue';
   import IconNode from '@/components/icons/Node.vue';
   import IconPinia from '@/components/icons/Pinia.vue';
   import IconPlatzi from '@/components/icons/Platzi.vue';
-  import IconVue from '@/components/icons/Vue.vue';
-  import IconVuetify from '@/components/icons/Vuetify.vue';
-  import IconChart from '@/components/icons/Chart.vue';
   import IconSequelize from '@/components/icons/Sequelize.vue';
   import IconTanstack from '@/components/icons/Tanstack.vue';
+  import IconVue from '@/components/icons/Vue.vue';
+  import IconVuetify from '@/components/icons/Vuetify.vue';
 
   const router = useRouter();
 
@@ -84,7 +84,13 @@
       <v-container>
         <v-row align="center">
           <v-col cols="12" md="6">
-            <v-chip class="mb-4" color="secondary" label size="small" variant="tonal">
+            <v-chip
+              class="mb-4"
+              color="secondary"
+              label
+              size="small"
+              variant="tonal"
+            >
               Developer Foundations Challenge 2025
             </v-chip>
             <h1 class="text-h2 font-weight-bold text-primary mb-6" style="line-height: 1.1;">
@@ -190,7 +196,13 @@
         </div>
 
         <v-row>
-          <v-col v-for="module in modules" :key="module.title" cols="12" md="3" sm="6">
+          <v-col
+            v-for="module in modules"
+            :key="module.title"
+            cols="12"
+            md="3"
+            sm="6"
+          >
             <v-card class="h-100 hover-card" elevation="0" variant="outlined">
               <v-card-text class="pa-6">
                 <v-avatar class="mb-4" color="primary-lighten-5" rounded="lg" size="56">
@@ -243,15 +255,15 @@
             
             <!-- Tech Stack Icons -->
             <div class="d-flex justify-center flex-wrap gap-6 mb-8 align-center">
-              <a href="https://vuejs.org/" target="_blank" title="Vue.js" class="tech-icon"><IconVue /></a>
-              <a href="https://vuetifyjs.com/" target="_blank" title="Vuetify" class="tech-icon"><IconVuetify /></a>
-              <a href="https://pinia.vuejs.org/" target="_blank" title="Pinia" class="tech-icon"><IconPinia /></a>
-              <a href="https://www.chartjs.org/" target="_blank" title="Chart.js" class="tech-icon"><IconChart /></a>
-              <a href="https://tanstack.com/" target="_blank" title="TanStack" class="tech-icon"><IconTanstack /></a>
-              <a href="https://mariadb.org/" target="_blank" title="MariaDB" class="tech-icon"><IconMariaDB /></a>
-              <a href="https://nodejs.org/" target="_blank" title="Node.js" class="tech-icon"><IconNode /></a>
-              <a href="https://sequelize.org/" target="_blank" title="Sequelize" class="tech-icon"><IconSequelize /></a>
-              <a href="https://developer.mozilla.org/es/docs/Web/JavaScript" target="_blank" title="JavaScript" class="tech-icon"><IconJavaScript style="border-radius: 4px;" /></a>
+              <a class="tech-icon" href="https://vuejs.org/" target="_blank" title="Vue.js"><IconVue /></a>
+              <a class="tech-icon" href="https://vuetifyjs.com/" target="_blank" title="Vuetify"><IconVuetify /></a>
+              <a class="tech-icon" href="https://pinia.vuejs.org/" target="_blank" title="Pinia"><IconPinia /></a>
+              <a class="tech-icon" href="https://www.chartjs.org/" target="_blank" title="Chart.js"><IconChart /></a>
+              <a class="tech-icon" href="https://tanstack.com/" target="_blank" title="TanStack"><IconTanstack /></a>
+              <a class="tech-icon" href="https://mariadb.org/" target="_blank" title="MariaDB"><IconMariaDB /></a>
+              <a class="tech-icon" href="https://nodejs.org/" target="_blank" title="Node.js"><IconNode /></a>
+              <a class="tech-icon" href="https://sequelize.org/" target="_blank" title="Sequelize"><IconSequelize /></a>
+              <a class="tech-icon" href="https://developer.mozilla.org/es/docs/Web/JavaScript" target="_blank" title="JavaScript"><IconJavaScript style="border-radius: 4px;" /></a>
             </div>
 
             <p class="text-body-2 opacity-60 mb-2">
@@ -260,9 +272,9 @@
             
             <!-- Social Links -->
             <div class="d-flex justify-center gap-4 mb-6">
-              <a href="https://www.linkedin.com/in/juan-pablo-flores-díaz-5271b533a" target="_blank" class="social-icon" title="LinkedIn"><IconLinkedIn /></a>
-              <a href="https://github.com/JuanPabloFloresDiaz/Nexus-VCI-ERP-" target="_blank" class="social-icon" title="GitHub"><IconGithub /></a>
-              <a href="https://platzi.com/p/pablojuanfd/" target="_blank" class="social-icon" title="Platzi"><IconPlatzi /></a>
+              <a class="social-icon" href="https://www.linkedin.com/in/juan-pablo-flores-díaz-5271b533a" target="_blank" title="LinkedIn"><IconLinkedIn /></a>
+              <a class="social-icon" href="https://github.com/JuanPabloFloresDiaz/Nexus-VCI-ERP-" target="_blank" title="GitHub"><IconGithub /></a>
+              <a class="social-icon" href="https://platzi.com/p/pablojuanfd/" target="_blank" title="Platzi"><IconPlatzi /></a>
             </div>
 
             <p class="text-caption opacity-40">

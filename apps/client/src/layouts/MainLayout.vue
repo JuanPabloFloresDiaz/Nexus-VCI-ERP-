@@ -308,6 +308,36 @@
     // Header: Sistema
     { header: 'Sistema' },
     {
+      title: 'Configuración',
+      icon: 'mdi-cog-outline',
+      to: '/main/config',
+      value: 'config',
+      tags: ['ajustes', 'moneda', 'preferencias', 'sistema'],
+      description: 'Configuración global de la empresa',
+      category: 'Sistema',
+      roles: ['SuperAdministrador', 'Administrador']
+    },
+    {
+      title: 'Divisas',
+      icon: 'mdi-currency-usd',
+      to: '/main/divisas',
+      value: 'divisas',
+      tags: ['monedas', 'divisas', 'tipos', 'dinero'],
+      description: 'Gestión del catálogo de monedas',
+      category: 'Sistema',
+      roles: ['SuperAdministrador', 'Administrador']
+    },
+    {
+      title: 'Tasas de Cambio',
+      icon: 'mdi-currency-brl',
+      to: '/main/tasas',
+      value: 'tasas',
+      tags: ['paridad', 'tasas', 'cambios', 'conversion'],
+      description: 'Gestión de paridad cambiaria',
+      category: 'Sistema',
+      roles: ['SuperAdministrador', 'Administrador']
+    },
+    {
       title: 'Papelera',
       icon: 'mdi-delete-clock-outline',
       to: '/main/papelera',
@@ -320,16 +350,19 @@
 
   // --- Search Logic ---
   const filteredMenu = computed(() => {
-    // Simple filtering if needed later, currently showing all by structure
-    return menuItems;
+    return menuItems.filter(item => {
+      if (item.header) return true;
+      if (item.roles && !item.roles.includes(userRole.value)) return false;
+      return true;
+    });
   });
 
   const searchResults = computed(() => {
     if (!searchQuery.value) return [];
     const query = searchQuery.value.toLowerCase();
   
-    // Filter items that satisfy search by title or tags
-    return menuItems.filter(item => {
+    // Filter items that satisfy search by title or tags AND respect role permissions
+    return filteredMenu.value.filter(item => {
       if (item.header) return false;
       const matchesTitle = item.title.toLowerCase().includes(query);
       const matchesTags = item.tags.some(tag => tag.toLowerCase().includes(query));

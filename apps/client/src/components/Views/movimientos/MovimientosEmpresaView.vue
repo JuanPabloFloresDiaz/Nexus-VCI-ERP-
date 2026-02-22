@@ -11,23 +11,23 @@
           <v-col cols="12" md="4">
             <v-text-field
               v-model="search"
-              prepend-inner-icon="mdi-magnify"
-              label="Buscar Movimiento"
-              single-line
-              hide-details
-              variant="outlined"
               density="compact"
+              hide-details
+              label="Buscar Movimiento"
+              prepend-inner-icon="mdi-magnify"
+              single-line
+              variant="outlined"
               @update:model-value="handleSearch"
             />
           </v-col>
           <v-col cols="12" md="4">
             <v-select
               v-model="filters.tipo"
-              label="Tipo Movimiento"
-              :items="['Todos', 'Venta', 'Ajuste', 'Transferencia']" 
-              variant="outlined"
               density="compact"
-              hide-details
+              hide-details 
+              :items="['Todos', 'Venta', 'Ajuste', 'Transferencia']"
+              label="Tipo Movimiento"
+              variant="outlined"
               @update:model-value="applyFilters"
             />
           </v-col>
@@ -43,27 +43,27 @@
         :search="search"
         @update:options="loadItems"
       >
-        <template v-slot:item.tipo_movimiento="{ item }">
+        <template #item.tipo_movimiento="{ item }">
           <v-chip :color="getTypeColor(item.tipo_movimiento)">
             {{ item.tipo_movimiento }}
           </v-chip>
         </template>
 
-        <template v-slot:item.fecha_movimiento="{ item }">
+        <template #item.fecha_movimiento="{ item }">
           {{ formatDate(item.fecha_movimiento) }}
         </template>
         
-        <template v-slot:item.cantidad="{ item }">
-           <span :class="item.cantidad < 0 ? 'text-error font-weight-bold' : 'text-success font-weight-bold'">
-             {{ item.cantidad }}
-           </span>
+        <template #item.cantidad="{ item }">
+          <span :class="item.cantidad < 0 ? 'text-error font-weight-bold' : 'text-success font-weight-bold'">
+            {{ item.cantidad }}
+          </span>
         </template>
 
-        <template v-slot:item.details="{ item }">
-           <div>
-             <div class="font-weight-medium">{{ item.variante?.producto?.nombre_producto || 'Producto Desconocido' }}</div>
-             <div class="text-caption text-medium-emphasis">SKU: {{ item.variante?.sku || 'N/A' }}</div>
-           </div>
+        <template #item.details="{ item }">
+          <div>
+            <div class="font-weight-medium">{{ item.variante?.producto?.nombre_producto || 'Producto Desconocido' }}</div>
+            <div class="text-caption text-medium-emphasis">SKU: {{ item.variante?.sku || 'N/A' }}</div>
+          </div>
         </template>
       </v-data-table-server>
     </v-card>
@@ -71,93 +71,98 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { getMovimientos } from '@/services/movimientos.service';
-import { useHead } from '@unhead/vue';
-import dayjs from 'dayjs';
+  import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
+  import dayjs from 'dayjs';
+  import { ref, watch } from 'vue';
+  import { getMovimientos } from '@/services/movimientos.service';
 
-useHead({
-  title: 'Mis Movimientos | Nexus ERP',
-  link: [
-    { rel: 'canonical', href: window.location.href }
-  ]
-});
+  useHead({
+    title: 'Mis Movimientos | Nexus ERP',
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
-const headers = [
-  { title: 'Fecha', key: 'fecha_movimiento', align: 'start' },
-  { title: 'Tipo', key: 'tipo_movimiento' },
-  { title: 'Almacén', key: 'almacen.nombre_almacen' },
-  { title: 'Producto / Variante', key: 'details', sortable: false },
-  { title: 'Cantidad', key: 'cantidad', align: 'end' }
-];
+  const headers = [
+    { title: 'Fecha', key: 'fecha_movimiento', align: 'start' },
+    { title: 'Tipo', key: 'tipo_movimiento' },
+    { title: 'Almacén', key: 'almacen.nombre_almacen' },
+    { title: 'Producto / Variante', key: 'details', sortable: false },
+    { title: 'Cantidad', key: 'cantidad', align: 'end' }
+  ];
 
-const search = ref('');
-const itemsPerPage = ref(10);
-const page = ref(1);
+  const search = ref('');
+  const itemsPerPage = ref(10);
+  const page = ref(1);
 
-const filters = ref({
-  tipo: 'Todos'
-});
+  const filters = ref({
+    tipo: 'Todos'
+  });
 
-const loadParams = ref({
-  page: 1,
-  limit: 10,
-  search: '',
-  tipo_movimiento: undefined,
+  const loadParams = ref({
+    page: 1,
+    limit: 10,
+    search: '',
+    tipo_movimiento: undefined,
   // id_almacen: should be filtered by backend for user/company context
-});
+  });
 
-const serverItems = ref([]);
-const totalItems = ref(0);
+  const serverItems = ref([]);
+  const totalItems = ref(0);
 
-// Query
-const { data, isLoading } = useQuery({
-  queryKey: ['movimientos-empresa', loadParams],
-  queryFn: () => getMovimientos(loadParams.value),
-  keepPreviousData: true
-});
+  // Query
+  const { data, isLoading } = useQuery({
+    queryKey: ['movimientos-empresa', loadParams],
+    queryFn: () => getMovimientos(loadParams.value),
+    keepPreviousData: true
+  });
 
-watch(data, (newVal) => {
-  if (newVal?.data) {
-    serverItems.value = newVal.data;
-    totalItems.value = newVal.count || newVal.data.length;
-  }
-}, { immediate: true });
+  watch(data, (newVal) => {
+    if (newVal?.data) {
+      serverItems.value = newVal.data;
+      totalItems.value = newVal.count || newVal.data.length;
+    }
+  }, { immediate: true });
 
-function loadItems({ page: p, itemsPerPage: ipp, itemsLength }) {
-  page.value = p;
-  itemsPerPage.value = ipp;
+  function loadItems({ page: p, itemsPerPage: ipp, itemsLength }) {
+    page.value = p;
+    itemsPerPage.value = ipp;
   
-  loadParams.value = {
-    ...loadParams.value,
-    page: p,
-    limit: ipp
-  };
-}
+    loadParams.value = {
+      ...loadParams.value,
+      page: p,
+      limit: ipp
+    };
+  }
 
-function handleSearch(val) {
+  function handleSearch(val) {
     search.value = val;
     loadParams.value.search = val;
     loadParams.value.page = 1;
-}
+  }
 
-function applyFilters() {
+  function applyFilters() {
     loadParams.value.page = 1;
     loadParams.value.tipo_movimiento = filters.value.tipo === 'Todos' ? undefined : filters.value.tipo;
-}
+  }
 
-function getTypeColor(type) {
+  function getTypeColor(type) {
     switch (type) {
-        case 'Compra': return 'success';
-        case 'Venta': return 'info';
-        case 'Ajuste': return 'warning';
-        case 'Transferencia': return 'purple';
-        default: return 'default';
+      case 'Compra': { return 'success';
+      }
+      case 'Venta': { return 'info';
+      }
+      case 'Ajuste': { return 'warning';
+      }
+      case 'Transferencia': { return 'purple';
+      }
+      default: { return 'default';
+      }
     }
-}
+  }
 
-function formatDate(date) {
+  function formatDate(date) {
     return dayjs(date).format('DD/MM/YYYY HH:mm');
-}
+  }
 </script>

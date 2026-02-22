@@ -1,11 +1,14 @@
 <script setup>
   import { useMutation, useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getCategoriaById, getCategorias } from '@/services/categorizacion.service';
   import { getProductoById, updateProducto } from '@/services/productos.service';
-  import { useHead } from '@unhead/vue';
+  
+  import { uploadFile } from '@/services/storage.service';
+  import { getImage } from '@/utils/getImage';
 
   // --- SEO ---
   useHead({
@@ -17,9 +20,6 @@
       { rel: 'canonical', href: window.location.href }
     ]
   });
-  
-  import { uploadFile } from '@/services/storage.service';
-  import { getImage } from '@/utils/getImage';
 
   const route = useRoute();
   const router = useRouter();
@@ -562,13 +562,13 @@
                           v-model.number="newVariant.stock_actual"
                           bg-color="white"
                           density="compact"
+                          :disabled="!!newVariant.id"
+                          :hint="!!newVariant.id ? 'Gestione el stock desde Inventario' : 'Stock Inicial'"
                           label="Stock"
+                          persistent-hint
                           :rules="[requiredRule, numberRule]"
                           type="number"
                           variant="outlined"
-                          :disabled="!!newVariant.id"
-                          :hint="!!newVariant.id ? 'Gestione el stock desde Inventario' : 'Stock Inicial'"
-                          persistent-hint
                         />
                       </v-col>
                       <v-col cols="12" md="4">

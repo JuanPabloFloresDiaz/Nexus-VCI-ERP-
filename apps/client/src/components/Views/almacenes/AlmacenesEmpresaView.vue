@@ -10,13 +10,13 @@
       <v-card-title>
         <v-text-field
           v-model="search"
-          prepend-inner-icon="mdi-magnify"
-          label="Buscar Almacén"
-          single-line
-          hide-details
-          variant="outlined"
-          density="compact"
           class="max-width-300"
+          density="compact"
+          hide-details
+          label="Buscar Almacén"
+          prepend-inner-icon="mdi-magnify"
+          single-line
+          variant="outlined"
           @update:model-value="handleSearch"
         />
       </v-card-title>
@@ -30,7 +30,7 @@
         :search="search"
         @update:options="loadItems"
       >
-        <template v-slot:item.es_principal="{ item }">
+        <template #item.es_principal="{ item }">
           <v-chip :color="item.es_principal ? 'success' : 'default'">
             {{ item.es_principal ? 'Principal' : 'Secundario' }}
           </v-chip>
@@ -39,8 +39,8 @@
 
 
         <!-- No Actions for Vendor/Empresa View unless specified -->
-        <template v-slot:item.actions="{ item }">
-           <!-- Maybe view details? For now empty -->
+        <template #item.actions="{ item }">
+          <!-- Maybe view details? For now empty -->
         </template>
       </v-data-table-server>
     </v-card>
@@ -48,70 +48,70 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { getAlmacenes } from '@/services/almacenes.service';
-import { useHead } from '@unhead/vue';
+  import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
+  import { ref, watch } from 'vue';
+  import { getAlmacenes } from '@/services/almacenes.service';
 
-useHead({
-  title: 'Mis Almacenes | Nexus ERP',
-  link: [
-    { rel: 'canonical', href: window.location.href }
-  ]
-});
+  useHead({
+    title: 'Mis Almacenes | Nexus ERP',
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
 
-const headers = [
-  { title: 'Nombre', key: 'nombre_almacen', align: 'start' },
-  { title: 'Ubicación', key: 'ubicacion' },
-  { title: 'Tipo', key: 'es_principal', align: 'center' },
+  const headers = [
+    { title: 'Nombre', key: 'nombre_almacen', align: 'start' },
+    { title: 'Ubicación', key: 'ubicacion' },
+    { title: 'Tipo', key: 'es_principal', align: 'center' },
   // { title: 'Acciones', key: 'actions', align: 'end', sortable: false }
-];
+  ];
 
-const search = ref('');
-const itemsPerPage = ref(10);
-const page = ref(1);
-const sortBy = ref([]);
+  const search = ref('');
+  const itemsPerPage = ref(10);
+  const page = ref(1);
+  const sortBy = ref([]);
 
-const loadParams = ref({
-  page: 1,
-  limit: 10,
-  search: ''
-});
+  const loadParams = ref({
+    page: 1,
+    limit: 10,
+    search: ''
+  });
 
-// Query
-const { data, isLoading } = useQuery({
-  queryKey: ['almacenes-empresa', loadParams],
-  queryFn: () => getAlmacenes(loadParams.value), // Should already be filtered by company in backend
-  keepPreviousData: true
-});
+  // Query
+  const { data, isLoading } = useQuery({
+    queryKey: ['almacenes-empresa', loadParams],
+    queryFn: () => getAlmacenes(loadParams.value), // Should already be filtered by company in backend
+    keepPreviousData: true
+  });
 
-const serverItems = ref([]);
-const totalItems = ref(0);
+  const serverItems = ref([]);
+  const totalItems = ref(0);
 
-watch(data, (newVal) => {
-  if (newVal?.data) {
-    serverItems.value = newVal.data;
-    totalItems.value = newVal.count || newVal.data.length;
-  }
-});
+  watch(data, (newVal) => {
+    if (newVal?.data) {
+      serverItems.value = newVal.data;
+      totalItems.value = newVal.count || newVal.data.length;
+    }
+  });
 
-function loadItems({ page: p, itemsPerPage: ipp, sortBy: sort, search: s }) {
-  page.value = p;
-  itemsPerPage.value = ipp;
-  sortBy.value = sort;
+  function loadItems({ page: p, itemsPerPage: ipp, sortBy: sort, search: s }) {
+    page.value = p;
+    itemsPerPage.value = ipp;
+    sortBy.value = sort;
   
-  loadParams.value = {
-    page: p,
-    limit: ipp,
-    search: s
-  };
-}
+    loadParams.value = {
+      page: p,
+      limit: ipp,
+      search: s
+    };
+  }
 
-function handleSearch(val) {
+  function handleSearch(val) {
     search.value = val;
     loadParams.value.search = val;
     loadParams.value.page = 1;
-}
+  }
 </script>
 
 <style scoped>

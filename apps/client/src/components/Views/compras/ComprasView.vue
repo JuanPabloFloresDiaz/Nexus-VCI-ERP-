@@ -1,12 +1,12 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import DeleteComprasModal from '@/components/modals/compras/DeleteComprasModal.vue';
   import DetalleComprasModal from '@/components/modals/compras/DetalleComprasModal.vue';
   import { getCompras } from '@/services/compras.service';
   import { getProveedores } from '@/services/proveedores.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

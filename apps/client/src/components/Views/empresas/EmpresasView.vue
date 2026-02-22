@@ -136,17 +136,17 @@
 
 <script setup>
   import { keepPreviousData, useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref, watch } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   // Modals
   import CreateEmpresaModal from '@/components/modals/empresas/CreateEmpresaModal.vue';
-  import DeleteEmpresaModal from '@/components/modals/empresas/DeleteEmpresaModal.vue';
 
+  import DeleteEmpresaModal from '@/components/modals/empresas/DeleteEmpresaModal.vue';
   import DetailEmpresaModal from '@/components/modals/empresas/DetailEmpresaModal.vue';
   import UpdateEmpresaModal from '@/components/modals/empresas/UpdateEmpresaModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getEmpresas } from '@/services/empresas.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

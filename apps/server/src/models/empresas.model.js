@@ -14,6 +14,7 @@ class Empresas extends BaseEntity {
         this.hasMany(models.Filtros, { foreignKey: 'id_empresa', as: 'filtros' });
         this.hasMany(models.Almacenes, { foreignKey: 'id_empresa', as: 'almacenes' });
         this.hasMany(models.MovimientosInventario, { foreignKey: 'id_empresa', as: 'movimientos' });
+        this.hasOne(models.ConfiguracionesGlobales, { foreignKey: 'id_empresa', as: 'configuracion' });
     }
 
     static initModel(sequelize) {

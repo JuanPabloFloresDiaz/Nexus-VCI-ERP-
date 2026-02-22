@@ -1,11 +1,11 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import DeleteCategorizacionModal from '@/components/modals/categorizacion/DeleteCategorizacionModal.vue';
   import DetalleFiltrosModal from '@/components/modals/categorizacion/DetalleFiltrosModal.vue';
   import { useAuth } from '@/hooks/useAuth';
   import { getCategorias } from '@/services/categorizacion.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

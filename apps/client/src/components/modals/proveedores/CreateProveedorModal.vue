@@ -179,8 +179,8 @@
                 v-model.number="formData.dias_credito"
                 density="compact"
                 label="Días de Crédito"
-                type="number"
                 min="0"
+                type="number"
                 variant="outlined"
               />
             </v-col>

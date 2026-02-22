@@ -72,20 +72,9 @@
 </template>
 
 <script setup>
+  import { useHead } from '@unhead/vue';
   import { ref } from 'vue';
   import { useAuth } from '@/hooks/useAuth';
-  import { useHead } from '@unhead/vue';
-
-  // --- SEO ---
-  useHead({
-    title: 'Papelera de Reciclaje',
-    meta: [
-      { name: 'description', content: 'Recuperación de elementos eliminados.' }
-    ],
-    link: [
-      { rel: 'canonical', href: window.location.href }
-    ]
-  });
 
   import categorizacionWindowTab from './window-tab/categorizacionWindowTab.vue';
   import clientesWindowTab from './window-tab/clientesWindowTab.vue';
@@ -99,6 +88,17 @@
   // For now, I'm importing them. If they are empty/don't exist properly, I might need to create placeholders or the build will fail.
   // User provided paths, so I assume files exist (even if empty).
   import usuariosWindowTab from './window-tab/usuariosWindowTab.vue';
+
+  // --- SEO ---
+  useHead({
+    title: 'Papelera de Reciclaje',
+    meta: [
+      { name: 'description', content: 'Recuperación de elementos eliminados.' }
+    ],
+    link: [
+      { rel: 'canonical', href: window.location.href }
+    ]
+  });
   // import filtrosWindowTab from './window-tab/filtrosWindowTab.vue'; // Optional if needed
 
   const { isSuperAdmin } = useAuth();

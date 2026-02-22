@@ -1,9 +1,9 @@
 <script setup>
   import { useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { computed, ref } from 'vue';
   import AsyncAvatar from '@/components/common/AsyncAvatar.vue';
   import { getCategorias } from '@/services/categorizacion.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

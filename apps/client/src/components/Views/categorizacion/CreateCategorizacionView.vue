@@ -1,10 +1,10 @@
 <script setup>
   import { useMutation, useQueryClient } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import { reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { createCategoria } from '@/services/categorizacion.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

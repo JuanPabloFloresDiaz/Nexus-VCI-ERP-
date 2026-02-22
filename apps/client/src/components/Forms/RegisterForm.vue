@@ -1,9 +1,9 @@
 <script setup>
+  import { useHead } from '@unhead/vue';
   import { computed, reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { useAuth } from '@/hooks/useAuth';
   import { uploadFile } from '@/services/storage.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

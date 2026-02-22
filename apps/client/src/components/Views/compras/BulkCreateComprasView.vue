@@ -1,14 +1,14 @@
 <script setup>
   import { useMutation, useQuery } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import Swal from 'sweetalert2';
   import { computed, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import * as XLSX from 'xlsx';
-  import { createBulkCompras } from '@/services/compras.service';
   import { getAlmacenesList } from '@/services/almacenes.service';
+  import { createBulkCompras } from '@/services/compras.service';
   import { getProductos } from '@/services/productos.service';
   import { getProveedores } from '@/services/proveedores.service';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({
@@ -150,26 +150,24 @@
       let rawDate = row.fecha_entrega;
       let finalDate = null;
       if (typeof rawDate === 'number') {
-          // Excel Serial Date to JS Date
-          // 25569 is offset for 1970-01-01
-          const date = new Date((rawDate - 25_569) * 86_400 * 1000);
-          finalDate = isNaN(date) ? null : date.toISOString().split('T')[0];
+        // Excel Serial Date to JS Date
+        // 25569 is offset for 1970-01-01
+        const date = new Date((rawDate - 25_569) * 86_400 * 1000);
+        finalDate = isNaN(date) ? null : date.toISOString().split('T')[0];
       } else if (typeof rawDate === 'string' && rawDate.trim() !== '') {
-          // Try to handle DD/MM/YYYY manually if needed, or rely on standard string
-          // If format is DD/MM/YYYY, simple Date() might fail or parse as MM/DD/YYYY depending on locale.
-          // Let's assume standard ISO or let backend handle if valid string.
-          // But user screenshot shows 20/2/2026.
-          if (rawDate.includes('/')) {
-              const parts = rawDate.split('/');
-              if (parts.length === 3) {
-                  // Assume DD/MM/YYYY
-                  if (parts[2].length === 4) {
-                      finalDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                  }
-              }
-          } else {
-             finalDate = rawDate.trim();
+        // Try to handle DD/MM/YYYY manually if needed, or rely on standard string
+        // If format is DD/MM/YYYY, simple Date() might fail or parse as MM/DD/YYYY depending on locale.
+        // Let's assume standard ISO or let backend handle if valid string.
+        // But user screenshot shows 20/2/2026.
+        if (rawDate.includes('/')) {
+          const parts = rawDate.split('/');
+          if (parts.length === 3 && // Assume DD/MM/YYYY
+            parts[2].length === 4) {
+            finalDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
           }
+        } else {
+          finalDate = rawDate.trim();
+        }
       }
 
       const dateKey = finalDate || 'SIN_FECHA';
@@ -267,8 +265,8 @@
 
   function submit() {
     if (!selectedWarehouse.value) {
-        Swal.fire('Error', 'Debe seleccionar un almacén destino', 'error');
-        return;
+      Swal.fire('Error', 'Debe seleccionar un almacén destino', 'error');
+      return;
     }
 
     const invalidGroups = parsedData.value.filter(g => !g.valid);
@@ -302,8 +300,8 @@
     }));
 
     mutate({
-        compras: comprasPayload,
-        id_almacen_destino: selectedWarehouse.value
+      compras: comprasPayload,
+      id_almacen_destino: selectedWarehouse.value
     });
   }
 </script>
@@ -325,13 +323,13 @@
         <v-col cols="12" md="6">
           <v-select
             v-model="selectedWarehouse"
-            :items="almacenesData?.data || []"
+            class="mb-4"
             item-title="nombre_almacen"
             item-value="id"
+            :items="almacenesData?.data || []"
             label="Almacén Destino"
-            variant="outlined"
-            class="mb-4"
             :rules="[v => !!v || 'Requerido']"
+            variant="outlined"
           />
           <v-file-input
             v-model="file"

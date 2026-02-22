@@ -1,8 +1,11 @@
 <script setup>
   import { onMounted, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
+  // Fetch Almacenes
+  import { getAlmacenes } from '@/services/almacenes.service';
   import CarritoWidget from './widget/Carrito.vue';
   import CatalogoProductosWidget from './widget/CatalogoProductos.vue';
+
   import ClienteWidget from './widget/Cliente.vue';
 
   const props = defineProps({
@@ -40,14 +43,14 @@
 
         let currentStock = 0;
         if (variant) {
-            if (warehouseId && variant.stock) {
-                const entry = variant.stock.find(s => s.id_almacen === warehouseId);
-                currentStock = entry ? entry.stock_actual : 0;
-            } else {
-                currentStock = variant.stock_actual || 0;
-            }
+          if (warehouseId && variant.stock) {
+            const entry = variant.stock.find(s => s.id_almacen === warehouseId);
+            currentStock = entry ? entry.stock_actual : 0;
+          } else {
+            currentStock = variant.stock_actual || 0;
+          }
         } else {
-            currentStock = product?.stock_actual || 0;
+          currentStock = product?.stock_actual || 0;
         }
 
         return {
@@ -76,13 +79,10 @@
       }
       if (val.almacen_origen) {
         // If editing, use the order's warehouse
-         selectedWarehouse.value = val.id_almacen_origen || val.almacen_origen?.id; // Adjust based on API response
+        selectedWarehouse.value = val.id_almacen_origen || val.almacen_origen?.id; // Adjust based on API response
       }
     }
   }, { immediate: true });
-
-  // Fetch Almacenes
-  import { getAlmacenes } from '@/services/almacenes.service';
   const almacenes = ref([]);
   const selectedWarehouse = ref(null);
 
@@ -93,11 +93,11 @@
         almacenes.value = res.data;
         // Default to main or first if not editing
         if (!props.isEdit && !selectedWarehouse.value) {
-            const main = almacenes.value.find(a => a.es_principal);
-            selectedWarehouse.value = main ? main.id : almacenes.value[0]?.id;
+          const main = almacenes.value.find(a => a.es_principal);
+          selectedWarehouse.value = main ? main.id : almacenes.value[0]?.id;
         }
       }
-    } catch (e) { console.error(e); }
+    } catch (error) { console.error(error); }
   });
 
   function addToCart (payload) {
@@ -118,14 +118,14 @@
     // Validate Stock
     let stockAvailable = 0;
     if (variant) {
-        if (selectedWarehouse.value && variant.stock) {
-            const entry = variant.stock.find(s => s.id_almacen === selectedWarehouse.value);
-            stockAvailable = entry ? entry.stock_actual : 0;
-        } else {
-            stockAvailable = variant.stock_actual || 0;
-        }
+      if (selectedWarehouse.value && variant.stock) {
+        const entry = variant.stock.find(s => s.id_almacen === selectedWarehouse.value);
+        stockAvailable = entry ? entry.stock_actual : 0;
+      } else {
+        stockAvailable = variant.stock_actual || 0;
+      }
     } else {
-        stockAvailable = product.stock_actual || 0;
+      stockAvailable = product.stock_actual || 0;
     }
     if (stockAvailable <= 0) {
       // Should have been disabled in UI, but double check
@@ -179,18 +179,18 @@
               <ClienteWidget v-model="selectedClient" />
             </v-col>
             <v-col cols="12" md="4">
-               <v-select
-                 v-model="selectedWarehouse"
-                 :items="almacenes"
-                 item-title="nombre_almacen"
-                 item-value="id"
-                 label="Almacén de Origen"
-                 density="compact"
-                 variant="outlined"
-                 hide-details
-                 :disabled="cart.length > 0" 
-               />
-               <!-- Disable changing warehouse if cart has items to avoid stock mismatch issues? 
+              <v-select
+                v-model="selectedWarehouse"
+                density="compact"
+                :disabled="cart.length > 0"
+                hide-details
+                item-title="nombre_almacen"
+                item-value="id"
+                :items="almacenes"
+                label="Almacén de Origen"
+                variant="outlined" 
+              />
+              <!-- Disable changing warehouse if cart has items to avoid stock mismatch issues? 
                     Or just re-validate. Safer to disable or warn. -->
             </v-col>
             <v-col class="text-right d-none d-md-block" cols="12" md="2">
@@ -220,9 +220,9 @@
         <CarritoWidget
           v-model="cart"
           :cliente="selectedClient"
-          :warehouse-id="selectedWarehouse"
           :is-edit="isEdit"
           :order-id="initialOrder?.id"
+          :warehouse-id="selectedWarehouse"
           @clear-cart="clearCart"
           @clear-client="selectedClient = null"
           @order-created="onOrderSaved"

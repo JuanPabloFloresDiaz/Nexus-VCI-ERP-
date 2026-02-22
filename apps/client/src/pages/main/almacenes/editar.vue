@@ -6,8 +6,8 @@ meta:
 </route>
 
 <script setup>
-  import UpdateAlmacenesView from '@/components/Views/almacenes/UpdateAlmacenesView.vue';
   import { useRoute } from 'vue-router';
+  import UpdateAlmacenesView from '@/components/Views/almacenes/UpdateAlmacenesView.vue';
   
   const route = useRoute();
 </script>

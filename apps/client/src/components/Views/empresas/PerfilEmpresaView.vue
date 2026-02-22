@@ -144,12 +144,12 @@
 
 <script setup>
   import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+  import { useHead } from '@unhead/vue';
   import Swal from 'sweetalert2';
   import { computed, ref } from 'vue';
   import { getEmpresaProfile, updateEmpresaProfile } from '@/services/empresas.service';
   import { uploadFile } from '@/services/storage.service';
   import { getImage } from '@/utils/getImage';
-  import { useHead } from '@unhead/vue';
 
   // --- SEO ---
   useHead({

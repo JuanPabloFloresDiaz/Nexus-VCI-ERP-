@@ -70,7 +70,7 @@
 <template>
   <div class="h-100 d-flex flex-column">
     <!-- Header -->
-    <div class="d-flex align-center pa-4 gap-4 bg-white border-b">
+    <div class="d-flex align-center pa-4 gap-4 bg-surface border-b">
       <div>
         <h1 class="text-h5 font-weight-bold text-secondary">Catálogo de Productos</h1>
         <div class="text-subtitle-2 text-medium-emphasis">
@@ -80,10 +80,10 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="d-flex align-center pa-4 gap-4 bg-grey-lighten-5 border-b">
+    <div class="d-flex align-center pa-4 gap-4 bg-surface border-b">
       <v-text-field
         v-model="search"
-        bg-color="white"
+        
         density="compact"
         hide-details
         placeholder="Buscar producto..."

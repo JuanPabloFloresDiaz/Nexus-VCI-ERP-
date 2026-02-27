@@ -41,7 +41,7 @@ class ConfiguracionesGlobalesController {
 
     static update = catchErrors(async (req, res) => {
         const { id_empresa } = req.user;
-        const { id_divisa_base } = req.body;
+        const { id_divisa_base, tema_interfaz } = req.body;
 
         const config = await ConfiguracionesGlobales.findOne({ where: { id_empresa } });
         if (!config) {
@@ -53,7 +53,12 @@ class ConfiguracionesGlobalesController {
             return ApiResponse.error(res, { error: 'Divisa no encontrada', status: 404 });
         }
 
-        await config.update({ id_divisa_base });
+        const updateData = { id_divisa_base };
+        if (tema_interfaz !== undefined) {
+            updateData.tema_interfaz = tema_interfaz;
+        }
+
+        await config.update(updateData);
 
         return ApiResponse.success(res, {
             data: config,

@@ -287,9 +287,9 @@
 </script>
 
 <template>
-  <div class="h-100 d-flex flex-column bg-grey-lighten-5">
+  <div class="h-100 d-flex flex-column bg-surface">
     <!-- Header -->
-    <div class="d-flex align-center pa-4 bg-white border-b">
+    <div class="d-flex align-center pa-4 bg-surface border-b">
       <v-btn class="mr-2" icon to="/main/productos" variant="text">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
@@ -420,7 +420,7 @@
                 </v-alert>
 
                 <!-- Add Variant Form -->
-                <v-sheet class="bg-grey-lighten-4 pa-4 rounded border mb-4">
+                <v-sheet class="bg-surface-variant pa-4 rounded border mb-4">
                   <div class="text-subtitle-2 font-weight-bold mb-2">Nueva Variante</div>
                   <v-form ref="variantFormRef" @submit.prevent>
                     <v-row dense>
@@ -428,7 +428,7 @@
                       <v-col v-for="(detalle, i) in newVariant.detalles" :key="i" cols="12" md="4">
                         <v-select
                           v-model="detalle.id_opcion_filtro"
-                          bg-color="white"
+                          
                           density="compact"
                           item-title="valor_opcion"
                           item-value="id"
@@ -444,7 +444,7 @@
                         <v-text-field
                           v-model="newVariant.sku"
                           v-maska="'***-###'"
-                          bg-color="white"
+                          
                           density="compact"
                           label="SKU (Opcional)"
                           placeholder="AAA-123"
@@ -454,7 +454,7 @@
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model.number="newVariant.precio_unitario"
-                          bg-color="white"
+                          
                           density="compact"
                           label="Precio Unitario"
                           prefix="$"
@@ -466,7 +466,7 @@
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model.number="newVariant.costo_unitario"
-                          bg-color="white"
+                          
                           density="compact"
                           label="Costo Unitario"
                           prefix="$"
@@ -478,7 +478,7 @@
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model.number="newVariant.stock_actual"
-                          bg-color="white"
+                          
                           density="compact"
                           label="Stock Inicial"
                           :rules="[requiredRule, numberRule]"
@@ -489,7 +489,7 @@
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model.number="newVariant.stock_minimo"
-                          bg-color="white"
+                          
                           density="compact"
                           label="Stock Mínimo"
                           :rules="[requiredRule, numberRule]"

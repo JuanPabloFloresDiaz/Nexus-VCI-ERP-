@@ -133,7 +133,7 @@
 
         <div v-if="conversions.length > 0">
            <div class="text-subtitle-2 text-medium-emphasis mb-2">Equivalencias según Tasa de Cambio actual:</div>
-           <v-list class="bg-grey-lighten-4 rounded-lg">
+           <v-list class="bg-surface-variant rounded-lg">
              <v-list-item v-for="c in conversions" :key="c.moneda" class="border-b">
                 <template #prepend>
                    <v-avatar color="primary" variant="tonal" size="36" class="mr-3 font-weight-bold">

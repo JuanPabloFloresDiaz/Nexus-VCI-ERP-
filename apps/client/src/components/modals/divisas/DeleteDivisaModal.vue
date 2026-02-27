@@ -56,7 +56,7 @@
         </span>
       </v-card-text>
 
-      <v-card-actions class="pa-4 bg-grey-lighten-4">
+      <v-card-actions class="pa-4 bg-surface-variant">
         <v-spacer />
         <v-btn :disabled="isPending" variant="text" @click="close">
           Cancelar

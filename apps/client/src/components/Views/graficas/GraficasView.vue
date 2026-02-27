@@ -4,13 +4,13 @@
     <div class="d-flex flex-wrap align-center justify-space-between mb-6 gap-4">
       <div>
         <h1 class="text-h4 font-weight-bold text-secondary">Panel de Control</h1>
-        <p class="text-body-2 text-slate-500">Visualización de métricas clave</p>
+        <p class="text-body-2 text-medium-emphasis">Visualización de métricas clave</p>
       </div>
       
       <div class="d-flex align-center gap-2">
         <v-select
           v-model="selectedRange"
-          bg-color="white"
+          
           density="compact"
           hide-details
           item-title="title"
@@ -27,15 +27,15 @@
     <!-- Stats Cards -->
     <v-row>
       <v-col cols="12" md="4" sm="6">
-        <v-card class="border-thin rounded-lg" elevation="0">
+        <v-card class="border rounded-lg bg-surface" elevation="0">
           <v-card-text class="d-flex align-center">
-            <v-avatar class="mr-4" color="blue-lighten-5" size="48">
-              <v-icon color="blue" size="24">mdi-currency-usd</v-icon>
+            <v-avatar class="mr-4 bg-surface-variant" size="48">
+              <v-icon color="info" size="24">mdi-currency-usd</v-icon>
             </v-avatar>
             <div>
-              <div class="text-overline text-slate-500 mb-0">Ventas Totales</div>
-              <div v-if="statsLoading" class="text-h5 font-weight-bold text-slate-400">Cargando...</div>
-              <div v-else class="text-h5 font-weight-bold text-slate-800">
+              <div class="text-overline text-medium-emphasis mb-0">Ventas Totales</div>
+              <div v-if="statsLoading" class="text-h5 font-weight-bold text-disabled">Cargando...</div>
+              <div v-else class="text-h5 font-weight-bold text-primary">
                 {{ formatCurrency(stats?.data?.total_sales || 0) }}
               </div>
             </div>
@@ -44,15 +44,15 @@
       </v-col>
 
       <v-col cols="12" md="4" sm="6">
-        <v-card class="border-thin rounded-lg" elevation="0">
+        <v-card class="border rounded-lg bg-surface" elevation="0">
           <v-card-text class="d-flex align-center">
-            <v-avatar class="mr-4" color="emerald-lighten-5" size="48">
+            <v-avatar class="mr-4 bg-surface-variant" size="48">
               <v-icon color="success" size="24">mdi-cart-outline</v-icon>
             </v-avatar>
             <div>
-              <div class="text-overline text-slate-500 mb-0">Pedidos Totales</div>
-              <div v-if="statsLoading" class="text-h5 font-weight-bold text-slate-400">Cargando...</div>
-              <div v-else class="text-h5 font-weight-bold text-slate-800">
+              <div class="text-overline text-medium-emphasis mb-0">Pedidos Totales</div>
+              <div v-if="statsLoading" class="text-h5 font-weight-bold text-disabled">Cargando...</div>
+              <div v-else class="text-h5 font-weight-bold text-primary">
                 {{ stats?.data?.total_orders || 0 }}
               </div>
             </div>
@@ -61,15 +61,15 @@
       </v-col>
 
       <v-col cols="12" md="4" sm="6">
-        <v-card class="border-thin rounded-lg" elevation="0">
+        <v-card class="border rounded-lg bg-surface" elevation="0">
           <v-card-text class="d-flex align-center">
-            <v-avatar class="mr-4" color="amber-lighten-5" size="48">
+            <v-avatar class="mr-4 bg-surface-variant" size="48">
               <v-icon color="warning" size="24">mdi-account-group</v-icon>
             </v-avatar>
             <div>
-              <div class="text-overline text-slate-500 mb-0">Clientes Activos</div>
-              <div v-if="statsLoading" class="text-h5 font-weight-bold text-slate-400">Cargando...</div>
-              <div v-else class="text-h5 font-weight-bold text-slate-800">
+              <div class="text-overline text-medium-emphasis mb-0">Clientes Activos</div>
+              <div v-if="statsLoading" class="text-h5 font-weight-bold text-disabled">Cargando...</div>
+              <div v-else class="text-h5 font-weight-bold text-primary">
                 {{ stats?.data?.total_customers || 0 }}
               </div>
             </div>
@@ -82,16 +82,16 @@
     <v-row class="mt-4">
       <!-- Sales History (Line) -->
       <v-col cols="12" md="8">
-        <v-card class="border-thin rounded-lg h-100" elevation="0">
-          <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
+        <v-card class="border rounded-lg h-100 bg-surface" elevation="0">
+          <v-card-title class="text-subtitle-1 font-weight-bold text-primary px-4 pt-4">
             Historial de Ventas
           </v-card-title>
           <v-card-text style="height: 350px; position: relative;">
-            <div v-if="salesLoading" class="d-flex align-center justify-center h-100 text-slate-400">
+            <div v-if="salesLoading" class="d-flex align-center justify-center h-100 text-disabled">
               Cargando datos...
             </div>
             <Line v-else-if="salesData.labels.length > 0" :data="salesData" :options="lineOptions" />
-            <div v-else class="d-flex align-center justify-center h-100 text-slate-400">
+            <div v-else class="d-flex align-center justify-center h-100 text-disabled">
               No hay datos disponibles en este rango
             </div>
           </v-card-text>
@@ -100,14 +100,14 @@
 
       <!-- Order Status (Doughnut) -->
       <v-col cols="12" md="4">
-        <v-card class="border-thin rounded-lg h-100" elevation="0">
-          <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
+        <v-card class="border rounded-lg h-100 bg-surface" elevation="0">
+          <v-card-title class="text-subtitle-1 font-weight-bold text-primary px-4 pt-4">
             Estado de Pedidos
           </v-card-title>
           <v-card-text class="d-flex justify-center align-center" style="height: 350px; position: relative;">
-            <div v-if="statusLoading" class="text-slate-400">Cargando...</div>
+            <div v-if="statusLoading" class="text-disabled">Cargando...</div>
             <Doughnut v-else-if="statusData.labels.length > 0" :data="statusData" :options="doughnutOptions" />
-            <div v-else class="text-slate-400">
+            <div v-else class="text-disabled">
               Sin pedidos
             </div>
           </v-card-text>
@@ -118,16 +118,16 @@
     <!-- Top Products (Bar) -->
     <v-row class="mt-4">
       <v-col cols="12" md="6">
-        <v-card class="border-thin rounded-lg" elevation="0">
-          <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
+        <v-card class="border rounded-lg bg-surface" elevation="0">
+          <v-card-title class="text-subtitle-1 font-weight-bold text-primary px-4 pt-4">
             Productos Más Vendidos
           </v-card-title>
           <v-card-text style="height: 300px; position: relative;">
-            <div v-if="topProductsLoading" class="d-flex align-center justify-center h-100 text-slate-400">
+            <div v-if="topProductsLoading" class="d-flex align-center justify-center h-100 text-disabled">
               Cargando...
             </div>
             <Bar v-else-if="topProductsData.labels.length > 0" :data="topProductsData" :options="barOptions" />
-            <div v-else class="d-flex align-center justify-center h-100 text-slate-400">
+            <div v-else class="d-flex align-center justify-center h-100 text-disabled">
               No hay datos de productos
             </div>
           </v-card-text>
@@ -136,16 +136,16 @@
 
       <!-- Top Categories (Bar) -->
       <v-col cols="12" md="6">
-        <v-card class="border-thin rounded-lg" elevation="0">
-          <v-card-title class="text-subtitle-1 font-weight-bold text-slate-800 px-4 pt-4">
+        <v-card class="border rounded-lg bg-surface" elevation="0">
+          <v-card-title class="text-subtitle-1 font-weight-bold text-primary px-4 pt-4">
             Categorías Más Vendidas
           </v-card-title>
           <v-card-text style="height: 300px; position: relative;">
-            <div v-if="topCategoriesLoading" class="d-flex align-center justify-center h-100 text-slate-400">
+            <div v-if="topCategoriesLoading" class="d-flex align-center justify-center h-100 text-disabled">
               Cargando...
             </div>
             <Bar v-else-if="topCategoriesData.labels.length > 0" :data="topCategoriesData" :options="barOptions" />
-            <div v-else class="d-flex align-center justify-center h-100 text-slate-400">
+            <div v-else class="d-flex align-center justify-center h-100 text-disabled">
               No hay datos de categorías
             </div>
           </v-card-text>
@@ -161,6 +161,7 @@
   import dayjs from 'dayjs';
   import { computed, ref, watch } from 'vue';
   import { Bar, Doughnut, Line } from 'vue-chartjs';
+  import { useTheme } from 'vuetify';
   import { 
     getDashboardStats, 
     getOrderStatus, 
@@ -263,7 +264,7 @@
         label: 'Unidades Vendidas',
         data: rawData.map(p => p.total_quantity),
         backgroundColor: [
-          '#1E293B', '#3B82F6', '#0EA5E9', '#10B981', '#F59E0B'
+          '#6366F1', '#3B82F6', '#0EA5E9', '#10B981', '#F59E0B'
         ],
         borderRadius: 4
       }]
@@ -303,17 +304,61 @@
     };
   });
 
+  // --- Theme Dynamic Options ---
+  const theme = useTheme();
+  
+  const dynamicOptions = computed(() => {
+    const isDark = theme.global.current.value.dark;
+    const textColor = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    const tooltipBg = isDark ? '#1E293B' : '#FFFFFF';
+    const tooltipText = isDark ? '#FFFFFF' : '#1E293B';
+
+    return {
+      ...baseOptions,
+      color: textColor,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: textColor }
+        },
+        y: {
+          grid: { color: gridColor, borderDash: [4, 4] },
+          ticks: { color: textColor },
+          beginAtZero: true
+        }
+      },
+      plugins: {
+        ...baseOptions.plugins,
+        legend: {
+          ...baseOptions.plugins?.legend,
+          labels: {
+            ...baseOptions.plugins?.legend?.labels,
+            color: textColor
+          }
+        },
+        tooltip: {
+          backgroundColor: tooltipBg,
+          titleColor: tooltipText,
+          bodyColor: tooltipText,
+          padding: 10,
+          cornerRadius: 8
+        }
+      }
+    };
+  });
+
   // --- Options ---
-  const lineOptions = { ...baseOptions };
-  const barOptions = { 
-    ...baseOptions,
+  const lineOptions = computed(() => ({ ...dynamicOptions.value }));
+  const barOptions = computed(() => ({ 
+    ...dynamicOptions.value,
     indexAxis: 'y', // Horizontal Bar
-  };
-  const doughnutOptions = {
-    ...baseOptions,
+  }));
+  const doughnutOptions = computed(() => ({
+    ...dynamicOptions.value,
     scales: { x: { display: false }, y: { display: false } },
     cutout: '70%'
-  };
+  }));
 
   function formatCurrency (value) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -322,8 +367,5 @@
 </script>
 
 <style scoped>
-.text-slate-800 { color: #1E293B !important; }
-.text-slate-500 { color: #64748B !important; }
-.text-slate-400 { color: #94a3b8 !important; }
-.border-thin { border: 1px solid #E2E8F0 !important; }
+/* Removed hardcoded light-mode slate colors */
 </style>

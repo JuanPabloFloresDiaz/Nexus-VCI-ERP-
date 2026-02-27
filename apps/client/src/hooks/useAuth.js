@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 
 export function useAuth() {
     const authStore = useAuthStore();
-    const { user, token, isAuthenticated, isSuperAdmin, isAdmin, isVendor, idEmpresa } = storeToRefs(authStore);
+    const { user, token, isAuthenticated, isSuperAdmin, isAdmin, isVendor, idEmpresa, globalConfig, currentTheme } = storeToRefs(authStore);
 
     return {
         // State (Reactive)
@@ -11,6 +11,8 @@ export function useAuth() {
         token,
         isAuthenticated,
         idEmpresa,
+        globalConfig,
+        currentTheme,
 
         // Roles (Reactive)
         isSuperAdmin,

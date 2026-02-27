@@ -287,7 +287,7 @@
                 </v-alert>
 
                 <!-- Editor Form -->
-                <v-card class="pa-3 bg-grey-lighten-5" variant="outlined">
+                <v-card class="pa-3 bg-surface" variant="outlined">
                   <span class="text-subtitle-2 font-weight-bold mb-2 d-block">
                     {{ editForm.index > -1 ? 'Editar Fila Seleccionada' : 'Agregar Manualmente' }}
                   </span>
@@ -295,7 +295,7 @@
                     <v-col v-if="isSuperAdmin" cols="12" md="4">
                       <v-text-field
                         v-model="editForm.id_empresa"
-                        bg-color="white"
+                        
                         density="compact"
                         label="ID Empresa"
                         variant="outlined"
@@ -304,7 +304,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.nombre_cliente"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Nombre *"
                         variant="outlined"
@@ -313,7 +313,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.apellido_cliente"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Apellido *"
                         variant="outlined"
@@ -322,7 +322,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.correo_cliente"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Correo *"
                         variant="outlined"
@@ -332,7 +332,7 @@
                       <v-text-field
                         v-model="editForm.telefono_cliente"
                         v-maska="'####-####'"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Teléfono"
                         variant="outlined"
@@ -342,7 +342,7 @@
                       <v-text-field
                         v-model="editForm.dui_cliente"
                         v-maska="'########-#'"
-                        bg-color="white"
+                        
                         density="compact"
                         label="DUI"
                         variant="outlined"

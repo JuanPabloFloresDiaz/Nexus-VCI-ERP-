@@ -5,7 +5,7 @@
       <p class="text-body-1 text-medium-emphasis">Recupera elementos eliminados o bórralos permanentemente.</p>
     </div>
 
-    <v-card class="border rounded-lg" elevation="0">
+    <v-card class="border rounded-lg bg-surface" elevation="0">
       <v-tabs v-model="tab" color="primary" show-arrows>
         <!-- Generic Tabs available to Admin and SuperAdmin -->
         <v-tab class="text-none" value="usuarios">
@@ -38,7 +38,7 @@
 
       <v-divider />
 
-      <v-card-text class="pa-6 bg-grey-lighten-5" style="min-height: 400px;">
+      <v-card-text class="pa-6 bg-surface" style="min-height: 400px;">
         <v-window v-model="tab">
           <v-window-item value="usuarios">
             <usuariosWindowTab />

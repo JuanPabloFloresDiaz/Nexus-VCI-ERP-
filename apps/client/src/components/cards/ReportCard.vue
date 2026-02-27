@@ -43,7 +43,7 @@
 
 <template>
   <v-card class="d-flex flex-column h-100 rounded-lg elevation-2 hover-card" variant="elevated">
-    <div class="d-flex flex-column align-center justify-center pt-6 pb-2 bg-grey-lighten-5">
+    <div class="d-flex flex-column align-center justify-center pt-6 pb-2 bg-surface">
       <!-- PDF SVG Icon -->
       <div style="width: 64px; height: 64px;">
         <svg v-if="iconType === 'pdf'" class="w-100 h-100" viewBox="0 0 75.32 92.604">

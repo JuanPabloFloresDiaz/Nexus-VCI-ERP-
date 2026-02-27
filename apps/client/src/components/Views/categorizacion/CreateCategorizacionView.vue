@@ -97,9 +97,9 @@
 </script>
 
 <template>
-  <div class="h-100 d-flex flex-column bg-grey-lighten-5">
+  <div class="h-100 d-flex flex-column bg-surface">
     <!-- Header -->
-    <div class="d-flex align-center pa-4 bg-white border-b">
+    <div class="d-flex align-center pa-4 bg-surface border-b">
       <v-btn class="mr-2" icon to="/main/categorizacion" variant="text">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
@@ -224,7 +224,7 @@
                               <v-card 
                                 v-for="(filtro, fIndex) in sub.filtros" 
                                 :key="fIndex"
-                                class="mb-3 bg-grey-lighten-5"
+                                class="mb-3 bg-surface"
                                 variant="flat"
                               >
                                 <v-card-text>

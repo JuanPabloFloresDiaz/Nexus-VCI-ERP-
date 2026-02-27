@@ -98,7 +98,7 @@
 <template>
   <div class="h-100 d-flex flex-column">
     <!-- Toolbar -->
-    <div class="d-flex align-center pa-4 gap-4 border-b bg-white">
+    <div class="d-flex align-center pa-4 gap-4 border-b bg-surface">
       <v-text-field
         v-model="search"
         bg-color="grey-lighten-5"

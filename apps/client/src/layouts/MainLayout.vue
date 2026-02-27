@@ -139,7 +139,7 @@
             </v-list-item>
           </v-list>
         </v-card-text>
-        <v-card-actions class="bg-grey-lighten-4 py-2 px-4 text-caption text-medium-emphasis">
+        <v-card-actions class="bg-surface py-2 px-4 text-caption text-medium-emphasis">
           <span class="mr-4"><kbd class="bg-white px-1 border rounded">Enter</kbd> seleccionar</span>
           <span><kbd class="bg-white px-1 border rounded">Esc</kbd> cerrar</span>
         </v-card-actions>

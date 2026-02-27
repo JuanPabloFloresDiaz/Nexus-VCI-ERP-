@@ -166,14 +166,14 @@
 </script>
 
 <template>
-  <div class="d-flex flex-column h-100 bg-grey-lighten-4">
+  <div class="d-flex flex-column h-100 bg-surface-variant">
     <!-- POS Layout -->
     <div class="d-flex flex-grow-1 overflow-hidden" style="height: calc(100vh - 64px);">
             
       <!-- Left: Catalog & Client Search -->
       <div class="d-flex flex-column flex-grow-1 w-66">
         <!-- Header: Client & Warehouse -->
-        <div class="bg-white pa-3 border-b">
+        <div class="bg-surface pa-3 border-b">
           <v-row align="center">
             <v-col cols="12" md="6">
               <ClienteWidget v-model="selectedClient" />
@@ -216,7 +216,7 @@
       </div>
 
       <!-- Right: Cart -->
-      <div class="w-33 h-100 bg-white border-s elevation-2" style="min-width: 350px; max-width: 450px;">
+      <div class="w-33 h-100 bg-surface border-s elevation-2" style="min-width: 350px; max-width: 450px;">
         <CarritoWidget
           v-model="cart"
           :cliente="selectedClient"

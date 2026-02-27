@@ -142,7 +142,7 @@
     </section>
 
     <!-- Problem / Solution Section -->
-    <section class="bg-grey-lighten-5 py-16">
+    <section class="bg-surface py-16">
       <v-container>
         <v-row justify="center">
           <v-col class="text-center" cols="12" md="8">

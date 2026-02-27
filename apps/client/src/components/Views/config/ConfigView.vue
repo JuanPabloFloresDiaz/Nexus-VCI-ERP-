@@ -3,6 +3,8 @@
   import { useHead } from '@unhead/vue';
   import { computed, ref, watch } from 'vue';
   import { useAuth } from '@/hooks/useAuth';
+  import { useAuthStore } from '@/stores/auth';
+  import ThemeCard from '@/components/cards/ThemeCard.vue';
   import { showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
   import { getConfiguracionGlobal, syncExchangeRates, updateConfiguracionGlobal } from '@/services/config.service';
   import { getDivisasList } from '@/services/divisas.service';
@@ -34,19 +36,43 @@
   const divisas = computed(() => divisasData.value?.data || []);
 
   const selectedDivisaId = ref(null);
+  const selectedTema = ref('nexusTheme'); // Default theme
+
+  const availableThemes = [
+    { title: 'Clásico', value: 'nexusTheme', colors: { primary: '#2563EB', secondary: '#1E40AF', background: '#F8FAFC', surface: '#FFFFFF' } },
+    { title: 'Nocturno', value: 'darkTheme', colors: { primary: '#38BDF8', secondary: '#1E293B', background: '#0F172A', surface: '#1E293B' } },
+    { title: 'Océano', value: 'oceanTheme', colors: { primary: '#0EA5E9', secondary: '#0284C7', background: '#F0F9FF', surface: '#FFFFFF' } },
+    { title: 'Industrial', value: 'industrialTheme', colors: { primary: '#1A1A1A', secondary: '#B91C1C', background: '#F4F4F5', surface: '#FFFFFF' } },
+    { title: 'Naturaleza', value: 'natureTheme', colors: { primary: '#166534', secondary: '#22C55E', background: '#F0FDF4', surface: '#FFFFFF' } },
+    { title: 'Carmesí', value: 'crimsonTheme', colors: { primary: '#991B1B', secondary: '#EF4444', background: '#FEF2F2', surface: '#FFFFFF' } },
+    { title: 'Tierra', value: 'earthTheme', colors: { primary: '#451A03', secondary: '#92400E', background: '#FFFBEB', surface: '#FFFFFF' } },
+    { title: 'Majestad', value: 'royalTheme', colors: { primary: '#581C87', secondary: '#A855F7', background: '#FAF5FF', surface: '#FFFFFF' } },
+    { title: 'Carbono', value: 'carbonTheme', colors: { primary: '#334155', secondary: '#64748B', background: '#F1F5F9', surface: '#FFFFFF' } }
+  ];
 
   watch(config, (val) => {
-    if (val && val.id_divisa_base) {
-      selectedDivisaId.value = val.id_divisa_base;
+    if (val) {
+      if (val.id_divisa_base) selectedDivisaId.value = val.id_divisa_base;
+      if (val.tema_interfaz) selectedTema.value = val.tema_interfaz;
     }
   }, { immediate: true });
 
   // Mutations
   const { mutate: doUpdateConfig, isPending: isSavingConfig } = useMutation({
     mutationFn: updateConfiguracionGlobal,
-    onSuccess: () => {
+    onSuccess: (response) => {
       showSuccessToast('Configuración actualizada');
       queryClient.invalidateQueries(['configuracion-global']);
+      
+      // Update local storage and app state for theme instantly using Pinia
+      const updatedConfig = response.data?.data || response.data;
+      if (updatedConfig) {
+        useAuthStore().updateConfig(updatedConfig);
+        // Force reload a bit later to guarantee sync of elements outside standard reactivity cycle if needed
+        setTimeout(() => {
+          window.location.reload();
+        }, 300)
+      }
     },
     onError: (error) => {
       showErrorToast(error.response?.data?.error || 'Error al actualizar configuración');
@@ -65,7 +91,12 @@
 
   function handleSaveConfig() {
     if (!selectedDivisaId.value) return;
-    doUpdateConfig({ id_divisa_base: selectedDivisaId.value });
+    
+    // Send both divisa and theme
+    doUpdateConfig({ 
+      id_divisa_base: selectedDivisaId.value,
+      tema_interfaz: selectedTema.value
+    });
   }
 
   function handleSyncRates() {
@@ -75,24 +106,24 @@
 </script>
 
 <template>
-  <v-container class="h-100 bg-white rounded-lg pa-6 border align-start" fluid>
+  <v-container class="h-100 bg-surface rounded-lg pa-6 border align-start" fluid>
     <h1 class="text-h4 font-weight-bold text-secondary mb-2 d-flex align-center gap-3">
       <v-icon color="secondary">mdi-cog</v-icon>
       Configuración Global
     </h1>
-    <p class="text-medium-emphasis mb-6">Administra los parámetros base del perfil de la empresa como la moneda de operación.</p>
+    <p class="text-medium-emphasis mb-6">Administra los parámetros base del perfil de la empresa como la moneda de operación y la apariencia gráfica.</p>
     
     <v-divider class="mb-6" />
 
     <v-row>
-      <!-- Card: Divisa Base -->
+      <!-- Card: Divisa Base & Tema -->
       <v-col cols="12" md="6">
-        <v-card class="border rounded-lg" elevation="0">
-          <v-card-item class="bg-grey-lighten-4 border-b py-3">
+        <v-card class="border rounded-lg bg-surface" elevation="0">
+          <v-card-item class="bg-surface-variant border-b py-3">
             <template #title>
               <span class="text-subtitle-1 font-weight-bold">
                 <v-icon class="mr-2">mdi-cash-register</v-icon>
-                Moneda de Operación (Base)
+                Preferencias Globales
               </span>
             </template>
           </v-card-item>
@@ -104,6 +135,7 @@
                     
             <v-autocomplete
               v-model="selectedDivisaId"
+              class="mb-6"
               density="comfortable"
               hide-details="auto"
               item-title="nombre_divisa"
@@ -125,10 +157,33 @@
               </template>
             </v-autocomplete>
 
+            <p class="text-caption text-medium-emphasis mb-4">
+              Selecciona el tema visual para todos los usuarios de la empresa.
+            </p>
+
+            <v-row class="mb-4">
+              <v-col
+                v-for="theme in availableThemes"
+                :key="theme.value"
+                cols="6"
+                lg="4"
+                md="6"
+                sm="4"
+              >
+                <ThemeCard
+                  :colors="theme.colors"
+                  :selected="selectedTema === theme.value"
+                  :theme-value="theme.value"
+                  :title="theme.title"
+                  @select="selectedTema = $event"
+                />
+              </v-col>
+            </v-row>
+
             <div class="mt-5 d-flex justify-end">
               <v-btn 
                 color="primary" 
-                :disabled="!selectedDivisaId || selectedDivisaId === config?.id_divisa_base" 
+                :disabled="(!selectedDivisaId || selectedDivisaId === config?.id_divisa_base) && selectedTema === config?.tema_interfaz" 
                 :loading="isSavingConfig"
                 prepend-icon="mdi-content-save"
                 @click="handleSaveConfig"
@@ -142,7 +197,7 @@
 
       <!-- Card: Acciones de SuperAdmin -->
       <v-col v-if="isSuperAdmin" cols="12" md="6">
-        <v-card class="border-error border opacity-90 rounded-lg" elevation="0">
+        <v-card class="border-error border opacity-90 rounded-lg bg-surface" elevation="0">
           <v-card-item class="bg-error text-white py-3">
             <template #title>
               <span class="text-subtitle-1 font-weight-bold">

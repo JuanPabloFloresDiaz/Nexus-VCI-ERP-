@@ -221,7 +221,7 @@
 
               <!-- Financial Analysis Accordion -->
               <v-expansion-panels class="mb-4">
-                <v-expansion-panel bg-color="white" elevation="1">
+                <v-expansion-panel  elevation="1">
                   <v-expansion-panel-title class="text-white" color="info">
                     <div class="d-flex align-center">
                       <v-icon class="mr-2" color="white">mdi-chart-line</v-icon>
@@ -297,7 +297,7 @@
                     </v-alert>
 
                     <!-- Glossary Carousel -->
-                    <div class="bg-grey-lighten-4 rounded pa-2">
+                    <div class="bg-surface-variant rounded pa-2">
                       <div class="text-caption font-weight-bold text-center text-medium-emphasis mb-1">Glosario de Términos (Desliza para ver más)</div>
                       <v-carousel
                         cycle

@@ -41,16 +41,18 @@ export const colors = {
 
 // --- Defaults ---
 ChartJS.defaults.font.family = 'Roboto, sans-serif';
-ChartJS.defaults.color = colors.text;
-ChartJS.defaults.scale.grid.color = colors.grid;
+ChartJS.defaults.color = 'rgba(var(--v-theme-on-surface), 0.7)'; // Dynamic text color
+ChartJS.defaults.scale.grid.color = 'rgba(var(--v-theme-on-surface), 0.1)'; // Dynamic grid color
 ChartJS.defaults.scale.grid.borderDash = [5, 5];
-ChartJS.defaults.plugins.tooltip.backgroundColor = colors.primary;
+ChartJS.defaults.plugins.tooltip.backgroundColor = 'rgba(var(--v-theme-surface-variant), 0.9)'; // Dynamic tooltip BG
+ChartJS.defaults.plugins.tooltip.titleColor = 'rgba(var(--v-theme-on-surface-variant), 1)';
+ChartJS.defaults.plugins.tooltip.bodyColor = 'rgba(var(--v-theme-on-surface-variant), 0.8)';
 ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
 ChartJS.defaults.plugins.legend.labels.usePointStyle = true;
 
 // --- Helper to create gradients ---
-export function createGradient (ctx, colorStart, colorEnd) {
+export function createGradient(ctx, colorStart, colorEnd) {
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, colorStart);
     gradient.addColorStop(1, colorEnd);

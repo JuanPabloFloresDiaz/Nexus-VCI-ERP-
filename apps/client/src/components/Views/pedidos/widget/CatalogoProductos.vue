@@ -144,7 +144,7 @@
 </script>
 
 <template>
-  <div class="h-100 d-flex flex-column bg-white">
+  <div class="h-100 d-flex flex-column bg-surface">
     <!-- Filters Header -->
     <div class="pa-3 border-b">
       <v-row dense>
@@ -201,7 +201,7 @@
     </div>
 
     <!-- Product Grid -->
-    <div class="flex-grow-1 overflow-y-auto pa-3 bg-grey-lighten-5">
+    <div class="flex-grow-1 overflow-y-auto pa-3 bg-surface">
       <div v-if="isLoading" class="d-flex justify-center align-center h-100">
         <v-progress-circular color="primary" indeterminate size="64" />
       </div>
@@ -231,8 +231,8 @@
           >
             <!-- EXPANDED VIEW (Variants List) -->
             <v-expand-transition>
-              <div v-if="expandedProductId === producto.id" class="fill-height d-flex flex-column bg-white" style="position: absolute; z-index: 2; width: 100%; height: 100%;">
-                <div class="d-flex align-center justify-space-between pa-2 border-b bg-grey-lighten-4">
+              <div v-if="expandedProductId === producto.id" class="fill-height d-flex flex-column bg-surface" style="position: absolute; z-index: 2; width: 100%; height: 100%;">
+                <div class="d-flex align-center justify-space-between pa-2 border-b bg-surface-variant">
                   <div class="text-subtitle-2 font-weight-bold text-truncate">{{ producto.nombre_producto }}</div>
                   <v-btn icon="mdi-close" size="x-small" variant="text" @click.stop="expandedProductId = null" />
                 </div>
@@ -276,7 +276,7 @@
             <!-- DEFAULT VIEW (Product Card) -->
             <div class="d-flex flex-column h-100" @click="handleCardClick(producto)">
               <div class="position-relative">
-                <div class="bg-grey-lighten-4" style="height: 140px;">
+                <div class="bg-surface-variant" style="height: 140px;">
                   <AsyncImage
                     :alt="producto.nombre_producto"
                     cover

@@ -65,7 +65,7 @@
               <v-list-item
                 v-for="(item, i) in topProducts"
                 :key="item.id_producto"
-                class="py-3 border-b hover:bg-slate-50 transition-colors"
+                class="py-3 border-b  transition-colors"
               >
                 <template #prepend>
                   <AsyncAvatar
@@ -123,7 +123,7 @@
               <v-list-item
                 v-for="(client, i) in topClients"
                 :key="client.id_cliente"
-                class="py-3 border-b hover:bg-slate-50 transition-colors"
+                class="py-3 border-b  transition-colors"
               >
                 <template #prepend>
                   <AsyncAvatar
@@ -254,8 +254,5 @@
 <style scoped>
 .v-card {
     transition: transform 0.2s, box-shadow 0.2s;
-}
-.hover\:bg-slate-50:hover {
-    background-color: #f8fafc; /* Slate 50 */
 }
 </style>

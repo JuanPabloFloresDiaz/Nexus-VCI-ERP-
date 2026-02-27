@@ -58,7 +58,7 @@
         <v-btn icon="mdi-close" size="small" variant="text" @click="show = false" />
       </v-card-title>
             
-      <v-card-text class="pa-4 bg-grey-lighten-5">
+      <v-card-text class="pa-4 bg-surface">
         <!-- Info Grid -->
         <v-row>
           <v-col cols="12" md="6">
@@ -97,7 +97,7 @@
 
         <!-- Products Table -->
         <v-card elevation="1">
-          <v-card-title class="text-subtitle-2 px-4 py-2 bg-grey-lighten-3 border-b">Productos</v-card-title>
+          <v-card-title class="text-subtitle-2 px-4 py-2 bg-surface border-b">Productos</v-card-title>
           <v-table density="compact">
             <thead>
               <tr>
@@ -111,7 +111,7 @@
               <tr v-for="detalle in pedido.detalles" :key="detalle.id">
                 <td class="py-2">
                   <div class="d-flex align-center">
-                    <div class="mr-3 rounded border bg-grey-lighten-4 overflow-hidden" style="width: 48px; height: 48px; min-width: 48px;">
+                    <div class="mr-3 rounded border bg-surface-variant overflow-hidden" style="width: 48px; height: 48px; min-width: 48px;">
                       <AsyncImage 
                         :alt="detalle.producto?.nombre_producto"
                         cover
@@ -155,7 +155,7 @@
             
       <v-divider />
             
-      <v-card-actions class="pa-4 bg-white">
+      <v-card-actions class="pa-4 bg-surface">
         <v-spacer />
         <v-btn color="primary" variant="tonal" @click="show = false">Cerrar</v-btn>
         <!-- Add Print Button maybe? -->

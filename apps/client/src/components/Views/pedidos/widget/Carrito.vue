@@ -144,9 +144,9 @@
 </script>
 
 <template>
-  <div class="d-flex flex-column h-100 bg-white border-s">
+  <div class="d-flex flex-column h-100 bg-surface border-s">
     <!-- Header -->
-    <div class="pa-4 border-b bg-grey-lighten-4">
+    <div class="pa-4 border-b bg-surface-variant">
       <div class="d-flex align-center justify-space-between mb-2">
         <div class="text-h6 font-weight-bold">
           <v-icon start>mdi-cart</v-icon>
@@ -157,7 +157,7 @@
         </v-chip>
       </div>
             
-      <div v-if="cliente" class="d-flex align-center pa-2 bg-white rounded border">
+      <div v-if="cliente" class="d-flex align-center pa-2 bg-surface rounded border">
         <v-avatar class="mr-2" color="primary" size="32">
           <span class="text-caption text-white">{{ cliente.nombre_cliente.charAt(0) }}</span>
         </v-avatar>
@@ -168,7 +168,7 @@
         <v-spacer />
         <v-btn icon="mdi-close" size="x-small" variant="text" @click="$emit('clear-client')" />
       </div>
-      <div v-else class="pa-2 border rounded border-dashed text-center text-medium-emphasis bg-grey-lighten-5">
+      <div v-else class="pa-2 border rounded border-dashed text-center text-medium-emphasis bg-surface">
         <v-icon class="mb-1">mdi-account-plus-outline</v-icon>
         <div class="text-caption">Seleccione un cliente</div>
       </div>
@@ -185,11 +185,11 @@
         <v-list-item
           v-for="(item, index) in modelValue"
           :key="item.cartItemId || index"
-          class="mb-2 bg-white border rounded elevation-1"
+          class="mb-2 bg-surface border rounded elevation-1"
           lines="two"
         >
           <template #prepend>
-            <div class="mr-4 rounded-lg overflow-hidden border bg-grey-lighten-4" style="width: 64px; height: 64px;">
+            <div class="mr-4 rounded-lg overflow-hidden border bg-surface-variant" style="width: 64px; height: 64px;">
               <AsyncImage
                 :alt="item.nombre_producto"
                 cover
@@ -265,7 +265,7 @@
     </div>
 
     <!-- Footer -->
-    <div class="pa-4 border-t bg-grey-lighten-4 mt-auto">
+    <div class="pa-4 border-t bg-surface-variant mt-auto">
       <v-row class="mb-2" dense>
         <v-col><div class="text-subtitle-2 text-medium-emphasis">Subtotal</div></v-col>
         <v-col class="text-right"><div class="text-subtitle-2 font-weight-bold">{{ formatCurrency(subtotal) }}</div></v-col>

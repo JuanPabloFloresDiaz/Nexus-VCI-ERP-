@@ -1,4 +1,4 @@
-const { Usuarios, Empresas, sequelize } = require('../models');
+const { Usuarios, Empresas, ConfiguracionesGlobales, Divisas, sequelize } = require('../models');
 const catchErrors = require('../utils/tryCatch');
 const ApiResponse = require('../utils/apiResponse');
 const { generateToken } = require('../auth'); // Module with functions: asignarToken, verificarToken
@@ -46,6 +46,12 @@ class AuthController {
             user.rol_usuario
         );
 
+        // Fetch Global Config
+        const config = await ConfiguracionesGlobales.findOne({
+            where: { id_empresa: user.id_empresa },
+            include: [{ model: Divisas, as: 'divisa_base', attributes: ['nombre_divisa', 'codigo_iso', 'simbolo'] }]
+        });
+
         // Respond with the token and basic user info (excluding the password)
         return ApiResponse.success(
             res,
@@ -59,6 +65,7 @@ class AuthController {
                         rol_usuario: user.rol_usuario,
                         id_empresa: user.id_empresa
                     },
+                    config
                 },
                 message: 'Inicio de sesión exitoso',
                 status: 200,
@@ -112,7 +119,24 @@ class AuthController {
                 estado_usuario: true
             }, { transaction: t });
 
-            return { newEmpresa, newUser };
+            // 3. Create Default Global Configuration
+            const divisaBase = await Divisas.findOne({ where: { codigo_iso: 'USD' } });
+            let config = null;
+            if (divisaBase) {
+                config = await ConfiguracionesGlobales.create({
+                    id_empresa: newEmpresa.id,
+                    id_divisa_base: divisaBase.id,
+                    tema_interfaz: 'nexusTheme'
+                }, { transaction: t });
+            }
+
+            return { newEmpresa, newUser, config };
+        });
+
+        // Fetch populated config
+        const config = await ConfiguracionesGlobales.findOne({
+            where: { id_empresa: result.newEmpresa.id },
+            include: [{ model: Divisas, as: 'divisa_base', attributes: ['nombre_divisa', 'codigo_iso', 'simbolo'] }]
         });
 
         // Generate token for immediate login
@@ -136,7 +160,8 @@ class AuthController {
                     rol_usuario: result.newUser.rol_usuario,
                     id_empresa: result.newEmpresa.id
                 },
-                empresa: result.newEmpresa
+                empresa: result.newEmpresa,
+                config
             },
             message: 'Registro exitoso. Empresa y Usuario creados.',
             status: 201,

@@ -127,9 +127,10 @@
         <v-btn
           v-if="!isVendor"
           class="mr-2"
-          color="success"
+          color="secondary"
           elevation="0"
-          prepend-icon="mdi-file-excel"
+          prepend-icon="mdi-microsoft-excel"
+          variant="tonal"
           @click="createBulk" 
         >
           Carga Masiva

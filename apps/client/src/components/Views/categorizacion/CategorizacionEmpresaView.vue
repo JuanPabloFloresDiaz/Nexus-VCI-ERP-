@@ -47,7 +47,7 @@
 <template>
   <div class="h-100 d-flex flex-column">
     <!-- Header -->
-    <div class="d-flex align-center pa-4 gap-4 bg-white border-b">
+    <div class="d-flex align-center pa-4 gap-4 bg-surface border-b">
       <div>
         <h1 class="text-h5 font-weight-bold text-secondary">Directorio de Categorías</h1>
         <div class="text-subtitle-2 text-medium-emphasis">
@@ -57,10 +57,10 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="d-flex align-center pa-4 gap-4 bg-grey-lighten-5 border-b">
+    <div class="d-flex align-center pa-4 gap-4 bg-surface border-b">
       <v-text-field
         v-model="search"
-        bg-color="white"
+        
         density="compact"
         hide-details
         placeholder="Buscar categoría..."
@@ -102,11 +102,11 @@
       <!-- Expanded Row for Subcategories -->
       <template #expanded-row="{ columns, item }">
         <tr>
-          <td class="pa-4 bg-grey-lighten-5" :colspan="columns.length">
+          <td class="pa-4 bg-surface" :colspan="columns.length">
             <div class="text-subtitle-2 mb-2 text-medium-emphasis">
               Subcategorías y Filtros
             </div>
-            <v-card class="bg-white" variant="outlined">
+            <v-card class="bg-surface" variant="outlined">
               <v-list density="compact">
                 <template v-if="item.subcategorias && item.subcategorias.length > 0">
                   <v-list-group 
@@ -132,7 +132,7 @@
                       <div class="px-4 py-2">
                         <v-row dense>
                           <v-col v-for="filtro in sub.filtros" :key="filtro.id" cols="12" md="6">
-                            <v-card class="bg-grey-lighten-4 mb-2" variant="flat">
+                            <v-card class="bg-surface-variant mb-2" variant="flat">
                               <v-card-text class="py-2">
                                 <div class="d-flex align-center justify-space-between mb-1">
                                   <div class="font-weight-medium text-body-2">{{ filtro.nombre_filtro }}</div>

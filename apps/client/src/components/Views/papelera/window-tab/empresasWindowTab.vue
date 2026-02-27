@@ -14,7 +14,7 @@
         <v-toolbar class="mb-4" color="transparent" density="compact" flat>
           <v-text-field
             v-model="search"
-            class="mr-4 bg-white"
+            class="mr-4 bg-surface"
             density="compact"
             hide-details
             label="Buscar empresas eliminadas..."

@@ -106,7 +106,7 @@
             </tr>
           </tbody>
           <tfoot v-if="!isLoading">
-            <tr class="bg-grey-lighten-4">
+            <tr class="bg-surface-variant">
               <td class="text-right font-weight-bold text-h6" colspan="3">TOTAL</td>
               <td class="text-right font-weight-bold text-h6 text-primary">
                 {{ formatCurrency(compraData.total_compra) }}

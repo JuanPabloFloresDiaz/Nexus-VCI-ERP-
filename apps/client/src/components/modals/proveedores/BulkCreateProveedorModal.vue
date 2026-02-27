@@ -297,7 +297,7 @@
                 </v-alert>
 
                 <!-- Editor Form -->
-                <v-card class="pa-3 bg-grey-lighten-5" variant="outlined">
+                <v-card class="pa-3 bg-surface" variant="outlined">
                   <span class="text-subtitle-2 font-weight-bold mb-2 d-block">
                     {{ editForm.index > -1 ? 'Editar Fila Seleccionada' : 'Agregar Manualmente' }}
                   </span>
@@ -305,7 +305,7 @@
                     <v-col v-if="isSuperAdmin" cols="12" md="4">
                       <v-text-field
                         v-model="editForm.id_empresa"
-                        bg-color="white"
+                        
                         density="compact"
                         label="ID Empresa"
                         variant="outlined"
@@ -314,7 +314,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.nombre_proveedor"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Nombre *"
                         variant="outlined"
@@ -323,7 +323,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.contacto_nombre"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Contacto"
                         variant="outlined"
@@ -332,7 +332,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.correo_proveedor"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Correo"
                         variant="outlined"
@@ -341,7 +341,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model="editForm.nit_dui_proveedor"
-                        bg-color="white"
+                        
                         density="compact"
                         label="NIT / DUI"
                         variant="outlined"
@@ -350,7 +350,7 @@
                     <v-col cols="12" md="4">
                       <v-text-field
                         v-model.number="editForm.dias_credito"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Días Crédito"
                         type="number"
@@ -361,7 +361,7 @@
                       <v-text-field
                         v-model="editForm.telefono_proveedor"
                         v-maska="'####-####'"
-                        bg-color="white"
+                        
                         density="compact"
                         label="Teléfono"
                         variant="outlined"

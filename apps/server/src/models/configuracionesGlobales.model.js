@@ -25,6 +25,11 @@ class ConfiguracionesGlobales extends Model {
                         model: 'divisas',
                         key: 'id'
                     }
+                },
+                tema_interfaz: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    defaultValue: 'nexusTheme'
                 }
             },
             {

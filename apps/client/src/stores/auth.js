@@ -5,16 +5,22 @@ import { authLogin, authRegister } from '@/services/auth.service';
 export const useAuthStore = defineStore('auth', {
     state: () => {
         let parsedUser = null;
+        let parsedConfig = null;
         try {
-            const stored = localStorage.getItem('user');
-            if (stored) {parsedUser = JSON.parse(stored);}
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) { parsedUser = JSON.parse(storedUser); }
+
+            const storedConfig = localStorage.getItem('config');
+            if (storedConfig) { parsedConfig = JSON.parse(storedConfig); }
         } catch (error) {
             console.warn('Corrupted user session data, clearing.', error);
             localStorage.removeItem('user');
+            localStorage.removeItem('config');
         }
         return {
             user: parsedUser,
             token: localStorage.getItem('token') || null,
+            config: parsedConfig,
         };
     },
 
@@ -27,8 +33,11 @@ export const useAuthStore = defineStore('auth', {
         isVendor: (state) => state.user?.rol_usuario === 'Vendedor',
 
         // Enterprise Context
-        // SuperAdmin might want to "view as" a specific company later, but default to own or null
         idEmpresa: (state) => state.user?.id_empresa,
+
+        // Config Helpers
+        globalConfig: (state) => state.config,
+        currentTheme: (state) => state.config?.tema_interfaz || 'nexusTheme',
 
         // Permissions Logic
         canViewAllTenants: (state) => state.user?.rol_usuario === 'SuperAdministrador',
@@ -40,9 +49,9 @@ export const useAuthStore = defineStore('auth', {
         async login(credentials) {
             try {
                 const response = await authLogin(credentials);
-                const { token, user } = response.data;
+                const { token, user, config } = response.data;
 
-                this.setSession(token, user);
+                this.setSession(token, user, config);
                 return { success: true };
             } catch (error) {
                 return {
@@ -55,10 +64,10 @@ export const useAuthStore = defineStore('auth', {
         async register(data) {
             try {
                 const response = await authRegister(data);
-                const { token, user } = response.data;
+                const { token, user, config } = response.data;
 
                 // Auto-login after register
-                this.setSession(token, user);
+                this.setSession(token, user, config);
                 return { success: true };
             } catch (error) {
                 return {
@@ -68,25 +77,31 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
-        setSession(token, user) {
+        setSession(token, user, config) {
             this.token = token;
             this.user = user;
+            if (config) this.config = config;
 
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
-
-            // Setup Axios default header if using a global axios instance (optional here if handled in interceptor)
-            // axios.defaults.headers.common['Authorization'] = `Bearer ${token}`; 
+            if (config) localStorage.setItem('config', JSON.stringify(config));
         },
 
         logout() {
             this.token = null;
             this.user = null;
+            this.config = null;
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            localStorage.removeItem('config');
             // Redirigir a la pantalla de inicio o al login
             router.push('/');
-            // window.location.reload(); // Optional: force reload to clear all memory states
+        },
+
+        updateConfig(newConfig) {
+            // Merge existing config with new changes
+            this.config = { ...this.config, ...newConfig };
+            localStorage.setItem('config', JSON.stringify(this.config));
         }
     }
 });

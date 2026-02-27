@@ -13,7 +13,7 @@
           El elemento volverá a estar activo y visible en su módulo correspondiente.
         </div>
       </v-card-text>
-      <v-card-actions class="pa-4 bg-grey-lighten-5">
+      <v-card-actions class="pa-4 bg-surface">
         <v-spacer />
         <v-btn
           color="grey-darken-1"

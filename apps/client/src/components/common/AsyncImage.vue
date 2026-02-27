@@ -10,19 +10,19 @@
     <v-img 
       v-else-if="blobUrl" 
       :alt="alt" 
-      class="bg-grey-lighten-4" 
+      class="bg-surface-variant" 
       :cover="cover"
       :height="height"
       :src="blobUrl"
     >
       <template #placeholder>
-        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-4">
+        <div class="d-flex align-center justify-center fill-height bg-surface-variant">
           <v-progress-circular color="primary" indeterminate size="24" />
         </div>
       </template>
     </v-img>
     
-    <div v-else class="d-flex align-center justify-center fill-height bg-grey-lighten-3 w-100 h-100 text-medium-emphasis">
+    <div v-else class="d-flex align-center justify-center fill-height bg-surface w-100 h-100 text-medium-emphasis">
       <v-icon :size="iconSize">{{ fallbackIcon }}</v-icon>
     </div>
   </div>

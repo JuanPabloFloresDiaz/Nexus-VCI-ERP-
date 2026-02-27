@@ -72,7 +72,7 @@
 <template>
   <div class="h-100 d-flex flex-column">
     <!-- Header -->
-    <div class="d-flex align-center pa-4 gap-4 bg-white border-b">
+    <div class="d-flex align-center pa-4 gap-4 bg-surface border-b">
       <div>
         <h1 class="text-h5 font-weight-bold text-secondary">Categorización</h1>
         <div class="text-subtitle-2 text-medium-emphasis">
@@ -82,10 +82,10 @@
       <v-spacer />
       <div class="d-flex gap-2">
         <v-btn
-          color="success"
-          prepend-icon="mdi-file-excel-outline"
+          color="secondary"
+          prepend-icon="mdi-microsoft-excel" 
+          variant="tonal" 
           to="/main/categorizacion/crear_masivo"
-          variant="outlined"
         >
           Carga Masiva
         </v-btn>
@@ -100,10 +100,10 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="d-flex align-center pa-4 gap-4 bg-grey-lighten-5 border-b">
+    <div class="d-flex align-center pa-4 gap-4 bg-surface border-b">
       <v-text-field
         v-model="search"
-        bg-color="white"
+        
         density="compact"
         hide-details
         placeholder="Buscar categoría..."
@@ -118,7 +118,7 @@
     </div>
 
     <!-- Content Area -->
-    <div class="flex-grow-1 overflow-y-auto pa-4 bg-grey-lighten-5">
+    <div class="flex-grow-1 overflow-y-auto pa-4 bg-surface">
       <div v-if="isLoading" class="d-flex justify-center pa-8">
         <v-progress-circular color="primary" indeterminate />
       </div>
@@ -219,7 +219,7 @@
     </div>
 
     <!-- Footer Pagination -->
-    <div class="bg-white border-t pa-2 d-flex align-center justify-end">
+    <div class="bg-surface border-t pa-2 d-flex align-center justify-end">
       <div class="text-caption text-medium-emphasis mr-4">
         Total: {{ totalItems }}
       </div>

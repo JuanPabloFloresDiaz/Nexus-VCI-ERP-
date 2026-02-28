@@ -10,9 +10,15 @@ class CategoriasController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -53,10 +59,15 @@ class CategoriasController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const data = await Categorias.findOne({
-            where: { id, id_empresa },
+            where,
             include: [{
                 model: Subcategorias,
                 as: 'subcategorias',
@@ -90,13 +101,18 @@ class CategoriasController {
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -130,9 +146,15 @@ class CategoriasController {
     });
 
     static all = catchErrors(async (req, res) => {
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = {};
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const data = await Categorias.findAll({
-            where: { id_empresa },
+            where,
             attributes: ['id', 'nombre_categoria'],
             order: [['nombre_categoria', 'ASC']]
         });
@@ -291,10 +313,15 @@ class CategoriasController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
         const { nombre_categoria, descripcion_categoria, subcategorias } = req.body;
 
-        const categoria = await Categorias.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const categoria = await Categorias.findOne({ where });
         if (!categoria) {
             return ApiResponse.error(res, {
                 error: 'Categoría no encontrada',
@@ -429,8 +456,14 @@ class CategoriasController {
 
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
-        const categoria = await Categorias.findOne({ where: { id, id_empresa } });
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const categoria = await Categorias.findOne({ where });
 
         if (!categoria) {
             return ApiResponse.error(res, {
@@ -452,9 +485,15 @@ class CategoriasController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const categoria = await Categorias.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 
@@ -486,9 +525,15 @@ class CategoriasController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const categoria = await Categorias.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 

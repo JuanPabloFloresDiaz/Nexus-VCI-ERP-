@@ -10,9 +10,15 @@ class MovimientosController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search, id_almacen, tipo_movimiento, fecha_inicio, fecha_fin } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (id_almacen) where.id_almacen = id_almacen;
         if (tipo_movimiento) where.tipo_movimiento = tipo_movimiento;
@@ -48,13 +54,18 @@ class MovimientosController {
     static trashed = catchErrors(async (req, res) => {
         // Ledger usually doesn't have soft delete exposed, but user requested standard CRUD.
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         const data = await MovimientosInventario.findAndCountAll({
             where,
@@ -75,10 +86,15 @@ class MovimientosController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const movimiento = await MovimientosInventario.findOne({
-            where: { id, id_empresa },
+            where,
             include: [
                 { model: Almacenes, as: 'almacen' },
                 { model: ProductoVariantes, as: 'variante', include: ['producto'] }
@@ -172,9 +188,14 @@ class MovimientosController {
         // For strict CRUD compliance requested by user:
         const { id } = req.params;
         const { notas } = req.body;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const movimiento = await MovimientosInventario.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const movimiento = await MovimientosInventario.findOne({ where });
         if (!movimiento) return ApiResponse.error(res, { error: 'Movimiento no encontrado', status: 404 });
 
         await movimiento.update({ notas });
@@ -190,9 +211,14 @@ class MovimientosController {
     static destroy = catchErrors(async (req, res) => {
         // Soft delete - DOES NOT REVERT STOCK. Only hides record.
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const movimiento = await MovimientosInventario.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const movimiento = await MovimientosInventario.findOne({ where });
         if (!movimiento) return ApiResponse.error(res, { error: 'Movimiento no encontrado', status: 404 });
 
         await movimiento.destroy();
@@ -207,8 +233,14 @@ class MovimientosController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
-        const movimiento = await MovimientosInventario.findOne({ where: { id, id_empresa }, paranoid: false });
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const movimiento = await MovimientosInventario.findOne({ where, paranoid: false });
 
         if (!movimiento) return ApiResponse.error(res, { error: 'Movimiento no encontrado', status: 404 });
 
@@ -224,8 +256,14 @@ class MovimientosController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
-        const movimiento = await MovimientosInventario.findOne({ where: { id, id_empresa }, paranoid: false });
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const movimiento = await MovimientosInventario.findOne({ where, paranoid: false });
 
         if (!movimiento) return ApiResponse.error(res, { error: 'Movimiento no encontrado', status: 404 });
 

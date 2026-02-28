@@ -17,6 +17,9 @@
         <v-tab class="text-none" value="proveedores">
           <v-icon start>mdi-truck-delivery</v-icon> Proveedores
         </v-tab>
+        <v-tab class="text-none" value="almacenes">
+          <v-icon start>mdi-warehouse</v-icon> Almacenes
+        </v-tab>
         <v-tab class="text-none" value="categorizacion">
           <v-icon start>mdi-shape</v-icon> Categorización
         </v-tab>
@@ -29,10 +32,19 @@
         <v-tab class="text-none" value="pedidos">
           <v-icon start>mdi-cart</v-icon> Pedidos
         </v-tab>
+        <v-tab class="text-none" value="movimientos">
+          <v-icon start>mdi-history</v-icon> Movimientos
+        </v-tab>
         
         <!-- Super Admin Only Tabs -->
         <v-tab v-if="isSuperAdmin" class="text-none" value="empresas">
           <v-icon start>mdi-domain</v-icon> Empresas
+        </v-tab>
+        <v-tab v-if="isSuperAdmin" class="text-none" value="divisas">
+          <v-icon start>mdi-currency-usd</v-icon> Divisas
+        </v-tab>
+        <v-tab v-if="isSuperAdmin" class="text-none" value="tasas_cambio">
+          <v-icon start>mdi-currency-exchange</v-icon> Tasas de Cambio
         </v-tab>
       </v-tabs>
 
@@ -49,6 +61,9 @@
           <v-window-item value="proveedores">
             <proveedoresWindowTab />
           </v-window-item>
+          <v-window-item value="almacenes">
+            <almacenesWindowTab />
+          </v-window-item>
           <v-window-item value="categorizacion">
             <categorizacionWindowTab />
           </v-window-item>
@@ -61,9 +76,18 @@
           <v-window-item value="pedidos">
             <pedidosWindowTab />
           </v-window-item>
+          <v-window-item value="movimientos">
+            <movimientosWindowTab />
+          </v-window-item>
 
           <v-window-item v-if="isSuperAdmin" value="empresas">
             <empresasWindowTab />
+          </v-window-item>
+          <v-window-item v-if="isSuperAdmin" value="divisas">
+            <divisasWindowTab />
+          </v-window-item>
+          <v-window-item v-if="isSuperAdmin" value="tasas_cambio">
+            <tasasWindowTab />
           </v-window-item>
         </v-window>
       </v-card-text>
@@ -83,6 +107,10 @@
   import pedidosWindowTab from './window-tab/pedidosWindowTab.vue';
   import productosWindowTab from './window-tab/productosWindowTab.vue';
   import proveedoresWindowTab from './window-tab/proveedoresWindowTab.vue';
+  import almacenesWindowTab from './window-tab/almacenesWindowTab.vue';
+  import movimientosWindowTab from './window-tab/movimientosWindowTab.vue';
+  import divisasWindowTab from './window-tab/divisasWindowTab.vue';
+  import tasasWindowTab from './window-tab/tasasWindowTab.vue';
   // Import Window Tabs
   // Note: Assuming these components will be implemented. 
   // For now, I'm importing them. If they are empty/don't exist properly, I might need to create placeholders or the build will fail.

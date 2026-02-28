@@ -55,6 +55,10 @@ class DivisasController {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         const where = {
             ...query,
             deleted_at: { [Op.not]: null }
@@ -110,6 +114,10 @@ class DivisasController {
     static store = catchErrors(async (req, res) => {
         const { nombre_divisa, codigo_iso, simbolo } = req.body;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         const existe = await Divisas.findOne({ where: { codigo_iso } });
         if (existe) {
             return ApiResponse.error(res, { error: 'Ya existe una divisa con ese código ISO', status: 400 });
@@ -132,6 +140,10 @@ class DivisasController {
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
         const { nombre_divisa, codigo_iso, simbolo, estado } = req.body;
+
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
 
         const divisa = await Divisas.findByPk(id);
         if (!divisa) {
@@ -158,6 +170,10 @@ class DivisasController {
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         const divisa = await Divisas.findByPk(id);
         if (!divisa) {
             return ApiResponse.error(res, { error: 'Divisa no encontrada', status: 404 });
@@ -175,6 +191,10 @@ class DivisasController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
+
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
 
         const divisa = await Divisas.findOne({ where: { id }, paranoid: false });
         if (!divisa) {
@@ -197,6 +217,10 @@ class DivisasController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
+
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
 
         const divisa = await Divisas.findOne({ where: { id }, paranoid: false });
         if (!divisa) {

@@ -2,7 +2,7 @@
   import { useMutation, useQuery } from '@tanstack/vue-query';
   import { computed, ref } from 'vue';
   import { showConfirmDialog, showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
-  import { destroyPedido, getTrashedPedidos, restorePedido } from '@/services/pedidos.service';
+  import { forceDestroyTasaCambio, getTrashedTasasCambio, restoreTasaCambio } from '@/services/tasasCambio.service';
 
   const page = ref(1);
   const limit = ref(10);
@@ -15,17 +15,15 @@
   }));
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['trashedPedidos', queryParams],
-    queryFn: () => getTrashedPedidos(queryParams.value),
+    queryKey: ['trashedTasasCambio', queryParams],
+    queryFn: () => getTrashedTasasCambio(queryParams.value),
     keepPreviousData: true
   });
 
   const headers = [
-    { title: 'Pedido', align: 'start', key: 'id' },
-    { title: 'Cliente', align: 'start', key: 'cliente' },
-    { title: 'Fecha de Pedido', align: 'start', key: 'fecha_pedido' },
-    { title: 'Total', align: 'end', key: 'total_pedido' },
-    { title: 'Estado', align: 'start', key: 'estado_pedido' },
+    { title: 'Divisa Origen', align: 'start', key: 'divisa_origen' },
+    { title: 'Divisa Destino', align: 'start', key: 'divisa_destino' },
+    { title: 'Tasa de Cambio', align: 'end', key: 'tasa_cambio' },
     { title: 'Eliminado', align: 'start', key: 'deleted_at' },
     { title: 'Acciones', align: 'end', key: 'actions', sortable: false }
   ];
@@ -34,31 +32,31 @@
   const totalItems = computed(() => data.value?.count || 0);
 
   const { mutate: restoreMutate, isPending: isRestoring } = useMutation({
-    mutationFn: restorePedido,
+    mutationFn: restoreTasaCambio,
     onSuccess: () => {
-      showSuccessToast('Pedido restaurado exitosamente');
+      showSuccessToast('Tasa de cambio restaurada exitosamente');
       refetch();
     },
     onError: (error) => {
-      showErrorToast(error.message || 'Error al restaurar pedido');
+      showErrorToast(error.message || 'Error al restaurar tasa de cambio');
     }
   });
 
   const { mutate: deleteMutate, isPending: isDeleting } = useMutation({
-    mutationFn: destroyPedido,
+    mutationFn: forceDestroyTasaCambio,
     onSuccess: () => {
-      showSuccessToast('Pedido eliminado definitivamente');
+      showSuccessToast('Tasa de cambio eliminada definitivamente');
       refetch();
     },
     onError: (error) => {
-      showErrorToast(error.message || 'Error al eliminar pedido');
+      showErrorToast(error.message || 'Error al eliminar tasa de cambio');
     }
   });
 
   async function handleRestore (item) {
     const confirmed = await showConfirmDialog(
-      '¿Restaurar pedido?',
-      `El pedido PE-${item.id} volverá a estar activo.`
+      '¿Restaurar tasa de cambio?',
+      `La tasa de cambio de ${item.codigo_iso_origen} a ${item.codigo_iso_destino} volverá a estar activa.`
     );
     if (confirmed) {
       restoreMutate(item.id);
@@ -68,7 +66,7 @@
   async function handleForceDelete (item) {
     const confirmed = await showConfirmDialog(
       '¿Eliminar definitivamente?',
-      `Esta acción no se puede deshacer. El pedido PE-${item.id} se borrará permanentemente.`,
+      `Esta acción no se puede deshacer. La tasa de cambio dejará de existir.`,
       'warning'
     );
     if (confirmed) {
@@ -86,23 +84,6 @@
       minute: '2-digit'
     });
   }
-
-  function formatCurrency(val) {
-    return new Intl.NumberFormat('es-SV', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(val || 0);
-  }
-
-  function getStatusColor(status) {
-    switch (status?.toLowerCase()) {
-      case 'entregado': return 'success';
-      case 'pendiente': return 'info';
-      case 'cancelado': return 'error';
-      case 'en proceso': return 'warning';
-      default: return 'primary';
-    }
-  }
 </script>
 
 <template>
@@ -113,7 +94,7 @@
         bg-color="grey-lighten-5"
         density="compact"
         hide-details
-        placeholder="Buscar pedido eliminado..."
+        placeholder="Buscar tasa eliminada..."
         prepend-inner-icon="mdi-magnify"
         style="max-width: 300px"
         variant="outlined"
@@ -135,28 +116,28 @@
       :items-per-page="limit"
       :loading="isLoading"
     >
-      <template #item.id="{ item }">
-        <span class="font-weight-bold">PE-{{ String(item.id).padStart(5, '0') }}</span>
-      </template>
-
-      <template #item.cliente="{ item }">
+      <template #item.divisa_origen="{ item }">
         <div class="d-flex flex-column">
-          <span class="font-weight-medium text-body-2">{{ item.cliente?.nombre_cliente }} {{ item.cliente?.apellido_cliente }}</span>
+          <span class="font-weight-medium text-body-2">
+            {{ item.divisa_origen?.nombre_divisa || item.codigo_iso_origen }}
+          </span>
+          <span class="text-caption text-medium-emphasis">{{ item.codigo_iso_origen }}</span>
         </div>
       </template>
-      
-      <template #item.fecha_pedido="{ item }">
-        <span class="text-body-2">{{ formatDate(item.fecha_pedido) }}</span>
+
+      <template #item.divisa_destino="{ item }">
+        <div class="d-flex flex-column">
+          <span class="font-weight-medium text-body-2">
+            {{ item.divisa_destino?.nombre_divisa || item.codigo_iso_destino }}
+          </span>
+          <span class="text-caption text-medium-emphasis">{{ item.codigo_iso_destino }}</span>
+        </div>
       </template>
 
-      <template #item.total_pedido="{ item }">
-        <span class="font-weight-bold">{{ formatCurrency(item.total_pedido) }}</span>
-      </template>
-
-      <template #item.estado_pedido="{ item }">
-        <v-chip class="font-weight-medium" :color="getStatusColor(item.estado_pedido)" size="small" variant="flat">
-          {{ item.estado_pedido }}
-        </v-chip>
+      <template #item.tasa_cambio="{ item }">
+        <span class="font-weight-bold text-primary">
+          {{ item.tasa_cambio }}
+        </span>
       </template>
 
       <template #item.deleted_at="{ item }">
@@ -206,7 +187,7 @@
       <template #no-data>
         <div class="d-flex flex-column align-center justify-center py-8 text-medium-emphasis">
           <v-icon class="mb-2 opacity-50" icon="mdi-delete-empty" size="48" />
-          <span>No hay pedidos en la papelera</span>
+          <span>No hay tasas de cambio en la papelera</span>
         </div>
       </template>
     </v-data-table-server>

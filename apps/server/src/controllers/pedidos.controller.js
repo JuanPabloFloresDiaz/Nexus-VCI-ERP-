@@ -13,9 +13,15 @@ class PedidosController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search, id_cliente, id_usuario_creador, estado_pedido, fecha_desde, fecha_hasta } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         // 1. Generic Search (ID or Total)
         if (search) {
@@ -103,10 +109,15 @@ class PedidosController {
         const { id } = req.params; // Client ID
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { estado_pedido, fecha_desde, fecha_hasta } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const whereCliente = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            whereCliente.id_empresa = id_empresa;
+        }
 
         // Verify client exists
-        const cliente = await Clientes.findOne({ where: { id, id_empresa } });
+        const cliente = await Clientes.findOne({ where: whereCliente });
         if (!cliente) {
             return ApiResponse.error(res, {
                 error: 'Cliente no encontrado',
@@ -117,9 +128,14 @@ class PedidosController {
 
         const where = {
             ...query,
-            id_cliente: id,
-            id_empresa
+            id_cliente: id
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (estado_pedido) {
             where.estado_pedido = estado_pedido;
@@ -162,13 +178,18 @@ class PedidosController {
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search, id_cliente, id_usuario_creador, estado_pedido, fecha_desde, fecha_hasta } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         // 1. Generic Search (Total only)
         if (search) {
@@ -233,10 +254,15 @@ class PedidosController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const pedido = await Pedidos.findOne({
-            where: { id, id_empresa },
+            where,
             include: [
                 {
                     model: Clientes,
@@ -622,12 +648,17 @@ class PedidosController {
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
         const { id_cliente, detalles, estado_pedido, id_almacen_origen } = req.body;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const result = await sequelize.transaction(async (t) => {
             // 1. Fetch original order
             const pedido = await Pedidos.findOne({
-                where: { id, id_empresa },
+                where,
                 include: [{ model: DetallesPedidos, as: 'detalles' }],
                 transaction: t
             });

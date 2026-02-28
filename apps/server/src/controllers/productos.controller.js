@@ -11,7 +11,7 @@ class ProductosController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search, id_categoria, min_price, max_price } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const {
             id_categoria: _cat,
@@ -20,7 +20,13 @@ class ProductosController {
             ...cleanQuery
         } = query;
 
-        const where = { ...cleanQuery, id_empresa };
+        const where = { ...cleanQuery };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -114,13 +120,18 @@ class ProductosController {
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -155,10 +166,15 @@ class ProductosController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const producto = await Productos.findOne({
-            where: { id, id_empresa },
+            where,
             include: [
                 {
                     model: Subcategorias,
@@ -405,10 +421,15 @@ class ProductosController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
         const { id_subcategoria, nombre_producto, descripcion_producto, imagen_url, variantes } = req.body;
 
-        const producto = await Productos.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const producto = await Productos.findOne({ where });
         if (!producto) {
             return ApiResponse.error(res, { error: 'Producto no encontrado', status: 404 });
         }
@@ -552,8 +573,14 @@ class ProductosController {
 
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
-        const producto = await Productos.findOne({ where: { id, id_empresa } });
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const producto = await Productos.findOne({ where });
 
         if (!producto) {
             return ApiResponse.error(res, {
@@ -575,9 +602,15 @@ class ProductosController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const producto = await Productos.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 
@@ -609,9 +642,15 @@ class ProductosController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const producto = await Productos.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 

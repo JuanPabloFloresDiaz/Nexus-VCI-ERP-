@@ -10,9 +10,15 @@ class ComprasController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search, id_proveedor, estado_compra, fecha_desde, fecha_hasta } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         // 1. Generic Search (Total only)
         if (search) {
@@ -76,10 +82,15 @@ class ComprasController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const compra = await Compras.findOne({
-            where: { id, id_empresa },
+            where,
             include: [
                 {
                     model: Proveedores,
@@ -381,12 +392,17 @@ class ComprasController {
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
         const { estado_compra, fecha_entrega_estimada, detalles } = req.body;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const result = await sequelize.transaction(async (t) => {
             // 1. Fetch original purchase
             const compra = await Compras.findOne({
-                where: { id, id_empresa },
+                where,
                 include: [{ model: DetallesCompras, as: 'detalles' }],
                 transaction: t
             });
@@ -531,8 +547,14 @@ class ComprasController {
 
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
-        const compra = await Compras.findOne({ where: { id, id_empresa } });
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const compra = await Compras.findOne({ where });
 
         if (!compra) {
             return ApiResponse.error(res, {
@@ -554,9 +576,15 @@ class ComprasController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const compra = await Compras.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 
@@ -581,13 +609,18 @@ class ComprasController {
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search, id_proveedor, estado_compra } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             if (!isNaN(parseFloat(search)) && isFinite(search)) {
@@ -618,9 +651,15 @@ class ComprasController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
         const compra = await Compras.findOne({
-            where: { id, id_empresa },
+            where,
             paranoid: false
         });
 

@@ -2,7 +2,7 @@
   import { useMutation, useQuery } from '@tanstack/vue-query';
   import { computed, ref } from 'vue';
   import { showConfirmDialog, showErrorToast, showSuccessToast } from '@/plugins/sweetalert2';
-  import { destroyPedido, getTrashedPedidos, restorePedido } from '@/services/pedidos.service';
+  import { forceDestroyMovimiento, getTrashedMovimientos, restoreMovimiento } from '@/services/movimientos.service';
 
   const page = ref(1);
   const limit = ref(10);
@@ -15,17 +15,17 @@
   }));
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['trashedPedidos', queryParams],
-    queryFn: () => getTrashedPedidos(queryParams.value),
+    queryKey: ['trashedMovimientos', queryParams],
+    queryFn: () => getTrashedMovimientos(queryParams.value),
     keepPreviousData: true
   });
 
   const headers = [
-    { title: 'Pedido', align: 'start', key: 'id' },
-    { title: 'Cliente', align: 'start', key: 'cliente' },
-    { title: 'Fecha de Pedido', align: 'start', key: 'fecha_pedido' },
-    { title: 'Total', align: 'end', key: 'total_pedido' },
-    { title: 'Estado', align: 'start', key: 'estado_pedido' },
+    { title: 'Fecha', align: 'start', key: 'fecha_movimiento' },
+    { title: 'Movimiento', align: 'start', key: 'tipo_movimiento' },
+    { title: 'Almacén', align: 'start', key: 'almacen' },
+    { title: 'Variante', align: 'start', key: 'variante' },
+    { title: 'Cantidad', align: 'end', key: 'cantidad' },
     { title: 'Eliminado', align: 'start', key: 'deleted_at' },
     { title: 'Acciones', align: 'end', key: 'actions', sortable: false }
   ];
@@ -34,31 +34,31 @@
   const totalItems = computed(() => data.value?.count || 0);
 
   const { mutate: restoreMutate, isPending: isRestoring } = useMutation({
-    mutationFn: restorePedido,
+    mutationFn: restoreMovimiento,
     onSuccess: () => {
-      showSuccessToast('Pedido restaurado exitosamente');
+      showSuccessToast('Movimiento restaurado exitosamente');
       refetch();
     },
     onError: (error) => {
-      showErrorToast(error.message || 'Error al restaurar pedido');
+      showErrorToast(error.message || 'Error al restaurar movimiento');
     }
   });
 
   const { mutate: deleteMutate, isPending: isDeleting } = useMutation({
-    mutationFn: destroyPedido,
+    mutationFn: forceDestroyMovimiento,
     onSuccess: () => {
-      showSuccessToast('Pedido eliminado definitivamente');
+      showSuccessToast('Movimiento eliminado definitivamente');
       refetch();
     },
     onError: (error) => {
-      showErrorToast(error.message || 'Error al eliminar pedido');
+      showErrorToast(error.message || 'Error al eliminar movimiento');
     }
   });
 
   async function handleRestore (item) {
     const confirmed = await showConfirmDialog(
-      '¿Restaurar pedido?',
-      `El pedido PE-${item.id} volverá a estar activo.`
+      '¿Restaurar movimiento?',
+      `El movimiento de ${item.tipo_movimiento} volverá a estar activo en el historial.`
     );
     if (confirmed) {
       restoreMutate(item.id);
@@ -68,7 +68,7 @@
   async function handleForceDelete (item) {
     const confirmed = await showConfirmDialog(
       '¿Eliminar definitivamente?',
-      `Esta acción no se puede deshacer. El pedido PE-${item.id} se borrará permanentemente.`,
+      `Esta acción no se puede deshacer. El movimiento de inventario se borrará permanentemente.`,
       'warning'
     );
     if (confirmed) {
@@ -87,19 +87,12 @@
     });
   }
 
-  function formatCurrency(val) {
-    return new Intl.NumberFormat('es-SV', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(val || 0);
-  }
-
-  function getStatusColor(status) {
-    switch (status?.toLowerCase()) {
-      case 'entregado': return 'success';
-      case 'pendiente': return 'info';
-      case 'cancelado': return 'error';
-      case 'en proceso': return 'warning';
+  function getMovementColor(type) {
+    switch(type) {
+      case 'Entrada': return 'success';
+      case 'Salida': return 'error';
+      case 'Ajuste': return 'warning';
+      case 'Transferencia': return 'info';
       default: return 'primary';
     }
   }
@@ -113,7 +106,7 @@
         bg-color="grey-lighten-5"
         density="compact"
         hide-details
-        placeholder="Buscar pedido eliminado..."
+        placeholder="Buscar movimiento eliminado..."
         prepend-inner-icon="mdi-magnify"
         style="max-width: 300px"
         variant="outlined"
@@ -135,28 +128,33 @@
       :items-per-page="limit"
       :loading="isLoading"
     >
-      <template #item.id="{ item }">
-        <span class="font-weight-bold">PE-{{ String(item.id).padStart(5, '0') }}</span>
+      <template #item.fecha_movimiento="{ item }">
+        <span class="text-body-2">{{ formatDate(item.fecha_movimiento) }}</span>
       </template>
 
-      <template #item.cliente="{ item }">
+      <template #item.tipo_movimiento="{ item }">
+        <v-chip class="font-weight-medium" :color="getMovementColor(item.tipo_movimiento)" size="small" variant="flat">
+          {{ item.tipo_movimiento }}
+        </v-chip>
+      </template>
+
+      <template #item.almacen="{ item }">
         <div class="d-flex flex-column">
-          <span class="font-weight-medium text-body-2">{{ item.cliente?.nombre_cliente }} {{ item.cliente?.apellido_cliente }}</span>
+          <span class="font-weight-medium text-body-2">{{ item.almacen?.nombre_almacen || 'N/A' }}</span>
         </div>
       </template>
-      
-      <template #item.fecha_pedido="{ item }">
-        <span class="text-body-2">{{ formatDate(item.fecha_pedido) }}</span>
+
+      <template #item.variante="{ item }">
+        <div class="d-flex flex-column">
+          <span class="font-weight-medium text-body-2">{{ item.variante?.producto?.nombre_producto || 'N/A' }}</span>
+          <span class="text-caption text-medium-emphasis">SKU: {{ item.variante?.sku || 'N/A' }}</span>
+        </div>
       </template>
 
-      <template #item.total_pedido="{ item }">
-        <span class="font-weight-bold">{{ formatCurrency(item.total_pedido) }}</span>
-      </template>
-
-      <template #item.estado_pedido="{ item }">
-        <v-chip class="font-weight-medium" :color="getStatusColor(item.estado_pedido)" size="small" variant="flat">
-          {{ item.estado_pedido }}
-        </v-chip>
+      <template #item.cantidad="{ item }">
+        <span class="font-weight-bold" :class="item.tipo_movimiento === 'Salida' ? 'text-error' : 'text-success'">
+          {{ item.tipo_movimiento === 'Salida' ? '-' : '+' }}{{ item.cantidad }}
+        </span>
       </template>
 
       <template #item.deleted_at="{ item }">
@@ -206,7 +204,7 @@
       <template #no-data>
         <div class="d-flex flex-column align-center justify-center py-8 text-medium-emphasis">
           <v-icon class="mb-2 opacity-50" icon="mdi-delete-empty" size="48" />
-          <span>No hay pedidos en la papelera</span>
+          <span>No hay movimientos en la papelera</span>
         </div>
       </template>
     </v-data-table-server>

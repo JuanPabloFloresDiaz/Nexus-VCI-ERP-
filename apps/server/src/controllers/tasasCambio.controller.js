@@ -44,6 +44,10 @@ class TasasCambioController {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         const where = {
             ...query,
             deleted_at: { [Op.not]: null }
@@ -107,6 +111,10 @@ class TasasCambioController {
     static store = catchErrors(async (req, res) => {
         const { codigo_iso_origen, codigo_iso_destino, tasa_cambio } = req.body;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         if (codigo_iso_origen === codigo_iso_destino) {
             return ApiResponse.error(res, { error: 'La divisa de origen y destino no pueden ser la misma', status: 400 });
         }
@@ -137,6 +145,10 @@ class TasasCambioController {
         const { id } = req.params;
         const { codigo_iso_origen, codigo_iso_destino, tasa_cambio, estado } = req.body;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         const tasa = await TasasCambio.findByPk(id);
         if (!tasa) {
             return ApiResponse.error(res, { error: 'Tasa de cambio no encontrada', status: 404 });
@@ -155,6 +167,10 @@ class TasasCambioController {
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
 
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
+
         const tasa = await TasasCambio.findByPk(id);
         if (!tasa) {
             return ApiResponse.error(res, { error: 'Tasa de cambio no encontrada', status: 404 });
@@ -172,6 +188,10 @@ class TasasCambioController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
+
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
 
         const tasa = await TasasCambio.findOne({ where: { id }, paranoid: false });
         if (!tasa) {
@@ -194,6 +214,10 @@ class TasasCambioController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
+
+        if (req.user.rol_usuario !== 'SuperAdministrador') {
+            return ApiResponse.error(res, { error: 'Acceso denegado. Solo administradores principales pueden realizar esta acción.', status: 403 });
+        }
 
         const tasa = await TasasCambio.findOne({ where: { id }, paranoid: false });
         if (!tasa) {

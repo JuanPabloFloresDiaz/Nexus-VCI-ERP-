@@ -10,9 +10,15 @@ class AlmacenesController {
     static index = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const where = { ...query, id_empresa };
+        const where = { ...query };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -57,13 +63,18 @@ class AlmacenesController {
     static trashed = catchErrors(async (req, res) => {
         const { query, limit, offset, order } = getPaginatedQuery(req.query);
         const { search } = req.query;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
         const where = {
             ...query,
-            id_empresa,
             deleted_at: { [Op.not]: null }
         };
+
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        } else if (req.query.id_empresa) {
+            where.id_empresa = req.query.id_empresa;
+        }
 
         if (search) {
             where[Op.or] = [
@@ -91,10 +102,15 @@ class AlmacenesController {
 
     static getById = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
+
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
 
         const almacen = await Almacenes.findOne({
-            where: { id, id_empresa }
+            where
         });
 
         if (!almacen) {
@@ -147,10 +163,15 @@ class AlmacenesController {
 
     static update = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
         const { nombre_almacen, ubicacion, es_principal, estado } = req.body;
 
-        const almacen = await Almacenes.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const almacen = await Almacenes.findOne({ where });
         if (!almacen) {
             return ApiResponse.error(res, { error: 'Almacén no encontrado', status: 404 });
         }
@@ -185,9 +206,14 @@ class AlmacenesController {
 
     static destroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const almacen = await Almacenes.findOne({ where: { id, id_empresa } });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const almacen = await Almacenes.findOne({ where });
         if (!almacen) {
             return ApiResponse.error(res, { error: 'Almacén no encontrado', status: 404 });
         }
@@ -208,9 +234,14 @@ class AlmacenesController {
 
     static restore = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const almacen = await Almacenes.findOne({ where: { id, id_empresa }, paranoid: false });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const almacen = await Almacenes.findOne({ where, paranoid: false });
         if (!almacen) {
             return ApiResponse.error(res, { error: 'Almacén no encontrado', status: 404 });
         }
@@ -231,9 +262,14 @@ class AlmacenesController {
 
     static forceDestroy = catchErrors(async (req, res) => {
         const { id } = req.params;
-        const { id_empresa } = req.user;
+        const { id_empresa, rol_usuario } = req.user;
 
-        const almacen = await Almacenes.findOne({ where: { id, id_empresa }, paranoid: false });
+        const where = { id };
+        if (rol_usuario !== 'SuperAdministrador') {
+            where.id_empresa = id_empresa;
+        }
+
+        const almacen = await Almacenes.findOne({ where, paranoid: false });
         if (!almacen) {
             return ApiResponse.error(res, { error: 'Almacén no encontrado', status: 404 });
         }
